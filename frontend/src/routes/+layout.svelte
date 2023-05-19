@@ -1,14 +1,13 @@
 <div class="main">
-	<slot></slot>
+	<div></div>
+	<slot />
 </div>
 
 <style lang='postcss'>
 	:global(*) {
-		margin: 0;
-		padding: 0;
 		box-sizing: border-box;
-		font-size: 16px;
 		font-family: 'Quicksand', Helvetica, monospace;
+		@apply m-0 p-0 text-base leading-none;
 	}
 
 	:global(a) {
@@ -19,6 +18,7 @@
 	:global(input, textarea, button) {
 		border: none;
 		outline: none;
+		background-color: #ffffff;
 	}
 
 	:global(textarea) {
@@ -29,8 +29,14 @@
 		list-style-type: none;
 	}
 
-	.main {
-		background-color: #dffaff;
-		@apply grid items-start justify-items-center w-screen h-screen;
+	:global(.main) {
+		padding: 27.5px 35px;
+		background-color: #000000;
+		@apply grid relative items-start justify-items-center w-full min-h-screen;
+	}
+
+	.main div {
+		background-color: #3d7cf1;
+		@apply absolute w-full h-1/2;
 	}
 </style>

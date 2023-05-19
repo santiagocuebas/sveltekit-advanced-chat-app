@@ -7,18 +7,29 @@ import { User } from '../models/User.js';
 passport.use(
 	'register',
 	new LocalStrategy({
-		usernameField: 'username',
+		usernameField: 'email',
+		passwordField: 'password',
+		passReqToCallback: true
+	},
+	async (req, email, password, done) => {
+		const user = await User.create({
+			username: req.body.username,
+			email,
+			password: await encryptPassword(password)
+		});
+
+		return done(null, user);
+	})
+);
+
+passport.use(
+	'signin',
+	new LocalStrategy({
+		usernameField: 'email',
 		passwordField: 'password'
 	},
-	async (username, password, done) => {
-		let user = await User.findOne({ username });
-
-		if (user === null) {
-			user = await User.create({
-				username,
-				password: await encryptPassword(password)
-			});
-		}
+	async (email, _password, done) => {
+		const user = await User.findOne({ email }) as IUser;
 
 		return done(null, user);
 	})

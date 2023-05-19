@@ -27,10 +27,21 @@ export interface IChat {
 
 export interface IUser {
 	_id: Types.ObjectId;
-	username: string;
+	email: string;
 	password: string;
+	username: string;
+	avatar: string;
+	description: string;
+	contacts: Types.ObjectId[];
 	createdAt: Date;
-	updatedAtAt: Date;
+}
+
+export interface IContact {
+	userId: string;
+	email: string;
+	username: string;
+	avatar: string;
+	description: string;
 }
 
 export interface Error {

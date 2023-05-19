@@ -1,26 +1,51 @@
 <script lang="ts">
-  import type { LayoutServerData } from './$types';
-  import { onMount } from 'svelte';
-  import io from 'socket.io-client';
-  import { DIR } from '$lib/config.js';
-  import Register from '$lib/components/Register.svelte';
+	import type { PageServerData } from './$types';
+	import type { IUser } from '$lib/global';
+	import { onMount } from 'svelte';
+	import { socket } from '$lib/socket.js'
+  import UserHeader from '$lib/components/UserHeader.svelte';
+  import Contacts from '$lib/components/Contacts.svelte';
+  import ChatBox from '$lib/components/ChatBox.svelte';
+  import Chat from '$lib/components/Chat.svelte';
 
-  export let data: LayoutServerData;
+	export let data: PageServerData;
 
-  const socket = io(DIR, { withCredentials: true });
-  let message = 'No estas connectado';
+	let user: IUser = data.user;
+	let contacts: IUser[] = [];
+	let contact: IUser;
 
-  onMount(() => {
-    socket.on('hola', (receiveMessage: string) => message = receiveMessage);
+	const userContacts = (contact: IUser[]) => {
+		contacts = contact;
+		console.log(contact);
+	};
 
-    return () => {
-      socket.off('hola', (receiveMessage: string) => message = receiveMessage);
-    }
-  });
+	onMount(() => {
+		socket.auth = { id: user._id };
+		socket.connect();
+	
+		socket.on('loadContacts', userContacts);
+
+		return () => {
+			socket.off('loadContacts', userContacts);
+		}
+	});
 </script>
 
-{#if data.logged}
-  {message}
-  {:else}
-  <Register bind:logged={data.logged} />
-{/if}
+<div class="container">
+	<UserHeader user={user} />
+	<Contacts contacts={contacts} bind:contact={contact} />
+	<ChatBox user={contact}>
+		<Chat user={contact}/>
+	</ChatBox>
+</div>
+
+<style lang="postcss">
+	.container {
+		grid-template-columns: 555px 1fr;
+		grid-auto-rows: min-content 1fr;
+		box-shadow: 0 0 0 1px #6f6f6f;
+		background-color: #999999;
+		z-index: 25;
+		@apply grid relative w-full h-full gap-x-px gap-y-px;
+	}
+</style>

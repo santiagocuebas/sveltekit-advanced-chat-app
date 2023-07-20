@@ -1,9 +1,11 @@
 import { Schema, model } from 'mongoose';
-import { IChat } from '../global.js';
+import { IChat } from '../types/global.js';
 
 const chatSchema = new Schema<IChat>({
 	from: String,
-	body: String,
+	to: String,
+	username: String,
+	content: String,
 	createdAt: { type: Date, default: new Date }
 });
 

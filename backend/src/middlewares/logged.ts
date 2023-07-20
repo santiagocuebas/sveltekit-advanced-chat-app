@@ -1,4 +1,4 @@
-import { Direction } from '../global.js';
+import type { Direction } from '../types/types.js';
 
 export const isLoggedIn: Direction = (req, res, next) => {
 	if (req.isAuthenticated()) return next();

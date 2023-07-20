@@ -15,7 +15,7 @@
 		text-decoration: none;
 	}
 
-	:global(input, textarea, button) {
+	:global(input, select, textarea, button) {
 		border: none;
 		outline: none;
 		background-color: #ffffff;
@@ -29,10 +29,11 @@
 		list-style-type: none;
 	}
 
-	:global(.main) {
+	.main {
+		min-height: 665px;
 		padding: 27.5px 35px;
 		background-color: #000000;
-		@apply grid relative items-start justify-items-center w-full min-h-screen;
+		@apply grid fixed items-start justify-items-center w-full h-screen;
 	}
 
 	.main div {

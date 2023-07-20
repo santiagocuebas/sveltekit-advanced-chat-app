@@ -91,13 +91,13 @@
 	}
 
 	label {
-		transition: all 0.5s;
+		transition: all 0.1s;
 		gap: 5px;
 		@apply flex flex-wrap w-full h-14 p-2 rounded shadow-ligthgrey;
 	}
 
 	p {
-		transition: all 0.5s;
+		transition: all 0.1s;
 		@apply w-full text-darkgrey text-xl font-normal leading-loose select-none;
 	}
 
@@ -128,7 +128,7 @@
 
 	.visible-input {
 		height: 20px;
-		transition-delay: 0.5s;
+		transition-delay: 0.1s;
 	}
 
 	.error-label {

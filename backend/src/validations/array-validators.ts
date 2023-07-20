@@ -1,4 +1,4 @@
-import { body, ValidationChain } from 'express-validator';
+import { body, type ValidationChain } from 'express-validator';
 import {
 	isValidPassword,
 	isValidEmail,

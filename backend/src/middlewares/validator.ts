@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { ValidationChain, validationResult } from 'express-validator';
-import { getErrorMessages } from '../libs/message-errors.js';
+import { getErrorMessages } from '../libs/index.js';
 
 export const validate = (validations: ValidationChain[]) => {
 	return async (req: Request, res: Response, next: NextFunction) => {

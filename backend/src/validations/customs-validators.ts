@@ -1,6 +1,6 @@
 import { CustomValidator } from 'express-validator';
 import { User } from '../models/User.js';
-import { matchPassword } from '../libs/bcrypt.js';
+import { matchPassword } from '../libs/index.js';
 
 export const isValidEmail: CustomValidator = async email => {
 	const user = await User.findOne({ email });

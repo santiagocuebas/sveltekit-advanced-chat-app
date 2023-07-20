@@ -1,8 +1,8 @@
 import express from 'express';
 import morgan from 'morgan';
+import multer from 'multer';
 import bodyParser from 'body-parser';
 import cors from 'cors';
-import multer from 'multer';
 import passport from 'passport';
 import http from 'http';
 import { join, dirname } from 'path';
@@ -37,7 +37,7 @@ app.use('/uploads', express.static(join(__dirname, '../uploads')));
 
 // Routes
 app.use('/api/auth', routes.Auth);
-app.use('/api/main', routes.Main);
-app.use('/api/search', routes.Search);
+app.use('/api/home', routes.Home);
+app.use('/api/settings', routes.Settings);
 
 export default server;

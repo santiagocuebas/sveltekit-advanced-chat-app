@@ -1,7 +1,7 @@
+import type { IUser } from '../types/global.js';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
-import { IUser } from '../global.js';
-import { encryptPassword } from '../libs/bcrypt.js';
+import { encryptPassword } from '../libs/index.js';
 import { User } from '../models/User.js';
 
 passport.use(
@@ -12,13 +12,14 @@ passport.use(
 		passReqToCallback: true
 	},
 	async (req, email, password, done) => {
-		const user = await User.create({
-			username: req.body.username,
-			email,
-			password: await encryptPassword(password)
-		});
+		const user = await User
+			.create({
+				username: req.body.username,
+				email,
+				password: await encryptPassword(password)
+			});
 
-		return done(null, user);
+		return done(null, user.toJSON() as IUser);
 	})
 );
 
@@ -29,9 +30,9 @@ passport.use(
 		passwordField: 'password'
 	},
 	async (email, _password, done) => {
-		const user = await User.findOne({ email }) as IUser;
+		const user = await User.findOne({ email });
 
-		return done(null, user);
+		return done(null, user?.toJSON() as IUser);
 	})
 );
 

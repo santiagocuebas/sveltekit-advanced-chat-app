@@ -1,28 +1,26 @@
 <script lang="ts">
-	import type { IUser } from '$lib/global';
 	import axios from 'axios';
 	import { DIR } from '$lib/config.js';
-	import { clickOutside } from '$lib/services/out-click';
+  import { socket } from '$lib/socket';
+  import { userData, contact, switchs, list } from '$lib/store';
+  import Lists from "./List.svelte";
 
-	export let user: IUser;
+  export let contactID: string;
+
+	const { id, username, avatar } = userData.getUser();
 	let visible = false;
 	let allowed = true;
 
-	function showBox() {
-		if (allowed) {
-			setTimeout(() => {
-				visible = true;
-				allowed = false;
-			}, 0);
-		}
-	}
-
-	function occultBox() {
+	function loadChat(option: string) {
 		visible = false;
-		setTimeout(() => allowed = true, 50);
+		allowed = true;
+		contactID = '';
+		switchs.setOption(option);
+		contact.resetContact();
+		list.resetContacts();
 	}
 
-	async function handleLogout(this: HTMLAnchorElement) {
+	async function handleLogout() {
 		const data = await axios({
 			method: 'POST',
 			url: DIR + '/api/auth/logout',
@@ -32,30 +30,36 @@
 		visible = false;
 		allowed = true;
 
-		if (data.logout) window.location.href = '/signin';
+		if (data.logout) {
+			socket.disconnect();
+			window.location.href = '/signin';
+		};
 	}
 </script>
 
 <div>
-	<img src={`${DIR}/uploads/avatar/${user?.avatar || 'avatar.png'}`} alt={user?._id}>
-	<p title={user?.username}>{user?.username}</p>
-	<button on:click={showBox}>
-		<i class="fa-solid fa-ellipsis-vertical"></i>
-	</button>
-	{#if visible}
-		<ul use:clickOutside on:outclick={occultBox}>
-			<a href="/logout" on:click|preventDefault={handleLogout}>
-				<i class="fa-solid fa-right-from-bracket"></i>
-				<li>Logout</li>
-			</a>
-		</ul>
-	{/if}
+	<img src={`${DIR}/uploads/avatar/${avatar}`} alt={id}>
+	<p title={username}>{username}</p>
+	<Lists bind:visible={visible} bind:allowed={allowed}>
+		<a href="#placeholder1" on:click|preventDefault={() => loadChat('group')}>
+			<i class="fa-solid fa-circle-stop"></i>
+			<li>Create Group</li>
+		</a>
+		<a href="#placeholder2" on:click|preventDefault={() => loadChat('settings')}>
+			<i class="fa-solid fa-gear"></i>
+			<li>Settings</li>
+		</a>
+		<a href="/logout" on:click|preventDefault={handleLogout}>
+			<i class="fa-solid fa-right-from-bracket"></i>
+			<li>Logout</li>
+		</a>
+	</Lists>
 </div>
 
 <style lang="postcss">
 	div {
 		background-color: #e7e7e7;
-		z-index: 52;
+		z-index: 152;
 		@apply flex relative items-center w-full h-full p-2.5 gap-2.5;
 	}
 
@@ -64,43 +68,24 @@
 	}
 
 	p {
-		@apply w-full overflow-hidden text-ellipsis text-xl font-semibold;
-	}
-
-	button {
-		background-color: #e7e7e7;
-		@apply p-2.5 rounded-full cursor-pointer leading-none;
-	}
-
-	button:hover {
-		background-color: #cccccc;
-	}
-
-	button i {
-		@apply w-5 h-5 text-xl leading-none;
-	}
-
-	ul {
-		background-color: #ffffff;
-		box-shadow: 0 0 10px #aaaaaa;
-		@apply absolute self-start right-0 mt-10 py-2 rounded;
+		@apply w-max overflow-hidden text-ellipsis text-xl font-semibold;
 	}
 
 	a {
 		padding: 5px 20px;
-		@apply flex items-center gap-5;
+		@apply flex items-center justify-start gap-5;
 	}
 
 	a:hover {
-		background-color: #aaaaaa;
+		background-color: #999999;
 		color: #ffffff;
 	}
 
-	ul i {
+	a i {
 		@apply text-xl leading-none;
 	}
 
 	li {
-		@apply font-bold;
+		@apply font-bold leading-tight;
 	}
 </style>

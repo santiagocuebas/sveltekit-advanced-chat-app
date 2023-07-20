@@ -14,8 +14,6 @@
 	async function handleSubmit(this: HTMLFormElement) {
 		visible = false;
 		try {
-			console.log(isValidLength(inputs));
-			console.log(isValidInput(inputs));
 			if (isValidLength(inputs) && isValidInput(inputs)) {
 				const data = await axios({
 					method: this.method,

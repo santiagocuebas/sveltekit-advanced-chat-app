@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { DIR } from '$lib/config.js';
-	import { DataRegister } from '$lib/data.js';
+	import { DataRegister } from '$lib/register.js';
 	import Input from '$lib/components/Input.svelte';
 	import Form from '$lib/components/Form.svelte';
 	import Box from '$lib/components/ErrorBox.svelte';

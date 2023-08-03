@@ -5,6 +5,8 @@
 		isValidInput,
 		isValidLength
 	} from '$lib/services/validation-submit.js';
+  import { user, register } from '$lib/store';
+    import { socket } from '$lib/socket';
 
 	export let action: string;
 	export let inputs: IKeys<string>;
@@ -22,7 +24,12 @@
 					data: this
 				}).then(res => res.data);
 
-				if (data.logged) window.location.href = '/';
+				if (data.user) {
+					user.setUser(data.user);
+					socket.auth = { sessionID: $user.id };
+					socket.connect();
+					register.setOption('user');
+				}
 				
 				if (data.error) {
 					console.log(data.error)

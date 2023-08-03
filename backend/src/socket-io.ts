@@ -15,14 +15,22 @@ export default async (socket: Socket) => {
 	const emitArray = [
 		'emitChat', 'emitDelete', 'emitLeave', 'emitBlock', 'emitDestroy', 'emitBlockDestroy', 'emitLeaveGroup', 'emitBlockGroup', 'emitAddMember', 'emitBanMember', 'emitBlockMember', 'emitUnblockMember', 'emitAddMod', 'emitRemoveMod', 'emitChangeState', 'emitDestroyGroup'
 	];
-	const userID = socket.request.user.id;
-	const { username, users, blacklist } = socket.request.user;
-	let { userRooms, groupRooms } = socket.request.user;
+	const userID = socket.user.id;
+	const { username, users, blacklist } = socket.user;
+	let { userRooms, groupRooms } = socket.user;
 
 	await User.updateOne({ _id: userID }, { logged: true, tempId: socket.id });
 
-	const contacts = await getUserContacts(userID, users);
-	const groups = await getGroupContacts(userID, groupRooms);
+	const [contacts, removedUsers] = await getUserContacts(userID, users);
+	const [groups, removedGroups] = await getGroupContacts(userID, groupRooms);
+
+	if (removedUsers.length) {
+		userRooms = userRooms.filter(room => removedUsers.includes(room));
+	}
+
+	if (removedGroups.length) {
+		groupRooms = groupRooms.filter(room => removedGroups.includes(room));
+	}
 
 	socket.join([...userRooms, ...groupRooms]);
 	socket.emit('loadContacts', [contacts, groups]);
@@ -139,8 +147,8 @@ export default async (socket: Socket) => {
 				{
 					$pull: {
 						connectedUsers: userID,
-						mods: { $elemMatch: { id: userID } },
-						members: { $elemMatch: { id: userID } }
+						mods: { id: userID },
+						members: { id: userID }
 					}
 				}
 			);
@@ -154,23 +162,28 @@ export default async (socket: Socket) => {
 		});
 	
 		socket.on('emitBlockGroup', async ([userID, name]: string[]) => {
-			await Group
-				.updateOne(
-					{ _id: contactID },
-					{
-						$pull: {
-							connectedUsers: userID,
-							mods: { $elemMatch: { id: userID } },
-							members: { $elemMatch: { id: userID } }
-						}
+			blacklist.push({
+				id: contactID,
+				name,
+				type: TypeContact.GROUP
+			});
+
+			await Group.updateOne(
+				{ _id: contactID },
+				{
+					$pull: {
+						connectedUsers: userID,
+						mods: { id: userID },
+						members: { id: userID }
 					}
-				);
+				}
+			);
 	
 			await User.updateOne(
 				{ _id: userID },
 				{
-					$pull: { groupRooms: contactID },
-					$push: { blacklist: { id: contactID, name, type: TypeContact.GROUP } }
+					blacklist,
+					$pull: { groupRooms: contactID }
 				}
 			);
 	
@@ -194,10 +207,10 @@ export default async (socket: Socket) => {
 			await Group.updateOne(
 				{ _id: contactID },
 				{
-					$pullAll: { connectedUsers: userIDs },
 					$pull: {
-						members: { $elemMatch: { $in: { id: userIDs } } },
-						mods: { $elemMatch: { $in: { id: userIDs } } }
+						connectedUsers: { $in: userIDs },
+						members: { id: { $in: userIDs } },
+						mods: { id: { $in: userIDs } }
 					}
 				}
 			);
@@ -216,10 +229,10 @@ export default async (socket: Socket) => {
 				{ _id: contactID },
 				{
 					$push: { blacklist: members },
-					$pullAll: { connectedUsers: userIDs },
 					$pull: {
-						members: { $elemMatch: { $in: { id: userIDs } } },
-						mods: { $elemMatch: { $in: { id: userIDs } } }
+						connectedUsers: { $in: userIDs },
+						members: { id: { $in: userIDs } },
+						mods: { id: { $in: userIDs } }
 					}
 				}
 			);
@@ -234,7 +247,7 @@ export default async (socket: Socket) => {
 		socket.on('emitUnblockMember', async (userIDs: string[]) => {
 			await Group.updateOne(
 				{ _id: contactID },
-				{ $pull: { blacklist: { $elemMatch: { $in: { id: userIDs } } } } }
+				{ $pull: { blacklist: { id: { $in: userIDs } } } }
 			);
 		});
 	
@@ -245,7 +258,7 @@ export default async (socket: Socket) => {
 				{ _id: contactID },
 				{
 					$push: { mods },
-					$pull: { members: { $elemMatch: { $in: { id: userIDs } } } }
+					$pull: { members: { id: { $in: userIDs } } }
 				}
 			);
 			
@@ -259,7 +272,7 @@ export default async (socket: Socket) => {
 				{ _id: contactID },
 				{
 					$push: { members },
-					$pull: { mods: { $elemMatch: { $in: { id: userIDs } } } }
+					$pull: { mods: { id: { $in: userIDs } } }
 				}
 			);
 			
@@ -318,7 +331,7 @@ export default async (socket: Socket) => {
 			.sort({ createdAt: -1 });
 
 		const contact = getContact(id, roomID, user, TypeContact.USER, chat);
-		const userContact = getContact(userID, roomID, socket.request.user, TypeContact.USER, chatUser);
+		const userContact = getContact(userID, roomID, socket.user, TypeContact.USER, chatUser);
 	
 		if (user.tempId) {
 			socket.to(user.tempId).emit('updateContacts', userContact);
@@ -351,15 +364,14 @@ export default async (socket: Socket) => {
 	});
 
 	socket.on('createGroup', async ({ name, mods, members, state }: GroupInit) => {
-		const group = await Group
-			.create({
-				admin: userID,
-				mods,
-				members,
-				name,
-				state,
-				loggedUser: [userID]
-			});
+		const group = await Group.create({
+			admin: userID,
+			mods,
+			members,
+			name,
+			state,
+			loggedUser: [userID]
+		});
 
 		const groupID = String(group._id);
 		groupRooms.push(groupID);
@@ -383,6 +395,11 @@ export default async (socket: Socket) => {
 		socket.join(groupID);
 		socket.emit('updateContacts', contact);
 		socket.to(rooms).emit('updateContacts', contact);
+	});
+
+	socket.on('emitDestroyUser', () => {
+		socket.to(userRooms).emit('leaveUser', userID);
+		socket.to(groupRooms).emit('updateMember', userID);
 	});
 
 	socket.on('disconnect', async () => {

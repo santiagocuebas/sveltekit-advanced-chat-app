@@ -1,18 +1,19 @@
 <script lang="ts">
 	import { DIR } from '$lib/config.js';
-	import { DataSignin } from '$lib/register.js';
+	import { DataRegister } from '$lib/register.js';
+	import { setUppercaseFirstLetter } from '$lib/services/set-uppercase.js';
+	import { checks } from '$lib/services/validations.js';
+  import { register } from '$lib/store';
 	import Input from '$lib/components/Input.svelte';
 	import Form from '$lib/components/Form.svelte';
 	import Box from '$lib/components/ErrorBox.svelte';
-	import { setUppercaseFirstLetter } from '$lib/services/set-uppercase.js';
-	import { checks } from '$lib/services/validations.js';
 
-	const properInput = ['email', 'password'];
+	const properInput = ['username', 'email', 'password'];
 	let visible = false;
 
-	const valueInput = new DataSignin('', '');
-	const errorMessage = new DataSignin('', '');
-	const activeError = new DataSignin(false, false);
+	const valueInput = new DataRegister('', '', '', '');
+	const errorMessage = new DataRegister('', '', '', '');
+	const activeError = new DataRegister(false, false, false, false);
 
 	const setMessage = (key: string, message: string) => {
 		activeError[key] = true;
@@ -21,7 +22,7 @@
 </script>
 
 <Form
-	action={DIR + '/api/auth/signin'}
+	action={DIR + '/api/auth/register'}
 	inputs={valueInput}
 	set={setMessage}
 	bind:visible={visible}
@@ -37,16 +38,26 @@
 			bind:error={errorMessage[key]}
 			bind:active={activeError[key]}
 			check={checks[key]}
-			pass={undefined}
 		/>
 	{/each}
+	{#if valueInput['password']}
+		<Input
+			text='Confirm Password'
+			name='confirmPassword'
+			bind:input={valueInput['confirmPassword']}
+			bind:error={errorMessage['confirmPassword']}
+			bind:active={activeError['confirmPassword']}
+			check={checks['confirmPassword']}
+			bind:pass={valueInput['password']}
+		/>
+	{/if}
 	<button class="signin">
-		Sign In
+		Register
 	</button>
 </Form>
-<a href="/register" class="register">
-	Create Account
-</a>
+<button class="register" on:click={() => register.setOption('signin')}>
+	Sign In
+</button>
 
 <style lang="postcss">
 	.signin, .register {

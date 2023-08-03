@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { IChat, IContact, IKeys, Members } from "$lib/global";
-  import { afterUpdate, onDestroy, onMount } from "svelte";
+  import { afterUpdate, onMount } from "svelte";
 	import { format } from 'timeago.js';
 	import { DIR } from "$lib/config";
   import {
@@ -19,14 +19,9 @@
         StateOption
 
 	} from "$lib/enums";
-  import {
-		getChat,
-		isMember,
-		isMod,
-		listOptions
-	} from "$lib/services/set-uppercase";
+  import { getChat, isMember, isMod } from "$lib/services/set-uppercase";
 	import { socket } from "$lib/socket";
-  import { userData, contact, users } from "$lib/store";
+  import { user, contact, users, options } from "$lib/store";
   import EditChat from "./EditChat.svelte";
   import List from "./List.svelte";
 
@@ -34,15 +29,13 @@
 	export let leaveUser: (id: string) => void;
 	export let leaveGroup: (id: string) => void;
 
-	let user = userData.getUser();
-	let options = listOptions.get();
 	let visible = false;
 	let allowed = true;
+	let usersValues: IContact[];
 	let option = '';
 	let message = '';
 	let chats: IChat[] = [];
 	let div: HTMLElement;
-	let usersValue: IContact[];
 	let members: Members[] = [];
 	let banIDs: string[] = [];
 	let blockedUsers: Members[] = [];
@@ -51,18 +44,18 @@
 	let removeMods: Members[] = [];
 	let state = StateOption.PUBLIC;
 	
-	const unsub = users.subscribe(value => usersValue = value as IContact[]);
+	users.subscribe(value => usersValues = value as IContact[]);
 
 	const socketFunction: IKeys<() => any> = {
-		LEAVE: () => user.id,
+		LEAVE: () => $user.id,
 		BLOCKGROUP: () => {
-			userData.updateBlock({
+			user.updateBlock({
 				id: $contact.contactID,
 				name: $contact.name,
 				type: TypeContact.GROUP
 			});
 
-			return [user.id, $contact.name];
+			return [$user.id, $contact.name];
 		},
 		ADD: () => members,
 		BAN: () => banIDs,
@@ -75,9 +68,9 @@
 	};
 
 	function handleDelete(id: string, from: string) {
-		if (user.id === from) {
+		if ($user.id === from) {
 			option = id;
-			listOptions.set('chat');
+			options.setOption('chat');
 		}
 	}
 
@@ -85,14 +78,14 @@
 		visible = false;
 		allowed = true;
 		option = value;
-		listOptions.set('user');
+		options.setOption('user');
 	}
 
 	function handleGroup(value: string) {
 		visible = false;
 		allowed = true;
 		option = value;
-		listOptions.set('group');
+		options.setOption('group');
 	}
 
 	function isNotMember() {
@@ -101,7 +94,7 @@
 		const members: Members[] = $contact.members ? $contact.members : [];
 		const memberIDs = [...mods, ...members].map(member => member.id);
 
-		for (const { contactID, name } of usersValue) {
+		for (const { contactID, name } of usersValues) {
 			if (!memberIDs.includes(contactID)) newMembers.push({ id: contactID, name });
 		}
 
@@ -114,7 +107,7 @@
 		const members: Members[] = $contact.members ? $contact.members : [];
 		const memberIDs = [...mods, ...members].map(member => member.id);
 
-		for (const { contactID, name } of usersValue) {
+		for (const { contactID, name } of usersValues) {
 			if (memberIDs.includes(contactID)) newMembers.push({ id: contactID, name });
 		}
 
@@ -140,7 +133,7 @@
 	function sendMessage() {
 		socket.emit('emitChat', message);
 
-		const chat = getChat(user.id, $contact, message);
+		const chat = getChat($user.id, $contact, message);
 
 		loadChat(chat);
 
@@ -156,36 +149,36 @@
 			socket.emit(OptionUser[value]);
 
 			if (OptionUser[value] === OptionUser.BLOCK || OptionUser[value] === OptionUser.BAD) {
-				userData.updateBlock({ id: $contact.contactID, name: $contact.name, type: TypeContact.USER });
+				user.updateBlock({ id: $contact.contactID, name: $contact.name, type: TypeContact.USER });
 			}
 		}
 
-		listOptions.reset();
+		options.resetOptions();
 		leaveUser($contact.contactID);
 	}
 
 	function groupOptions(value: string) {
 		if (OptionMember[value]) {
 			socket.emit(OptionMember[value], socketFunction[value]());
-			listOptions.reset();
+			options.resetOptions();
 			leaveGroup($contact.contactID);
 		}
 
 		if (OptionMod[value]) {
 			socket.emit(OptionMod[value], socketFunction[value]());
-			listOptions.reset();
+			options.resetOptions();
 		}
 
 		if (OptionAdmin[value]) {
 			socket.emit(OptionAdmin[value], socketFunction[value]());
-			listOptions.reset();
+			options.resetOptions();
 		}
 	}
 
 	function emitDelete(id: string) {
 		socket.emit('emitDelete', id);
 		deleteChat(id);
-		listOptions.reset();
+		options.resetOptions();
 	}
 
 	const loadChat = (message: IChat) => chats = [...chats, message];
@@ -207,12 +200,10 @@
 	});
 
 	afterUpdate(() => div.scrollTo(0, div.scrollHeight));
-
-	onDestroy(unsub);
 </script>
 
-{#if options.user}
-	<EditChat bind:visible={options.user} option={option} handle={userOptions}>
+{#if $options.user}
+	<EditChat bind:visible={$options.user} option={option} handle={userOptions}>
 		<h2 class="title">Are you sure you want to do this action?</h2>
 		{#if option === UserOptions.LEAVE}
 			<span class="span">
@@ -236,8 +227,8 @@
 	</EditChat>
 {/if}
 
-{#if options.group}
-	<EditChat bind:visible={options.group} option={option} handle={groupOptions}>
+{#if $options.group}
+	<EditChat bind:visible={$options.group} option={option} handle={groupOptions}>
 		<h2 class="title">Are you sure you want to do this action?</h2>
 		{#if option === MemberOptions.LEAVE}
 			<span class="span">
@@ -399,8 +390,8 @@
 	</EditChat>
 {/if}
 
-{#if options.chat}
-	<EditChat bind:visible={options.chat} option={option} handle={emitDelete}>
+{#if $options.chat}
+	<EditChat bind:visible={$options.chat} option={option} handle={emitDelete}>
 		<h2 class="title">Are you sure you want delete this message?</h2>
 	</EditChat>
 {/if}
@@ -428,17 +419,17 @@
 			<li on:mousedown={() => handleUser(UserOptions.DESTROY)}>Destroy Chat</li>
 			<li on:mousedown={() => handleUser(UserOptions.BAD)}>Destroy and Block</li>
 		{/if}
-		{#if isMember($contact.members, user.id) || isMod($contact.mods, user.id)}
+		{#if isMember($contact.members, $user.id) || isMod($contact.mods, $user.id)}
 			<li on:mousedown={() => handleGroup(MemberOptions.LEAVE)}>Leave Group</li>
 			<li on:mousedown={() => handleGroup(MemberOptions.BLOCKGROUP)}>Block Group</li>
 		{/if}
-		{#if isMod($contact.mods, user.id) || user.id === $contact.admin}
+		{#if isMod($contact.mods, $user.id) || $user.id === $contact.admin}
 			<li on:mousedown={() => handleGroup(ModOptions.ADD)}>Add Member</li>
 			<li on:mousedown={() => handleGroup(ModOptions.BAN)}>Ban Member</li>
 			<li on:mousedown={() => handleGroup(ModOptions.BLOCK)}>Block Member</li>
 			<li on:mousedown={() => handleGroup(ModOptions.UNBLOCK)}>Unblock Member</li>
 		{/if}
-		{#if user.id === $contact.admin}
+		{#if $user.id === $contact.admin}
 			<li on:mousedown={() => handleGroup(AdminOptions.ADDMOD)}>Add Mod</li>
 			<li on:mousedown={() => handleGroup(AdminOptions.REMOVEMOD)}>Remove Mod</li>
 			<li on:mousedown={() => handleGroup(AdminOptions.STATE)}>Change State</li>
@@ -449,7 +440,7 @@
 <div class="chats" bind:this={div}>
 	{#each chats as chat (chat._id)}
 		<div
-			class='chat {user.id === chat.from ? 'me' : ''}'
+			class='chat {$user.id === chat.from ? 'me' : ''}'
 			on:dblclick={() => handleDelete(chat._id, chat.from)}
 		>
 			{#if chat.username}

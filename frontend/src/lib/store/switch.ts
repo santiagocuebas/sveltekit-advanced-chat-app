@@ -16,11 +16,11 @@ function createSwitch(options: IKeys<boolean>) {
 			return value;
 		}),
 		resetOptions: () => {
-			const reset: IKeys<boolean> = Object.fromEntries(
-				Object.entries(options).map(([key, val]) => [key, val = false])
-			);
+      for (const option of Object.keys(options)) {
+        options[option] = false
+      }
 
-			set(reset);
+			set(options);
 		}
 	}
 }
@@ -30,4 +30,16 @@ export const switchs = createSwitch({
 	search: false,
 	group: false,
 	settings: false
+});
+
+export const options = createSwitch({
+	user: false,
+	group: false,
+	chat: false
+});
+
+export const register = createSwitch({
+	user: false,
+	signin: false,
+	register: false
 });

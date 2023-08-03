@@ -3,6 +3,14 @@ export enum ButtonValue {
   ROOMS = 'rooms'
 }
 
+export enum Settings {
+  AVATAR = 'avatar',
+  USERNAME = 'username',
+  DESCRIPTION = 'description',
+  PASSWORD = 'password',
+  UNBLOCK = 'unblock'
+}
+
 export enum StateOption {
   PUBLIC = 'public',
   PROTECTED = 'protected',

@@ -1,13 +1,13 @@
 <script lang="ts">
+	import type { IUser } from '$lib/global';
 	import axios from 'axios';
 	import { DIR } from '$lib/config.js';
   import { socket } from '$lib/socket';
-  import { userData, contact, switchs, list } from '$lib/store';
+  import { user, contact, switchs, list, register, users, groups } from '$lib/store';
   import Lists from "./List.svelte";
 
   export let contactID: string;
 
-	const { id, username, avatar } = userData.getUser();
 	let visible = false;
 	let allowed = true;
 
@@ -30,29 +30,33 @@
 		visible = false;
 		allowed = true;
 
-		if (data.logout) {
+		if (!data.user) {
 			socket.disconnect();
-			window.location.href = '/signin';
+			register.setOption('signin');
+			switchs.resetOptions();
+			users.resetContacts();
+			groups.resetContacts();
+			user.setUser({ } as IUser);
 		};
 	}
 </script>
 
 <div>
-	<img src={`${DIR}/uploads/avatar/${avatar}`} alt={id}>
-	<p title={username}>{username}</p>
+	<img src={`${DIR}/uploads/avatar/${$user.avatar}`} alt={$user.id}>
+	<p title={$user.username}>{$user.username}</p>
 	<Lists bind:visible={visible} bind:allowed={allowed}>
-		<a href="#placeholder1" on:click|preventDefault={() => loadChat('group')}>
+		<li on:mousedown={() => loadChat('group')}>
 			<i class="fa-solid fa-circle-stop"></i>
-			<li>Create Group</li>
-		</a>
-		<a href="#placeholder2" on:click|preventDefault={() => loadChat('settings')}>
+			Create Group
+		</li>
+		<li on:mousedown={() => loadChat('settings')}>
 			<i class="fa-solid fa-gear"></i>
-			<li>Settings</li>
-		</a>
-		<a href="/logout" on:click|preventDefault={handleLogout}>
+			Settings
+		</li>
+		<li on:mousedown={handleLogout}>
 			<i class="fa-solid fa-right-from-bracket"></i>
-			<li>Logout</li>
-		</a>
+			Logout
+		</li>
 	</Lists>
 </div>
 
@@ -71,21 +75,17 @@
 		@apply w-max overflow-hidden text-ellipsis text-xl font-semibold;
 	}
 
-	a {
+	li {
 		padding: 5px 20px;
-		@apply flex items-center justify-start gap-5;
+		@apply flex items-center justify-start font-bold leading-tight gap-5;
 	}
 
-	a:hover {
+	li:hover {
 		background-color: #999999;
 		color: #ffffff;
 	}
 
-	a i {
+	li i {
 		@apply text-xl leading-none;
-	}
-
-	li {
-		@apply font-bold leading-tight;
 	}
 </style>

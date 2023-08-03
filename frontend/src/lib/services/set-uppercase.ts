@@ -39,33 +39,3 @@ export const isMember = (member: Members[] | undefined, id: string) => {
       ?.map(({ id }) => id)
       .includes(id);
 }
-
-function createList() {
-  const options: IKeys<boolean> = {
-    user: false,
-		group: false,
-		chat: false
-  };
-
-  return {
-    get: () => options,
-    set: (key: string) => {
-      options[key] = true;
-  
-      for (const option of Object.keys(options)) {
-        if (option !== key) options[option] = false
-      }
-  
-      return options;
-    },
-    reset: () => {
-      for (const option of Object.keys(options)) {
-        options[option] = false
-      }
-  
-      return options;
-    }
-  }
-};
-
-export const listOptions = createList();

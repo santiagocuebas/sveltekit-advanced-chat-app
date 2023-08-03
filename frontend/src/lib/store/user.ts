@@ -1,17 +1,29 @@
 import type { Blacklist, IUser } from "$lib/global";
+import { writable } from "svelte/store";
 
 function createUser() {
-	let user: IUser;
-	
+	const { subscribe, update, set } = writable({ } as IUser);
+
 	return {
-		getUser: () => user,
-		updateBlock: (value: Blacklist) => {
+		subscribe,
+		unblockUser: (value: string[]) => update(user => {
+			user.blacklist.filter(({ id }) => !value.includes(id));
+
+			return user;
+		}),
+		updateProp: (value: string, prop: 'username' | 'description' | 'avatar') => update(user => {
+			user[prop] = value;
+
+			return user;
+		}),
+		updateBlock: (value: Blacklist) => update(user => {
 			user.blacklist.push(value);
 
 			return user;
-		},
-		setUser: (value: IUser) => user = value
+		}),
+		setUser: (value: IUser) => set(value),
+		resetUser: () => set({ } as IUser)
 	}
 }
 
-export const userData = createUser();
+export const user = createUser();

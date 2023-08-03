@@ -2,32 +2,24 @@
   import type { IContact, IList } from '$lib/global';
   import { DIR } from '$lib/config';
 	import { ButtonValue, TypeContact } from '$lib/enums';
-  import { contact, switchs, users, groups, list } from '$lib/store';
+  import { contact, switchs, users, groups, list, options } from '$lib/store';
 	import { socket } from '$lib/socket';
   import { onDestroy, onMount } from 'svelte';
   import axios from 'axios';
   import Button from './Button.svelte';
   import Contacts from './Contact.svelte';
-  import { listOptions } from '$lib/services/set-uppercase';
 
 	export let id: string;
 	
-	let usersValue: IContact[] = [];
-	let groupsValue: IContact[] = [];
-	let listValue: IList[];
 	let input = '';
-	let selected = initSelected();
+	let usersValues: IContact[];
+	let groupsValues: IContact[];
+	let listValues: IList[];
+	let selected = ButtonValue.CHATS;
 
-	const unsubUser = users.subscribe(value => usersValue = value as IContact[]);
-
-	const unsubGroup = groups.subscribe(value => groupsValue = value as IContact[]);
-
-	const unsubList = list.subscribe(value => listValue = value as IList[]);
-
-	function initSelected() {
-		if (groupsValue.length) return ButtonValue.ROOMS;
-		return ButtonValue.CHATS;
-	}
+	const unsubUsers = users.subscribe(value => usersValues = value as IContact[]);
+	const unsubGroups = groups.subscribe(value => groupsValues = value as IContact[]);
+	const unsubList = list.subscribe(value => listValues = value as IList[]);
 
 	async function searchUser() {
 		const data: IList[] = await axios({
@@ -41,7 +33,7 @@
 	}
 
 	const joinRoom = (foreign: IContact) => {
-		listOptions.reset();
+		options.resetOptions();
 		id = foreign.contactID;
 		contact.setContact(foreign);
 		switchs.setOption('chat');
@@ -51,13 +43,13 @@
 	const reloadUsers = (contact: IContact) => {
 		if (contact.type === TypeContact.GROUP) {
 			selected = ButtonValue.ROOMS;
-			groups.setContacts([...groupsValue, contact]);
+			groups.setContacts([...groupsValues, contact]);
 		} else {
 			selected = ButtonValue.CHATS;
-			users.setContacts([...usersValue, contact]); 
+			users.setContacts([...usersValues, contact]); 
 		}
 
-		const actList = listValue.filter(user => user.id !== contact.contactID);
+		const actList = listValues.filter(user => user.id !== contact.contactID);
 		list.setContacts(actList);
 		socket.emit('joinUpdate', contact.roomID);
 	};
@@ -65,16 +57,18 @@
 	onMount(() => {
 		socket.on('updateContacts', reloadUsers);
 
-		return () => socket.off('updateContacts', reloadUsers);
+		return () => {
+			socket.off('updateContacts', reloadUsers);
+		}
 	});
 
 	onDestroy(() => {
 		return {
-			unsubUser,
-			unsubGroup,
+			unsubUsers,
+			unsubGroups,
 			unsubList
 		}
-	});
+	})
 </script>
 
 <div class="sidebar">
@@ -88,16 +82,16 @@
 	<Button bind:selected={selected} text={ButtonValue.ROOMS} />
 	<ul>
 		{#if selected === ButtonValue.CHATS}
-			{#if usersValue.length > 0}
-				{#each usersValue as user (user.contactID)}
+			{#if usersValues.length > 0}
+				{#each usersValues as user (user.contactID)}
 					<Contacts contact={user} id={id} join={joinRoom} /> 
 				{/each}
 				{:else}
 				<div>No contacts yet</div>
 			{/if}
 			{:else if selected === ButtonValue.ROOMS}
-			{#if groupsValue.length > 0}
-				{#each groupsValue as group (group.roomID)}
+			{#if groupsValues.length > 0}
+				{#each groupsValues as group (group.roomID)}
 					<Contacts contact={group} id={id} join={joinRoom}/>
 				{/each}
 				{:else}

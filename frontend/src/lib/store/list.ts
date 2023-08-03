@@ -1,14 +1,17 @@
 import type { IList, IContact } from "$lib/global";
 import { writable } from "svelte/store";
 
-function createContacts(initContacts: IContact[] | IList[]) {
-	const { subscribe, set } = writable(initContacts);
+function createContacts(contacts: IContact[] | IList[]) {
+	const { subscribe, update, set } = writable(contacts);
 
-	 return {
+	return {
 		subscribe,
-		setContacts: (list: IContact[] | IList[]) => set(list),
-		resetContacts: () => set([] as IContact[] | IList[])
-	 }
+		setContacts: (value: IContact[] | IList[]) => update(contacts => {
+			contacts = value;
+			return contacts;
+		}),
+		resetContacts: () => set([])
+	}
 }
 
 export const list = createContacts([]);

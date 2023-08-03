@@ -1,6 +1,6 @@
 import type { PartialUser, Chats } from '../types/global.js';
 import type { Contact } from '../types/types.js';
-import { Chat } from '../models/index.js';
+import { Chat, User } from '../models/index.js';
 
 export const getUser: PartialUser = ({ id, username, avatar, description, blacklist }) => {
 	return { id, username, avatar, description, blacklist };
@@ -24,6 +24,21 @@ export const getContact: Contact = (contactID, roomID, contact, type, chat) => {
 		createdAt: chat?.createdAt
 	};
 };
+
+export const getId = async (): Promise<string> => {
+	const validChar = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	let id = '';
+
+	for (let i = 0; i < 12; i++) {
+		id += validChar.at(Math.floor(Math.random() * validChar.length));
+	}
+	const user = await User.findOne({ avatar: id });
+
+	if (user !== null) getId();
+
+	return id;
+};
+
 
 export const getChats: Chats = async (userID, contactID, roomID) => {
 	let findQuery = { };

@@ -1,63 +1,55 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { isLoggedIn } from '../middlewares/logged.js';
-import { Chat, User } from '../models/index.js';
-import { encryptPassword } from '../libs/bcrypt.js';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { settingsCtrl } from '../controllers/index.js';
+import { isValidToken } from '../middlewares/logged.js';
+import { validateSettings } from '../middlewares/validator.js';
+import {
+	arrayAvatar,
+	arrayUsername,
+	arrayDescription,
+	arrayPassword,
+	arrayUnblock
+} from '../validations/array-validators.js';
 
+const __dirname: string = dirname(fileURLToPath(import.meta.url));
 const router = Router();
-const upload = multer({ dest: '../../uploads/temp' });
-router.use(isLoggedIn);
+const upload = multer({ dest: join(__dirname, '../../uploads/temp') });
+
+router.use(isValidToken);
 
 router.post(
-	'avatar',
+	'/avatar',
 	upload.single('avatar'),
-	async (req, res) => {
-		return res.json({ data: req.user });
-	}
+	validateSettings(arrayAvatar),
+	settingsCtrl.postAvatar
 );
 
-router.post('username', async (req, res) => {
-	await User.updateOne({ _id: req.user.id }, { username: req.body.username });
+router.post(
+	'/username',
+	validateSettings(arrayUsername),
+	settingsCtrl.postUsername
+);
 
-	return res.json({ data: req.user });
-});
+router.post(
+	'/description',
+	validateSettings(arrayDescription),
+	settingsCtrl.postDescription
+);
 
-router.post('description', async (req, res) => {
-	await User.updateOne(
-		{ _id: req.user.id },
-		{ description: req.body.description }
-	);
+router.post(
+	'/password',
+	validateSettings(arrayPassword),
+	settingsCtrl.postPassword
+);
 
-	return res.json({ data: req.user });
-});
+router.post(
+	'/unblockUsers',
+	validateSettings(arrayUnblock),
+	settingsCtrl.postUnblock
+);
 
-router.post('password', async (req, res) => {
-	const password = encryptPassword(req.user.password);
-
-	await User.updateOne({ _id: req.user.id }, { password });
-
-	return res.json({ data: req.user });
-});
-
-router.post('unblockUsers', async (req, res) => {
-	await User.updateOne(
-		{ _id: req.user.id },
-		{ $pull: { blacklist: { $elemMatch: { $in: { id: req.body.userIDs } } } } }
-	);
-
-	return res.json({ data: req.user });
-});
-
-router.post('deleteUser', async (req, res) => {
-	const user = await User
-		.findOneAndDelete({ _id: req.user.id })
-		.lean({ virtuals: true });
-
-	if (user !== null) {
-		await Chat.deleteMany({ from: req.user.id });
-	}
-
-	return res.json({ data: req.user });
-});
+router.delete('/deleteUser', settingsCtrl.deleteUser);
 
 export default router;

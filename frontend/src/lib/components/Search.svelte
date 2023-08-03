@@ -2,16 +2,14 @@
   import type { IList } from '$lib/global';
   import { list } from '$lib/store';
   import Searched from './Searched.svelte';
+  
+	let listValues: IList[];
 
-  let listValue: IList[];
-
-  list.subscribe(value => {
-    listValue = value as IList[];
-  });
+	list.subscribe(value => listValues = value as IList[]);
 </script>
 
 <div>
-  {#each listValue as user}
+  {#each listValues as user}
 		<Searched contact={user} />
 	{/each}
 </div>

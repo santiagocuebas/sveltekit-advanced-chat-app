@@ -4,7 +4,7 @@
   import { switchs, users } from '$lib/store';
   import { socket } from "$lib/socket";
 
-	let usersValue: IContact[];
+	let usersValues: IContact[];
 	let name = '';
 	let mods: Members[] = [];
 	let members: Members[] = [];
@@ -12,7 +12,7 @@
 	let memberIDs: string[] = [];
 	let state = StateOption.PUBLIC;
 
-	users.subscribe(value => usersValue = value as IContact[]);
+	users.subscribe(value => usersValues = value as IContact[]);
 
 	function addMods(id: string, name: string) {
 		if (!modIDs.includes(id)) {
@@ -73,7 +73,7 @@
 	<div class="select">
 		Select moderators:
 		<div>
-			{#each usersValue as user}
+			{#each usersValues as user}
 				<span
 					class='members {modIDs.includes(user.contactID) ? 'selected' : ''}'
 					on:mousedown={addMods(user.contactID, user.name)}
@@ -84,7 +84,7 @@
 	<div class="select">
 		Select members:
 		<div>
-			{#each usersValue as user}
+			{#each usersValues as user}
 				<span
 					class='members {memberIDs.includes(user.contactID) ? 'selected' : ''}'
 					on:mousedown={addMembers(user.contactID, user.name)}

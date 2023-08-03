@@ -1,22 +1,29 @@
 <script lang="ts">
-	import type { ILoaded, IError } from "$lib/global";
+	import type { ILoaded, IError, IKeys } from "$lib/global";
   import axios from "axios";
-  import { userData, switchs } from '$lib/store';
+	import validator from 'validator';
 	import { DIR } from "$lib/config";
+	import { Settings } from "$lib/enums";
   import { isLoaded } from "$lib/function";
+  import { socket } from "$lib/socket";
+  import { user, switchs, groups, users, register } from '$lib/store';
 	import { loadImage } from "$lib/services/handle-image.js";
   import EditChat from "./EditChat.svelte";
+  import Box from "./Box.svelte";
 	
-	let user = userData.getUser();
+	let visible = false;
+	let visibleBox = false;
 	let disabled = true;
-	let src = DIR + '/uploads/avatar/' + user.avatar;
+	let src = DIR + '/uploads/avatar/' + $user.avatar;
 	let username = '';
-	let description = user.description;
+	let description = $user.description;
+	let matchPassword = false;
 	let actPassword = '';
 	let newPassword = '';
 	let confirmPassword = '';
 	let listUser: string[] = [];
-	let visibleBox = false;
+	let className: string;
+	let message: string | IKeys<string>;
 
 	async function handleAvatar(this: HTMLInputElement) {
 		const files = this.files as FileList;
@@ -33,6 +40,26 @@
 		}		
 	}
 
+	async function isValidOldPassword() {
+		if (validator.isStrongPassword(actPassword)) {
+			const data = await axios({
+				method: 'POST',
+				data: { password: actPassword },
+				url: DIR + '/api/home/password',
+				withCredentials: true
+			}).then(res => res.data)
+				.catch(() => {
+					return { match: false };
+				});
+
+			matchPassword = data.match;
+		} else matchPassword = false;
+	}
+
+	function isValidPassword() {
+		return validator.isStrongPassword(newPassword) && validator.isLength(newPassword, { max: 40 });
+	}
+
 	function addId(this: HTMLInputElement) {
 		if (this.checked) return listUser = [this.value, ...listUser];
 		return listUser.filter(id => id !== this.value);
@@ -40,25 +67,71 @@
 
 	async function handleDelete() {
 		const data = await axios({
-			method: 'POST',
-			url: DIR + '/api/main/test',
+			method: 'DELETE',
+			url: DIR + '/api/settings/deleteUser',
 			withCredentials: true
 		}).then(res => res.data);
 
 		visibleBox = false;
 
-		console.log(data);
+		if (data.delete) {
+			socket.emit('emitDestroyUser');
+			socket.disconnect();
+
+			user.resetUser();
+			users.resetContacts();
+			groups.resetContacts();
+			switchs.resetOptions();
+			register.setOption('signin');
+		}
 	}
 
 	async function handleSubmit(this: HTMLFormElement) {
+		console.log(new FormData(this))
 		const data = await axios({
 			method: this.method,
-			url: DIR + '/api/main/test',
+			url: this.action,
 			data: this,
 			withCredentials: true
 		}).then(res => res.data);
 
-		console.log(data);
+		if (data.errors) {
+			className = data.errors;
+			message = data.message;
+		}
+
+		if (data.success) {
+			className = data.success;
+			message = data.message;
+
+			if (this.id === Settings.AVATAR) {
+				user.updateProp(data.filename, Settings.AVATAR);
+				username = '';
+			}
+
+			if (this.id === Settings.USERNAME) {
+				user.updateProp(username, Settings.USERNAME);
+				username = '';
+			}
+
+			if (this.id === Settings.DESCRIPTION) {
+				user.updateProp(description, Settings.DESCRIPTION);
+			}
+
+			if (this.id === Settings.PASSWORD) {
+				matchPassword = false;
+				actPassword = '';
+				newPassword = '';
+				confirmPassword = '';
+			}
+
+			if (this.id === Settings.UNBLOCK) {
+				user.unblockUser(listUser);
+				listUser = [];
+			}
+		}
+
+		visible = true;
 	}
 </script>
 
@@ -69,11 +142,15 @@
 {/if}
 
 <div class="settings">
+	{#if visible}
+		<Box bind:visible={visible} className={className} message={message} />
+	{/if}
 	<button class="close" on:click|preventDefault={() => switchs.resetOptions()}>
 		<i class="fa-solid fa-xmark"></i>
 	</button>
 	<h1>Settings</h1>
-	<form 
+	<form
+		id={Settings.AVATAR}
 		action={DIR + '/api/settings/avatar'}
 		method='POST'
 		on:submit|preventDefault={handleSubmit}
@@ -82,14 +159,15 @@
 			Change avatar:
 		</div>
 		<label class="center">
-			<img src={src} alt={user.username}>
+			<img src={src} alt={$user.username}>
 			<input type="file" name="avatar" on:change={handleAvatar}>
 		</label>
 		<button class={disabled ? 'disabled' : 'accept'} disabled={disabled}>
 			Accept
 		</button>
 	</form>
-	<form 
+	<form
+		id={Settings.USERNAME}
 		action={DIR + '/api/settings/username'}
 		method='POST'
 		on:submit|preventDefault={handleSubmit}
@@ -100,15 +178,16 @@
 		<input
 			type="text"
 			name="username"
-			placeholder={user.username}
+			placeholder={$user.username}
 			bind:value={username}
 		>
 		<button
-			class={username.length < 3 ? 'disabled' : 'accept'}
-			disabled={username.length < 3}
+			class={username.length < 3 || username.length > 40 ? 'disabled' : 'accept'}
+			disabled={username.length < 3 || username.length > 40}
 		>Accept</button>
 	</form>
-	<form 
+	<form
+		id={Settings.DESCRIPTION}
 		action={DIR + '/api/settings/description'}
 		method='POST'
 		on:submit|preventDefault={handleSubmit}
@@ -123,11 +202,12 @@
 			rows="5"
 		></textarea>
 		<button
-			class={description === user.description ? 'disabled' : 'accept'}
-			disabled={description === user.description}
+			class={description === $user.description ? 'disabled' : 'accept'}
+			disabled={description === $user.description}
 		>Accept</button>
 	</form>
-	<form 
+	<form
+		id={Settings.PASSWORD}
 		action={DIR + '/api/settings/password'}
 		method='POST'
 		on:submit|preventDefault={handleSubmit}
@@ -139,6 +219,7 @@
 			type="password"
 			name="actPassword"
 			bind:value={actPassword}
+			on:keyup={isValidOldPassword}
 			placeholder="Enter the actual password"
 		>
 		<input
@@ -147,7 +228,7 @@
 			bind:value={newPassword}
 			placeholder="Enter the new password"
 		>
-		{#if actPassword.length >= 8 && newPassword.length >= 8}
+		{#if newPassword.length >= 8}
 			<input
 				type="password"
 				name="confirmPassword"
@@ -156,11 +237,12 @@
 			>
 		{/if}
 		<button
-			class={(actPassword.length < 8 || newPassword.length < 8 || newPassword !== confirmPassword) ? 'disabled' : 'accept'}
-			disabled={actPassword.length < 8 || newPassword.length < 8 || newPassword !== confirmPassword}
+			class={matchPassword && isValidPassword() && newPassword === confirmPassword ? 'accept' : 'disabled'}
+			disabled={!(matchPassword && isValidPassword() && newPassword === confirmPassword)}
 		>Accept</button>
 	</form>
-	<form 
+	<form
+		id={Settings.UNBLOCK}
 		action={DIR + '/api/settings/unblockUsers'}
 		method='POST'
 		on:submit|preventDefault={handleSubmit}
@@ -169,8 +251,8 @@
 			Unblock user:
 		</label>
 		<ul>
-			{#if user.blacklist.length}
-				{#each user.blacklist as { id, name } ({ id })}
+			{#if $user.blacklist.length}
+				{#each $user.blacklist as { id, name } ({ id })}
 					<li>
 						{name}
 						<input
@@ -187,14 +269,14 @@
 				</li>
 			{/if}
 		</ul>
-		{#if user.blacklist.length}
+		{#if $user.blacklist.length}
 			<button
 			class={listUser.length ? 'disabled' : 'accept'}
 			disabled={listUser.length}
 			>Accept</button>
 		{/if}
 	</form>
-	<form 
+	<form
 		action={DIR + '/api/settings/deleteUser'}
 		method='DELETE'
 	>

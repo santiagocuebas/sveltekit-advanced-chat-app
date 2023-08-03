@@ -1,16 +1,23 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-interface */
-import type { Session } from 'express-session';
 import type { TypeContact } from './enums.js';
 
 declare global {
 	namespace Express {
-		interface User extends IUser {}
+		interface Request {
+			user: IUser;
+		}
 	}
 }
 
 declare module 'http' {
 	interface IncomingMessage {
-		session: Session;
+		cookies: any;
+	}
+}
+
+declare module 'socket.io' {
+	interface Socket {
 		user: IUser;
 	}
 }
@@ -48,6 +55,7 @@ export interface IUser {
 	avatar: string;
 	description: string;
 	users: Users[];
+	userIDs: string[];
 	userRooms: string[];
 	groupRooms: string[];
 	blacklist: Blacklist[];

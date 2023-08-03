@@ -1,37 +1,29 @@
 import { Router } from 'express';
-import passport from 'passport';
-import { arraySignin, arrayRegister } from '../validations/array-validators.js';
-import { isLoggedIn, isNotLoggedIn } from '../middlewares/logged.js';
+import { authCtrl } from '../controllers/index.js';
+import { isValidToken, isNotValidToken } from '../middlewares/logged.js';
 import { validate } from '../middlewares/validator.js';
+import { arraySignin, arrayRegister } from '../validations/array-validators.js';
 
 const router = Router();
 
 router.post(
-	'/logout',
-	isLoggedIn,
-	(req, res, next) => {
-		return req.logout(err => {
-			if (err) return next(err);
-			res.clearCookie('session.id');
-			return res.json({ logout: true });
-		});
-	}
-);
-
-router.use(isNotLoggedIn);
-
-router.post(
 	'/register',
+	isNotValidToken,
 	validate(arrayRegister),
-	passport.authenticate('register'),
-	(_req, res) => res.json({ logged: true })
+	authCtrl.postRegister
 );
 
 router.post(
 	'/signin',
+	isNotValidToken,
 	validate(arraySignin),
-	passport.authenticate('signin'),
-	(_req, res) => res.json({ logged: true })
+	authCtrl.postSignin
+);
+
+router.post(
+	'/logout',
+	isValidToken,
+	authCtrl.postLogout
 );
 
 export default router;

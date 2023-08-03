@@ -7,7 +7,7 @@
 	export let name: string;
 	export let input: string;
 	export let error: string | undefined;
-	export let pass: string | undefined;
+	export let pass: string | undefined = undefined;
 	export let active: boolean;
 	export let check: Check;
 
@@ -87,7 +87,9 @@
 
 <style lang="postcss">
 	div {
-		@apply w-full;
+		min-width: 300px;
+		max-width: 600px;
+		@apply w-1/2;
 	}
 
 	label {

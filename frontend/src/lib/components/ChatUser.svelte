@@ -15,9 +15,7 @@
 		ModOptions,
 		AdminOptions,
 		TypeContact,
-
-        StateOption
-
+    StateOption
 	} from "$lib/enums";
   import { getChat, isMember, isMod } from "$lib/services/set-uppercase";
 	import { socket } from "$lib/socket";
@@ -32,6 +30,7 @@
 	let visible = false;
 	let allowed = true;
 	let usersValues: IContact[];
+	let optionValue: IKeys<boolean>;
 	let option = '';
 	let message = '';
 	let chats: IChat[] = [];
@@ -46,8 +45,10 @@
 	
 	users.subscribe(value => usersValues = value as IContact[]);
 
+	options.subscribe(value => optionValue = value);
+
 	const socketFunction: IKeys<() => any> = {
-		LEAVE: () => $user.id,
+		LEAVE: () => [],
 		BLOCKGROUP: () => {
 			user.updateBlock({
 				id: $contact.contactID,
@@ -55,16 +56,16 @@
 				type: TypeContact.GROUP
 			});
 
-			return [$user.id, $contact.name];
+			return [$contact.name];
 		},
-		ADD: () => members,
-		BAN: () => banIDs,
-		BLOCK: () => blockedUsers,
-		UNBLOCK: () => unblockedIDs,
-		ADDMOD: () => newMods,
-		REMOVEMOD: () => removeMods,
-		STATE: () => state,
-		DESTROY: () => undefined
+		ADD: () => [members, $contact.contactID],
+		BAN: () => [banIDs, $contact.contactID],
+		BLOCK: () => [blockedUsers, $contact.contactID],
+		UNBLOCK: () => [unblockedIDs, $contact.contactID],
+		ADDMOD: () => [newMods, $contact.contactID],
+		REMOVEMOD: () => [removeMods, $contact.contactID],
+		STATE: () => [state],
+		DESTROY: () => []
 	};
 
 	function handleDelete(id: string, from: string) {
@@ -131,11 +132,11 @@
 	}
 
 	function sendMessage() {
-		socket.emit('emitChat', message);
-
 		const chat = getChat($user.id, $contact, message);
 
 		loadChat(chat);
+
+		socket.emit('emitChat', message, chat._id);
 
 		if ($contact.type === TypeContact.GROUP) {
 			editGroups($contact.roomID, chat.content, chat.createdAt);
@@ -162,14 +163,10 @@
 			socket.emit(OptionMember[value], socketFunction[value]());
 			options.resetOptions();
 			leaveGroup($contact.contactID);
-		}
-
-		if (OptionMod[value]) {
-			socket.emit(OptionMod[value], socketFunction[value]());
+		} else if (OptionMod[value]) {
+			socket.emit(OptionMod[value], ...socketFunction[value]());
 			options.resetOptions();
-		}
-
-		if (OptionAdmin[value]) {
+		} else if (OptionAdmin[value]) {
 			socket.emit(OptionAdmin[value], socketFunction[value]());
 			options.resetOptions();
 		}
@@ -187,23 +184,35 @@
 
 	const deleteChat = (id: string) => chats = chats.filter(({ _id }) => _id !== id);
 
+	const loadChatID = (id: string, tempID: string) => {
+		chats = chats.map(chat => {
+			if (chat._id === tempID) {
+				chat._id = id;
+			}
+
+			return chat;
+		});
+	};
+
 	onMount(() => {
 		socket.on('loadChat', loadChat);
 		socket.on('loadChats', loadChats);
 		socket.on('deleteChat', deleteChat);
+		socket.on('loadChatID', loadChatID);
 
 		return () => {
 			socket.off('loadChat', loadChat);
 			socket.off('loadChats', loadChats);
 			socket.off('deleteChat', deleteChat);
+			socket.off('loadChatID', loadChatID);
 		};
 	});
 
 	afterUpdate(() => div.scrollTo(0, div.scrollHeight));
 </script>
 
-{#if $options.user}
-	<EditChat bind:visible={$options.user} option={option} handle={userOptions}>
+{#if optionValue.user}
+	<EditChat bind:visible={optionValue.user} option={option} handle={userOptions}>
 		<h2 class="title">Are you sure you want to do this action?</h2>
 		{#if option === UserOptions.LEAVE}
 			<span class="span">
@@ -227,8 +236,8 @@
 	</EditChat>
 {/if}
 
-{#if $options.group}
-	<EditChat bind:visible={$options.group} option={option} handle={groupOptions}>
+{#if optionValue.group}
+	<EditChat bind:visible={optionValue.group} option={option} handle={groupOptions}>
 		<h2 class="title">Are you sure you want to do this action?</h2>
 		{#if option === MemberOptions.LEAVE}
 			<span class="span">
@@ -342,44 +351,42 @@
 				{/if}
 			</span>
 			{:else if option === AdminOptions.STATE}
-			<span class="span">
-				Choose visibility:
-				<div class="choise-visibility">
-					<label>
-						<input
-							type="radio"
-							name="option"
-							on:click={() => state = StateOption.PUBLIC}
-							checked
-						>
-						Public
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="option"
-							on:click={() => state = StateOption.PROTECTED}
-						>
-						Protected
-					</label>
-					<label>
-						<input
-							type="radio"
-							name="option"
-							on:click={() => state = StateOption.PRIVATE}
-						>
-						Private
-					</label>
-					<span>
-						{#if state === StateOption.PUBLIC}
-							Everyone can join the group
-							{:else if state === StateOption.PROTECTED}
-							Only member contacts can join
-							{:else}
-							Only members with authorization from the admin or moderators can join
-						{/if}
-					</span>
-				</div>
+			<span class="span span-flex">
+				<p>Choose visibility:</p>
+				<label>
+					<input
+						type="radio"
+						name="option"
+						on:click={() => state = StateOption.PUBLIC}
+						checked
+					>
+					Public
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="option"
+						on:click={() => state = StateOption.PROTECTED}
+					>
+					Protected
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="option"
+						on:click={() => state = StateOption.PRIVATE}
+					>
+					Private
+				</label>
+				<span>
+					{#if state === StateOption.PUBLIC}
+						Everyone can join the group
+						{:else if state === StateOption.PROTECTED}
+						Only member contacts can join
+						{:else}
+						Only members with authorization from the admin or moderators can join
+					{/if}
+				</span>
 			</span>
 			{:else if option === AdminOptions.DESTROY}
 			<span class="span">
@@ -390,8 +397,8 @@
 	</EditChat>
 {/if}
 
-{#if $options.chat}
-	<EditChat bind:visible={$options.chat} option={option} handle={emitDelete}>
+{#if optionValue.chat}
+	<EditChat bind:visible={optionValue.chat} option={option} handle={emitDelete}>
 		<h2 class="title">Are you sure you want delete this message?</h2>
 	</EditChat>
 {/if}
@@ -472,12 +479,21 @@
 		@apply grid;
 	}
 
+	.span-flex {
+		@apply flex flex-wrap gap-1;
+	}
+
 	.span p {
 		grid-column: 1 / span 2;
+		width: 100%;
 	}
 
 	.span div {
 		@apply flex;
+	}
+
+	.span span {
+		@apply w-full text-center;
 	}
 
 	.span input[type='checkbox'] {
@@ -535,7 +551,7 @@
 	}
 
 	img {
-		@apply w-10 h-10;
+		@apply w-10 h-10 rounded-full;
 	}
 
 	.chats {

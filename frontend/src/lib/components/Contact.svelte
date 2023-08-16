@@ -49,7 +49,7 @@
 
 	img {
 		grid-row: 1 / span 2;
-		@apply w-16 h-16;
+		@apply w-16 h-16 rounded-full;
 	}
 
 	div {

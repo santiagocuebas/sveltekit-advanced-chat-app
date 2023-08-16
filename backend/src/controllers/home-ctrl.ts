@@ -1,4 +1,4 @@
-import type { Direction } from '../types/types.js';
+import type { Direction, IKeys } from '../types/types.js';
 import { getUser, matchPassword } from '../libs/index.js';
 import { Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
@@ -13,7 +13,7 @@ export const getSearch: Direction = async (req, res) => {
 	const { param } = req.params;
 	const { id, userIDs, groupRooms } = req.user;
 
-	const contacts = await User
+	const users = await User
 		.find({
 			$or: [
 				{ username: { $regex: '.*' + param + '.*' } },
@@ -28,7 +28,9 @@ export const getSearch: Direction = async (req, res) => {
 		.lean({ virtuals: true })
 		.select('id name avatar description blacklist connectedUsers');
 
-	const validUsers = contacts.filter(user => {
+	const contacts: IKeys<string>[] = [];
+
+	for (const user of users) {
 		const isBlockedUsers = user.blacklist
 			.filter(({ type }) => type === TypeContact.USER)
 			.map(({ id }) => id)
@@ -39,18 +41,54 @@ export const getSearch: Direction = async (req, res) => {
 			.map(({ id }) => id)
 			.includes(id);
 		
-		return user.id !== id && !userIDs.includes(user.id) && !isBlockedUsers && !isBlockedGroups;
-	});
+		if (
+			user.id !== id &&
+			!userIDs.includes(user.id) &&
+			!isBlockedUsers &&
+			!isBlockedGroups
+		) {
+			contacts.push({
+				id: user.id,
+				name: user.name,
+				avatar: user.avatar,
+				description: user.description,
+				type: TypeContact.USER
+			});
+		}
+	}
 
-	const validGroups = groups.filter(group => {
+	for (const group of groups) {
+		let match = false;
+
+		if (group.state === StateOption.PROTECTED) {
+			for (const id of [group.admin, ...group.modIDs, ...group.memberIDs]) {
+				if (userIDs.includes(id)) {
+					match = true;
+					break;
+				}
+			}
+		}
+
 		const isBlockedUsers = group.blacklist
 			.map(({ id }) => id)
 			.includes(id);
 
-		return !groupRooms.includes(group.id) && !isBlockedUsers && group.state !== StateOption.PRIVATE;
-	});
+		if (
+			!groupRooms.includes(group.id) &&
+			!isBlockedUsers &&
+			(group.state === StateOption.PUBLIC || match)
+		) {
+			contacts.push({
+				id: group.id,
+				name: group.name,
+				avatar: group.avatar,
+				description: group.description,
+				type: TypeContact.GROUP
+			});
+		}
+	}
 
-	return res.json([...validUsers, ...validGroups]);
+	return res.json(contacts);
 };
 
 export const postPassword: Direction = async (req, res) => {

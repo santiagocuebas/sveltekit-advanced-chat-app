@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { IContact, Contacts as IContacts } from '$lib/global';
+  import type { IContact, Contacts as IContacts, IKeys } from '$lib/global';
   import { TypeContact } from '$lib/enums';
 	import { socket } from '$lib/socket.js';
 	import { onDestroy, onMount } from 'svelte';
@@ -11,8 +11,10 @@
   import Search from '$lib/components/Search.svelte';
   import Group from '$lib/components/Group.svelte';
   import Settings from '$lib/components/Settings.svelte';
+  import ErrorMessage from '$lib/components/ErrorMessage.svelte';
 	
 	let contactID: string;
+	let errorMessage: IKeys<string> | null = null;
 	let usersValues: IContact[];
 	let groupsValues: IContact[];
 
@@ -115,6 +117,15 @@
 		}
 	};
 
+	const socketError = (err: IKeys<string>) => errorMessage = err;
+
+	const invalidSocket = () => {
+		errorMessage = {
+			error: 'Socket Error',
+			message: 'The socket emitted no exist'
+		};
+	};
+
 	onMount(() => {
 		socket.on('loggedUser', loggedUser);
 		socket.on('countMembers', countMembers);
@@ -122,6 +133,8 @@
 		socket.on('editContacts', editContacts);
 		socket.on('leaveUser', leaveUser);
 		socket.on('leaveGroup', leaveGroup);
+		socket.on('socketError', socketError);
+		socket.on('invalidSocket', invalidSocket);
 		socket.on('connect_error', connectError);
 
 		return () => {
@@ -131,6 +144,8 @@
 			socket.off('editContacts', editContacts);
 			socket.off('leaveUser', leaveUser);
 			socket.off('leaveGroup', leaveGroup);
+			socket.off('socketError', socketError);
+			socket.off('invalidSocket', invalidSocket);
 			socket.off('connect_error', connectError);
 		}
 	});
@@ -156,4 +171,7 @@
 	<Settings />
 	{:else}
 	<ChatBox />
+{/if}
+{#if errorMessage}
+	<ErrorMessage error={errorMessage} />
 {/if}

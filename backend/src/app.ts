@@ -3,17 +3,16 @@ import morgan from 'morgan';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import multer from 'multer';
 import { createServer } from 'http';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import { ORIGIN } from './config.js';
+import { join } from 'path';
+import { ORIGIN, __dirname } from './config.js';
 
 // Index Routes
 import * as routes from './routes/index.js';
 
 const app = express();
 const server = createServer(app);
-const __dirname: string = dirname(fileURLToPath(import.meta.url));
 
 app.use(morgan('dev'));
 app.use(bodyParser.json());
@@ -25,10 +24,10 @@ app.use(cors({
 	allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept',
 	credentials: true
 }));
+app.use(multer().any());
 
 // Uploads directory
 app.use('/uploads', express.static(join(__dirname, '../uploads')));
-
 
 // Routes
 app.use('/api/auth', routes.Auth);

@@ -32,6 +32,7 @@ export const getId = async (): Promise<string> => {
 	for (let i = 0; i < 12; i++) {
 		id += validChar.at(Math.floor(Math.random() * validChar.length));
 	}
+
 	const user = await User.findOne({ avatar: id });
 
 	if (user !== null) getId();
@@ -40,7 +41,7 @@ export const getId = async (): Promise<string> => {
 };
 
 
-export const getChats: Chats = async (userID, contactID, roomID) => {
+export const getChats: Chats = async ([userID, contactID, roomID]) => {
 	let findQuery = { };
 
 	if (roomID.length > 24) {

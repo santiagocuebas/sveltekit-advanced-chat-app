@@ -1,7 +1,6 @@
 import { Server } from 'socket.io';
-import mongoose from 'mongoose';
-import { MongoClient } from 'mongodb';
 import cookieParser from 'cookie-parser';
+import mongoose from 'mongoose';
 import { setupWorker } from '@socket.io/sticky';
 import { createAdapter } from '@socket.io/mongo-adapter';
 import server from './app.js';
@@ -9,22 +8,22 @@ import {
 	PORT,
 	ORIGIN,
 	MONGO_URI,
+	MONGO_REPLIC,
 	SOCKETS_DB,
 	COLLECTION
 } from './config.js';
-import { wrap } from './libs/wrap.js';
 import initSocket from './socket-io.js';
-import { socketValid } from './libs/socket-user.js';
+import { socketValid, wrap } from './libs/index.js';
 
 // Create Server
-const mongoClient = new MongoClient('mongodb://127.0.0.1:27017/?replicaSet=rs0', {
+const { MongoClient } = mongoose.mongo;
+const mongoClient = new MongoClient(MONGO_REPLIC, {
 	directConnection: true
 });
 
 // Connect Databases
-await mongoClient.connect();
-
 try {
+	await mongoClient.connect();
 	await mongoClient.db(SOCKETS_DB).createCollection(COLLECTION, {
 		capped: true,
 		size: 1e6
@@ -67,17 +66,11 @@ io.use(async (socket, next) => {
 	if (user && sessionID) {
 		socket.user = user;
 		return next();
-	} else return(new Error('Unauthorized'));
+	} 
+	
+	return(new Error('Unauthorized'));
 });
-	
-io.use((socket, next) => {
-	socket.onAny((event, ...args) => {
-		console.log(event, args);
-	});
-	
-	return next();
-});
-	
+
 io.on('connection', initSocket);
 
 // Listener Server

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
+import { __dirname } from '../config.js';
 import { settingsCtrl } from '../controllers/index.js';
 import { isValidToken } from '../middlewares/logged.js';
 import { validateSettings } from '../middlewares/validator.js';
@@ -13,9 +13,8 @@ import {
 	arrayUnblock
 } from '../validations/array-validators.js';
 
-const __dirname: string = dirname(fileURLToPath(import.meta.url));
 const router = Router();
-const upload = multer({ dest: join(__dirname, '../../uploads/temp') });
+const upload = multer({ dest: join(__dirname, '../uploads/temp') });
 
 router.use(isValidToken);
 

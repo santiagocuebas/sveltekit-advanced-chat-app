@@ -14,9 +14,11 @@
 			withCredentials: true
 		}).then(res => res.data);
 
+		console.log(data.user);
+
 		if (data.user) {
 			user.setUser(data.user);
-			socket.auth = { sessionID: $user.id };
+			socket.auth = { sessionID: data.user.id };
 			socket.connect();
 			register.setOption('user');
 		} else {
@@ -26,7 +28,7 @@
 	}
 </script>
 
-<svelte:window on:hashchange={testFunction()} />
+<svelte:document on:load={testFunction()} />
 
 <div class="main">
 	<div class="banner"></div>

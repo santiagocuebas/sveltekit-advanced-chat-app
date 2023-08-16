@@ -23,6 +23,24 @@ const groupSchema = new Schema<IGroup>({
 });
 
 groupSchema
+	.virtual('modIDs')
+	.get(function(this): string[] {
+		return this.mods.map(mod => mod.id);
+	});
+
+groupSchema
+	.virtual('memberIDs')
+	.get(function(this): string[] {
+		return this.members.map(member => member.id);
+	});
+
+groupSchema
+	.virtual('blockedIDs')
+	.get(function(this): string[] {
+		return this.blacklist.map(user => user.id);
+	});
+
+groupSchema
 	.virtual('logged')
 	.get(function(this): number {
 		return this.connectedUsers.length;

@@ -32,7 +32,7 @@ export type BlacklistGroup = { id: string, name: string };
 
 export type PartialUser = (value: IUser) => IPartialUser;
 
-export type Chats = (userID: string, contactID: string, roomID: string) => Promise<IChat[]>
+export type Chats = (ids: string[]) => Promise<IChat[]>
 
 export interface IChat {
 	_id: string;
@@ -69,7 +69,9 @@ export interface IGroup {
 	id: string;
 	admin: string;
 	mods: Members[];
+	modIDs: string[];
 	members: Members[];
+	memberIDs: string[];
 	name: string;
 	state: string;
 	description: string;
@@ -77,5 +79,6 @@ export interface IGroup {
 	connectedUsers: string[];
 	logged: number;
 	blacklist: BlacklistGroup[];
+	blockedIDs: string[];
 	createdAt: Date;
 }

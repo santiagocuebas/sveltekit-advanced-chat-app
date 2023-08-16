@@ -40,9 +40,8 @@ export interface IList {
 	name: string;
 	avatar: string;
 	description: string;
-	logged?: boolean;
+	type: string;
 }
-
 
 export interface IChat {
 	_id: string;

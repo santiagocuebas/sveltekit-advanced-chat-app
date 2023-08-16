@@ -37,7 +37,7 @@
 		id = foreign.contactID;
 		contact.setContact(foreign);
 		switchs.setOption('chat');
-		socket.emit('joinRoom', [foreign.contactID, foreign.roomID]);
+		socket.emit('joinRoom', foreign.contactID, foreign.roomID);
 	};
 
 	const reloadUsers = (contact: IContact) => {

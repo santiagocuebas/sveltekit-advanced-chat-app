@@ -1,13 +1,17 @@
 <script lang="ts">
-  import type { IList } from "$lib/global";
+  import type { IKeys, IList } from "$lib/global";
 	import { DIR } from '$lib/config.js';
   import { socket } from "$lib/socket";
 
   export let contact: IList;
 
+	const options: IKeys<string> = {
+		'User': 'joinUser',
+		'Group': 'joinGroup'
+	};
+
 	function createRoom() {
-		if (typeof contact.logged !== 'boolean') socket.emit('joinGroup', contact.id);
-		else socket.emit('joinUser', contact.id);
+		socket.emit(options[contact.type], contact.id);
 	}
 </script>
 
@@ -29,7 +33,7 @@
 		grid-template-columns: min-content 1fr min-content;
 		grid-auto-rows: 50%;
 		border-bottom: 2px solid #999999;
-		@apply grid items-center w-full p-3 font-medium gap-x-1.5;
+		@apply self-start grid items-center w-full p-3 font-medium gap-x-1.5;
 	}
 
 	img {

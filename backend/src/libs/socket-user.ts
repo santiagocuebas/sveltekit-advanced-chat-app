@@ -10,7 +10,7 @@ export const socketValid = async (token: string): Promise<IUser | undefined> => 
 
 		if (user === null) throw 'Error';
 
-		return user;
+		return user.toJSON();
 	}
 	catch {
 		return undefined;

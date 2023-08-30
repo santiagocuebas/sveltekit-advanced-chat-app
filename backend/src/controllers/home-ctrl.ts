@@ -1,5 +1,7 @@
 import type { Direction, IKeys } from '../types/types.js';
-import { getUser, matchPassword } from '../libs/index.js';
+import fs from 'fs-extra';
+import { extname, resolve } from 'path';
+import { getId, getUser, matchPassword } from '../libs/index.js';
 import { Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
 
@@ -21,12 +23,11 @@ export const getSearch: Direction = async (req, res) => {
 			]
 		})
 		.lean({ virtuals: true })
-		.select('id username avatar description users logged blacklist');
+		.select('id username avatar description users blacklist');
 		
 	const groups = await Group
 		.find({ name: { $regex: '.*' + param + '.*' } })
-		.lean({ virtuals: true })
-		.select('id name avatar description blacklist connectedUsers');
+		.lean({ virtuals: true });
 
 	const contacts: IKeys<string>[] = [];
 
@@ -100,4 +101,48 @@ export const postPassword: Direction = async (req, res) => {
 	}
 
 	return res.json({ match });
+};
+
+export const postImages: Direction = async (req, res) => {
+	const files = req.files as Express.Multer.File[];
+	const filenames: string[] = [];
+
+	for (const file of files) {
+		const tempPath = file.path as string;
+		const ext = extname(file.originalname).toLowerCase();
+		const avatarURL = await getId() + ext;
+		const targetPath = resolve(`uploads/${avatarURL}`);
+
+		await fs.rename(tempPath, targetPath);
+
+		filenames.push(avatarURL);
+	}
+
+	return res.json({ filenames });
+};
+
+export const postAvatar: Direction = async (req, res) => {
+	const group = await Group.findOne({ _id: req.body.id, admin: req.user.id });
+	
+	if (group !== null) {
+		const tempPath = req.file?.path as string;
+		const ext = extname(req.file?.originalname as string).toLowerCase();
+		const avatarURL = await getId() + ext;
+		const oldPath = resolve(`uploads/group-avatar/${group.avatar}`);
+		const targetPath = resolve(`uploads/group-avatar/${avatarURL}`);
+
+		// Unlink old avatar
+		if (group.avatar !== 'avatar.jpeg') await fs.unlink(oldPath);
+
+		// Set avatar location
+		await fs.rename(tempPath, targetPath);
+
+		// Update database with the new avatar
+		group.avatar = avatarURL;
+		await group.save();
+
+		return res.json({ filename: avatarURL });
+	}
+
+	return res.json(null);
 };

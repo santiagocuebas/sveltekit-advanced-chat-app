@@ -13,7 +13,7 @@ export const userSockets: UserSockets = (socket, [userID, contactID, roomID], us
 
 		userRooms = userRooms.filter(id => id !== roomID);
 
-		socket.to(roomID).emit('leaveUser', userID);
+		socket.to(roomID).emit('leaveUser', userID, roomID);
 		socket.leave(roomID);
 	});
 
@@ -33,7 +33,7 @@ export const userSockets: UserSockets = (socket, [userID, contactID, roomID], us
 
 		userRooms = userRooms.filter(id => id !== roomID);
 		
-		socket.to(roomID).emit('leaveUser', userID);
+		socket.to(roomID).emit('leaveUser', userID, roomID);
 		socket.leave(roomID);
 	});
 
@@ -52,7 +52,7 @@ export const userSockets: UserSockets = (socket, [userID, contactID, roomID], us
 
 		userRooms = userRooms.filter(id => id !== roomID);
 		
-		socket.to(roomID).emit('leaveUser', userID);
+		socket.to(roomID).emit('leaveUser', userID, roomID);
 		socket.leave(roomID);
 	});
 
@@ -79,7 +79,7 @@ export const userSockets: UserSockets = (socket, [userID, contactID, roomID], us
 
 		userRooms = userRooms.filter(id => id !== roomID);
 		
-		socket.to(roomID).emit('leaveUser', userID);
+		socket.to(roomID).emit('leaveUser', userID, roomID);
 		socket.leave(roomID);
 	});
 

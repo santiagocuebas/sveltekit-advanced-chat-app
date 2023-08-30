@@ -1,5 +1,3 @@
-import type { TypeContact } from "./enums";
-
 export type Contacts = [IContact[], IContact[]];
 
 export type Members = { id: string, name: string };
@@ -25,13 +23,14 @@ export interface IContact {
 	roomID: string;
 	name: string;
 	avatar: string;
+	description: string;
 	logged: boolean | number;
-	type: TypeContact;
+	type: string;
 	admin?: string;
 	mods?: Members[];
 	members?: Members[];
 	blacklist?: Members[];
-	content?: string;
+	content?: string | string[];
 	createdAt?: Date;
 }
 
@@ -48,7 +47,7 @@ export interface IChat {
 	from: string;
 	to: string;
 	username?: string;
-	content: string;
+	content: string | string[];
 	createdAt: Date;
 }
 

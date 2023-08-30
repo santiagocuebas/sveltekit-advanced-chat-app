@@ -72,25 +72,25 @@
 	</div>
 	<div class="select">
 		Select moderators:
-		<div>
+		<ul>
 			{#each usersValues as user}
-				<span
+				<li
 					class='members {modIDs.includes(user.contactID) ? 'selected' : ''}'
 					on:mousedown={addMods(user.contactID, user.name)}
-				>{user.name}</span>
+				>{user.name}</li>
 			{/each}
-		</div>
+		</ul>
 	</div>
 	<div class="select">
 		Select members:
-		<div>
+		<ul>
 			{#each usersValues as user}
-				<span
+				<li
 					class='members {memberIDs.includes(user.contactID) ? 'selected' : ''}'
 					on:mousedown={addMembers(user.contactID, user.name)}
-				>{user.name}</span>
+				>{user.name}</li>
 			{/each}
-		</div>
+		</ul>
 	</div>
 	<div class="select">
 		Choose visibility:
@@ -170,12 +170,12 @@
 		@apply grid w-3/5 gap-2;
 	}
 
-	input[type='text'], .select div {
+	input[type='text'], .select ul {
 		box-shadow: 0 0 0 2px #999999;
 		@apply p-1.5 overflow-y-auto overflow-x-hidden;
 	}
 
-	.select div {
+	.select ul {
 		height: 120px;
 		padding: 10px;
 	}

@@ -5,8 +5,8 @@
 		isValidInput,
 		isValidLength
 	} from '$lib/services/validation-submit.js';
+  import { socket } from '$lib/socket';
   import { user, register } from '$lib/store';
-    import { socket } from '$lib/socket';
 
 	export let action: string;
 	export let inputs: IKeys<string>;

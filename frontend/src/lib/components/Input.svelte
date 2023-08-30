@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { Check } from "$lib/global";
-  import { clickOutside } from "$lib/services/out-click";
   import { afterUpdate } from "svelte";
 
 	export let text: string;
 	export let name: string;
+	export let type: string;
 	export let input: string;
 	export let error: string | undefined;
 	export let pass: string | undefined = undefined;
@@ -14,24 +14,18 @@
 	let selectClass = { label: '', paragraph: '', input: '' };
 
 	const changeClass = () => {
-		error = undefined;
-		selectClass = {
-			label: 'focus-label',
-			paragraph: 'focus-p',
-			input: 'visible-input'
-		};
+		if (!error) {
+			selectClass = {
+				label: 'focus-label',
+				paragraph: 'focus-p',
+				input: 'visible-input'
+			};
+		}
 	};
 
 	const changeError = () => {
-		if (name === 'confirmPassword') error = check(input, error, pass);
-		else error = check(input, error);
-
-		if (error) {
-			selectClass.label = 'error-label';
-			selectClass.paragraph = 'error-p';
-		}
-
-		if (!error && !input.length) {
+		if (!input.length) {
+			error = undefined;
 			selectClass = {
 				label: '',
 				paragraph: '',
@@ -41,13 +35,24 @@
 	};
 
 	function setInput(this: HTMLInputElement) {
-		return input = this.value;
-	}
+		input = this.value;
 
-	const setType = () => {
-		if (name === 'username' || name === 'email') return 'text';
-		return 'password';
-	};
+		if (name === 'confirmPassword') error = check(input, undefined, pass);
+		else error = check(input);
+
+		if (error) {
+			selectClass.label = 'error-label';
+			selectClass.paragraph = 'error-p';
+		}
+
+		if (!error) {
+			selectClass = {
+				label: 'focus-label',
+				paragraph: 'focus-p',
+				input: 'visible-input'
+			};
+		}
+	}
 
 	afterUpdate(() => {
 		if (active) {
@@ -59,22 +64,19 @@
 </script>
 
 <div>
-	<label
-		class={selectClass.label}
-		use:clickOutside
-		on:mousedown={changeClass}
-		on:outclick={changeError}
-	>
+	<label class={selectClass.label}>
 		<p class={selectClass.paragraph}>
 			{text}
 		</p>
 		<input
 			class={selectClass.input}
-			type={setType()}
+			type={type}
 			name={name}
 			value={input}
 			autocomplete="off"
-			on:change={setInput}
+			on:keyup={setInput}
+			on:focus={changeClass}
+			on:blur={changeError}
 		>
 	</label>
 	{#if error}

@@ -5,7 +5,7 @@
 	import Input from '$lib/components/Input.svelte';
 	import Form from '$lib/components/Form.svelte';
 	import Box from '$lib/components/ErrorBox.svelte';
-	import { setUppercaseFirstLetter } from '$lib/services/set-uppercase.js';
+	import { setType, setUppercaseFirstLetter } from '$lib/services/libs.js';
 	import { checks } from '$lib/services/validations.js';
 
 	const properInput = ['email', 'password'];
@@ -33,6 +33,7 @@
 	{#each properInput as key (key)}
 		<Input
 			text={setUppercaseFirstLetter(key)}
+			type={setType(key)}
 			name={key}
 			bind:input={valueInput[key]}
 			bind:error={errorMessage[key]}

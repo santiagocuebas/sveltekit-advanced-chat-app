@@ -16,6 +16,11 @@ function createContact() {
 
 			return value;
 		}),
+		changeAvatar: (avatar: string) => update(value => {
+			value.avatar = avatar;
+
+			return value;
+		}),
 		setContact: (value: IContact) => set(value),
 		resetContact: () => set({ } as IContact)
 	}

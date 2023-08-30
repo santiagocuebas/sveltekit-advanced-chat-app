@@ -42,7 +42,6 @@ export const getGroupContacts = async (id: string, groupContacts: string[]): Pro
 	for (const key of groupContacts) {
 		const contact = await Group
 			.findOneAndUpdate({ _id: key }, { $addToSet: { connectedUsers: id } })
-			.select('admin mods members name avatar connectedUsers blacklist')
 			.lean({ virtuals: true });
 
 		if (contact !== null) {

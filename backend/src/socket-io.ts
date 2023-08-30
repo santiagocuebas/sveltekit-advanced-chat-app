@@ -10,12 +10,13 @@ import {
 	userSockets
 } from './socket/index.js';
 import { socketIndex } from './validations/socket-index.js';
+import { TypeContact } from './types/enums.js';
 
 export default async (socket: Socket) => {
 	console.log(socket.id, '==== connected');
 
 	const emitArray = [
-		'emitChat', 'emitDelete', 'emitLeave', 'emitBlock', 'emitDestroy', 'emitBlockDestroy', 'emitLeaveGroup', 'emitBlockGroup', 'emitAddMember', 'emitBanMember', 'emitBlockMember', 'emitUnblockMember', 'emitAddMod', 'emitRemoveMod', 'emitChangeState', 'emitDestroyGroup'
+		'emitChat', 'emitDelete', 'emitLeave', 'emitBlock', 'emitDestroy', 'emitBlockDestroy', 'emitLeaveGroup', 'emitBlockGroup', 'emitAddMember', 'emitBanMember', 'emitBlockMember', 'emitUnblockMember', 'emitAddMod', 'emitRemoveMod', 'emitChangeAvatar', 'emitChangeDescription', 'emitChangeState', 'emitDestroyGroup'
 	];
 	const userID = socket.user.id;
 	const { username } = socket.user;
@@ -36,33 +37,44 @@ export default async (socket: Socket) => {
 
 	socket.join([...userRooms, ...groupRooms]);
 	socket.emit('loadContacts', [contacts, groups]);
-	socket.to([...userRooms]).emit('loggedUser', userID, true);
-	socket.to([...groupRooms]).emit('countMembers', userID, 1);
+	socket.to(userRooms).emit('loggedUser', userID, true);
+	socket.to(groupRooms).emit('countMembers', userID, 1);
 	
 	socket.use(async ([event, ...args], next) => {
-		try {
-			console.log(event, args);
-			const match = await socketIndex[event](args, socket.user);
+		console.log(event, args);
+		if (typeof event === 'string' && socketIndex[event] !== undefined) {
+			const match = await socketIndex[event](args as never, socket.user);
 
 			if (match === true) return next();
 
 			socket.emit('socketError', match);
-		} catch {
+		} else {
 			socket.emit('invalidEvent');
 		}
 	});
 
-	socket.on('joinRoom', async (contactID: string, roomID: string) => {
+	socket.on('joinUserRoom', async (contactID: string, roomID: string) => {
 		emitArray.forEach(emitString => socket.removeAllListeners(emitString));
-		const IDs = [userID, contactID, roomID];
 
+		const IDs = [userID, contactID, roomID];
 		const messages = await getChats(IDs);
 
 		socket.emit('loadChats', messages);
 
-		chatSockets(socket, IDs, username);
+		chatSockets(socket, IDs);
 
 		[userRooms, blacklist] = userSockets(socket, IDs, users, userRooms, blacklist);
+	});
+
+	socket.on('joinGroupRoom', async (contactID: string) => {
+		emitArray.forEach(emitString => socket.removeAllListeners(emitString));
+		const IDs = [userID, contactID, contactID];
+
+		const messages = await getChats(IDs, TypeContact.GROUP);
+
+		socket.emit('loadChats', messages);
+
+		chatSockets(socket, IDs, username);
 
 		[groupRooms, blacklist] = memberSockets(socket, IDs, groupRooms, blacklist);
 
@@ -74,6 +86,12 @@ export default async (socket: Socket) => {
 	socket.on('joinUpdate', (id: string) => {
 		if (!userRooms.includes(id) || !groupRooms.includes(id)) {
 			socket.join(id);
+		}
+	});
+
+	socket.on('removeRoom', (roomID: string) => {
+		if (userRooms.includes(roomID) || groupRooms.includes(roomID)) {
+			socket.leave(roomID);
 		}
 	});
 
@@ -92,8 +110,8 @@ export default async (socket: Socket) => {
 			await Group.updateOne({ _id }, { $pull: { connectedUsers: userID } });
 		}
 
-		socket.to([...userRooms]).emit('loggedUser', userID, false);
-		socket.to([...groupRooms]).emit('countMembers', userID, -1);
+		socket.to(userRooms).emit('loggedUser', userID, false);
+		socket.to(groupRooms).emit('countMembers', userID, -1);
 		socket.removeAllListeners();
 	});
 };

@@ -68,7 +68,10 @@
 	}
 
 	img {
-		@apply w-10 h-10 rounded-full;
+		min-width: 40px;
+		min-heigth: 40px;
+		box-shadow: 0 0 5px #999999;
+		@apply w-10 h-10 object-cover rounded-full;
 	}
 
 	p {

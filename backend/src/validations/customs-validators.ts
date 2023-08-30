@@ -1,8 +1,8 @@
 import { CustomValidator } from 'express-validator';
+import { extname } from 'path';
 import { matchPassword } from '../libs/index.js';
 import { User } from '../models/index.js';
 import { Ext } from '../types/enums.js';
-import { extname } from 'path';
 
 export const isValidEmail: CustomValidator = async email => {
 	const user = await User.findOne({ email });
@@ -37,8 +37,7 @@ export const isUndefinedImage: CustomValidator = (_value, { req }) => {
 };
 
 export const isValidExtension: CustomValidator = (_value, { req }) => {
-	const file = req.file;
-	const ext: string = extname(file.originalname).toLowerCase();
+	const ext: string = extname(req.file.originalname).toLowerCase();
 	const values: string[] = Object.values(Ext);
 
 	return values.includes(ext);
@@ -69,4 +68,41 @@ export const isArrayString: CustomValidator = (value: string[]): boolean => {
 	if (!match) throw new Error('An error has occurred');
 
 	return true;
+};
+
+export const isArrayImages: CustomValidator = (_value, { req }) => {
+	return req.files instanceof Array;
+};
+
+export const isValidLengthImages: CustomValidator = (_value, { req }) => {
+	return req.files.length < 4;
+};
+
+export const isUndefinedImages: CustomValidator = (_value, { req }) => {
+	let match = true;
+
+	for (const file of req.files) {
+		if (typeof file !== 'object' || file === null) {
+			match = false;
+			break;
+		}
+	}
+
+	return match;
+};
+
+export const isValidSizesAndFormat: CustomValidator = (_value, { req }) => {
+	let match = true;
+
+	for (const file of req.files) {
+		const ext: string = extname(file.originalname).toLowerCase();
+		const values: string[] = Object.values(Ext);
+
+		if (file.size > 1e7 * 2 || !values.includes(ext)) {
+			match = false;
+			break;
+		}
+	}
+
+	return match;
 };

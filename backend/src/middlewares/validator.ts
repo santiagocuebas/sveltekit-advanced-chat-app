@@ -9,11 +9,21 @@ export const validate = (validations: ValidationChain[]) => {
 
 		const errs = validationResult(req);
 
-		if (errs.isEmpty()) return next();
+		if (!errs.isEmpty()) {
+			if (req.file !== undefined) fs.unlink(req.file.path);
+			
+			if (req.files !== undefined && req.files instanceof Array) {
+				for (const file of req.files) {
+					fs.unlink(file.path);
+				}
+			}
+			
+			const errors = getErrorMessages(errs.array());
 
-		const errors = getErrorMessages(errs.array());
+			return res.json({ errors });
+		}
 
-		return res.json({ errors });
+		return next();
 	};
 };
 

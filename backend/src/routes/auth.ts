@@ -1,10 +1,13 @@
 import { Router } from 'express';
+import { upload } from '../config.js';
 import { authCtrl } from '../controllers/index.js';
 import { isValidToken, isNotValidToken } from '../middlewares/logged.js';
 import { validate } from '../middlewares/validator.js';
 import { arraySignin, arrayRegister } from '../validations/array-validators.js';
 
 const router = Router();
+
+router.use(upload.none());
 
 router.post(
 	'/register',

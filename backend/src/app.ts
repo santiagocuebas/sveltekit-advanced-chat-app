@@ -3,7 +3,6 @@ import morgan from 'morgan';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import multer from 'multer';
 import { createServer } from 'http';
 import { join } from 'path';
 import { ORIGIN, __dirname } from './config.js';
@@ -24,7 +23,6 @@ app.use(cors({
 	allowedHeaders: 'Origin, X-Requested-With, Content-Type, Accept',
 	credentials: true
 }));
-app.use(multer().any());
 
 // Uploads directory
 app.use('/uploads', express.static(join(__dirname, '../uploads')));

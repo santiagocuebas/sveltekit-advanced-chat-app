@@ -5,7 +5,7 @@ const chatSchema = new Schema<IChat>({
 	from: String,
 	to: String,
 	username: String,
-	content: String,
+	content: { },
 	createdAt: { type: Date, default: new Date }
 });
 

@@ -39,6 +39,8 @@ export enum ModOptions {
 export enum AdminOptions {
   ADDMOD = 'ADDMOD',
   REMOVEMOD = 'REMOVEMOD',
+  AVATAR = 'AVATAR',
+  DESCRIPTION = 'DESCRIPTION',
   STATE = 'STATE',
   DESTROY = 'DESTROY'
 }

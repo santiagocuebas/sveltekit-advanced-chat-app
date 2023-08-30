@@ -4,18 +4,17 @@ export function loadImage(file: File) {
 	return new Promise((resolve, reject) => {
 		const fileReader = new FileReader();
 
-		fileReader.addEventListener('load', ({ target, loaded }) => {
+		fileReader.addEventListener('load', ({ target }) => {
 			const validFormats = ['png', 'jpg', 'jpeg', 'gif'];
-			const [data] = (target?.result as string).split(';');
-			const [_placeholder, format] = data.split('/');
+			const [_placeholder, format] = file.type.split('/');
 			
-			if (loaded <= 512000 && validFormats.includes(format)) {
+			if (file.size <= 512000 && validFormats.includes(format)) {
 				return resolve({ image: target?.result, enabled: false });
 			}
 
 			if (!validFormats.includes(format)) {
 				return reject({ message: LoadError.InvalidFormat, error: true });
-			} else if (loaded > 512000) {
+			} else if (file.size > 512000) {
 				return reject({ message: LoadError.TooHeavy, error: true });
 			}
 

@@ -1,12 +1,14 @@
 import type { ChatSockets } from '../types/sockets.js';
+import fs from 'fs-extra';
+import { resolve } from 'path';
 import { Chat } from '../models/index.js';
 
 export const chatSockets: ChatSockets = (socket, [userID, contactID, roomID], username) => {
-	socket.on('emitChat', async (message: string, tempID: string) => {
+	socket.on('emitChat', async (message: string | string[], tempID: string) => {
 		const chat = await Chat.create({
 			from: userID,
 			to: contactID,
-			username: roomID.length <= 24 ? username : undefined,
+			username: username ? username : undefined,
 			content: message,
 			createdAt: new Date
 		});
@@ -17,7 +19,18 @@ export const chatSockets: ChatSockets = (socket, [userID, contactID, roomID], us
 	});
 
 	socket.on('emitDelete', async (id: string) => {
-		await Chat.deleteOne({ _id: id, from: userID });
+		const chat = await Chat.findOneAndDelete({ _id: id, from: userID });
+
+		if (chat !== null && chat.content instanceof Array) {
+			for (const url of chat.content) {
+				const path = resolve(`uploads/${url}`);
+				const err = await fs
+					.unlink(path)
+					.catch(err => err);
+				
+				console.log(err);
+			}
+		}
 
 		socket.to(roomID).emit('deleteChat', id);
 	});

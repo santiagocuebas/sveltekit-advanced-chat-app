@@ -19,7 +19,7 @@ export const memberSockets: MemberSockets = (socket, [userID, contactID], groupR
 
 		groupRooms = groupRooms.filter(id => id !== contactID);
 		
-		socket.to(contactID).emit('leaveGroup', userID);
+		socket.to(contactID).emit('leaveGroup', userID, contactID);
 		socket.leave(contactID);
 	});
 
@@ -51,7 +51,7 @@ export const memberSockets: MemberSockets = (socket, [userID, contactID], groupR
 
 		groupRooms = groupRooms.filter(id => id !== contactID);
 		
-		socket.to(contactID).emit('leaveGroup', userID);
+		socket.to(contactID).emit('leaveGroup', userID, contactID);
 		socket.leave(contactID);
 	});
 

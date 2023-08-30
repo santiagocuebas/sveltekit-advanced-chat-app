@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { DIR } from '$lib/config.js';
 	import { DataRegister } from '$lib/register.js';
-	import { setUppercaseFirstLetter } from '$lib/services/set-uppercase.js';
+	import { setUppercaseFirstLetter, setType } from '$lib/services/libs.js';
 	import { checks } from '$lib/services/validations.js';
   import { register } from '$lib/store';
 	import Input from '$lib/components/Input.svelte';
@@ -33,6 +33,7 @@
 	{#each properInput as key (key)}
 		<Input
 			text={setUppercaseFirstLetter(key)}
+			type={setType(key)}
 			name={key}
 			bind:input={valueInput[key]}
 			bind:error={errorMessage[key]}
@@ -43,6 +44,7 @@
 	{#if valueInput['password']}
 		<Input
 			text='Confirm Password'
+			type={'password'}
 			name='confirmPassword'
 			bind:input={valueInput['confirmPassword']}
 			bind:error={errorMessage['confirmPassword']}

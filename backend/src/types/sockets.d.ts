@@ -4,7 +4,7 @@ import type { Blacklist, Users } from './global.js';
 export type ChatSockets = (
 	socket: Socket,
 	IDs: string[],
-	username: string
+	username?: string
 ) => void;
 
 export type UserSockets = (

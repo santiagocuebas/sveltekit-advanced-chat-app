@@ -1,6 +1,13 @@
 <script lang="ts">
-	import type { IChat, IContact, IKeys, Members } from "$lib/global";
+	import type {
+		IChat,
+		IContact,
+		IKeys,
+		Members
+	} from "$lib/global";
   import { afterUpdate, onMount } from "svelte";
+  import axios from "axios";
+	import validator from 'validator';
 	import { format } from 'timeago.js';
 	import { DIR } from "$lib/config";
   import {
@@ -17,22 +24,25 @@
 		TypeContact,
     StateOption
 	} from "$lib/enums";
-  import { getChat, isMember, isMod } from "$lib/services/set-uppercase";
+  import { getChat, isMember, isMod, selectAvatarURL } from "$lib/services/libs";
 	import { socket } from "$lib/socket";
   import { user, contact, users, options } from "$lib/store";
   import EditChat from "./EditChat.svelte";
   import List from "./List.svelte";
+  import Image from "./BoxImage.svelte";
 
 	export let editGroups: (room: string, content: string, createdAt: Date) => void;
-	export let leaveUser: (id: string) => void;
-	export let leaveGroup: (id: string) => void;
+	export let leaveUser: (id: string, room: string) => void;
+	export let leaveGroup: (id: string, room: string) => void;
 
-	let visible = false;
-	let allowed = true;
 	let usersValues: IContact[];
 	let optionValue: IKeys<boolean>;
+	let visible = false;
+	let allowed = true;
 	let option = '';
 	let message = '';
+	let imgSRC: string;
+	let altSRC: string;
 	let chats: IChat[] = [];
 	let div: HTMLElement;
 	let members: Members[] = [];
@@ -41,6 +51,9 @@
 	let unblockedIDs: string[] = [];
 	let newMods: Members[] = [];
 	let removeMods: Members[] = [];
+	let src = DIR + selectAvatarURL($contact);
+	let socketFile: File;
+	let description = $contact.description;
 	let state = StateOption.PUBLIC;
 	
 	users.subscribe(value => usersValues = value as IContact[]);
@@ -64,6 +77,7 @@
 		UNBLOCK: () => [unblockedIDs, $contact.contactID],
 		ADDMOD: () => [newMods, $contact.contactID],
 		REMOVEMOD: () => [removeMods, $contact.contactID],
+		DESCRIPTION: () => [description],
 		STATE: () => [state],
 		DESTROY: () => []
 	};
@@ -102,6 +116,29 @@
 		return newMembers;
 	}
 
+	async function handleAvatar(this: HTMLInputElement) {
+		const files = this.files as FileList;
+		const file = files[0];
+		const reader = new FileReader();
+		const validFormats = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif'];
+
+		reader.addEventListener('load', async ({ target }) => {
+			if (file.size <= 512000 && validFormats.includes(file.type)) {
+				src = target?.result as string;
+				socketFile = file;
+			}
+		});
+
+		reader.readAsDataURL(file);
+	}
+
+	function handleImage(this: HTMLImageElement) {
+		console.log(this.src)
+		imgSRC = this.src;
+		altSRC = this.alt;
+		optionValue.image = true;
+	}
+
 	function getMembers() {
 		const newMembers: Members[] = [];
 		const mods: Members[] = $contact.mods ? $contact.mods : [];
@@ -132,22 +169,65 @@
 	}
 
 	function sendMessage() {
-		const chat = getChat($user.id, $contact, message);
+		const chat = getChat($user, $contact, message);
 
 		loadChat(chat);
 
 		socket.emit('emitChat', message, chat._id);
 
-		if ($contact.type === TypeContact.GROUP) {
+		if ($contact.type === TypeContact.GROUP && typeof chat.content === 'string') {
 			editGroups($contact.roomID, chat.content, chat.createdAt);
 		}
 
 		message = '';
 	}
 
+	async function sendImage(this: HTMLInputElement) {
+		if (this.files && this.files.length < 4) {
+			const formData = new FormData();
+			const validFormat = ['image/png', 'image/jpeg', 'image/gif'];
+			let match = true;
+
+			for (const file of this.files) {
+				if (file.size > 1e7 * 2 && !validFormat.includes(file.type)) {
+					match = false;
+					break;
+				}
+
+				formData.append('images', file);
+			}
+
+			if (match) {
+				const data = await axios({
+					method: 'POST',
+					url: DIR + '/api/home/images',
+					data: formData,
+					withCredentials: true
+				}).then(res => res.data)
+					.catch(err => err);
+
+				if (data && data.filenames) {
+					const chat = getChat($user, $contact, data.filenames);
+
+					loadChat(chat);
+
+					socket.emit('emitChat', data.filenames, chat._id);
+
+					if ($contact.type === TypeContact.GROUP && chat.content instanceof Array) {
+						editGroups($contact.roomID, chat.content[0], chat.createdAt);
+					}
+
+					message = '';
+				}
+			}
+
+			formData.delete('images');
+		}
+	}
+
 	function userOptions(value: string) {
 		if (OptionUser[value]) {
-			socket.emit(OptionUser[value]);
+			socket.emit(OptionUser[value], $contact.contactID, $contact.roomID);
 
 			if (OptionUser[value] === OptionUser.BLOCK || OptionUser[value] === OptionUser.BAD) {
 				user.updateBlock({ id: $contact.contactID, name: $contact.name, type: TypeContact.USER });
@@ -155,19 +235,36 @@
 		}
 
 		options.resetOptions();
-		leaveUser($contact.contactID);
+		leaveUser($contact.contactID, $contact.roomID);
 	}
 
-	function groupOptions(value: string) {
-		if (OptionMember[value]) {
-			socket.emit(OptionMember[value], socketFunction[value]());
+	async function groupOptions(value: string) {
+		if (value === AdminOptions.AVATAR) {
+			const formData = new FormData();
+			formData.set('avatar', socketFile);
+			formData.set('id', $contact.contactID);
+
+			const data = await axios({
+				method: 'POST',
+				url: DIR + '/api/home/group',
+				data: formData,
+				withCredentials: true
+			}).then(res => res.data);
+
+			if (data && data.filename) {
+				socket.emit(OptionAdmin[value], data.filename);
+			}
+
 			options.resetOptions();
-			leaveGroup($contact.contactID);
+		} else if (OptionMember[value]) {
+			socket.emit(OptionMember[value], ...socketFunction[value]());
+			options.resetOptions();
+			leaveGroup($contact.contactID, $contact.roomID);
 		} else if (OptionMod[value]) {
 			socket.emit(OptionMod[value], ...socketFunction[value]());
 			options.resetOptions();
-		} else if (OptionAdmin[value]) {
-			socket.emit(OptionAdmin[value], socketFunction[value]());
+		} else if (OptionAdmin[value] && value !==  OptionAdmin.AVATAR) {
+			socket.emit(OptionAdmin[value], ...socketFunction[value]());
 			options.resetOptions();
 		}
 	}
@@ -186,9 +283,7 @@
 
 	const loadChatID = (id: string, tempID: string) => {
 		chats = chats.map(chat => {
-			if (chat._id === tempID) {
-				chat._id = id;
-			}
+			if (chat._id === tempID) chat._id = id;
 
 			return chat;
 		});
@@ -210,6 +305,10 @@
 
 	afterUpdate(() => div.scrollTo(0, div.scrollHeight));
 </script>
+
+{#if optionValue.image}
+	<Image bind:img={optionValue.image} src={imgSRC} alt={altSRC} />
+{/if}
 
 {#if optionValue.user}
 	<EditChat bind:visible={optionValue.user} option={option} handle={userOptions}>
@@ -253,7 +352,7 @@
 				{#if isNotMember().length}
 					<p>Add member:</p>
 					{#each isNotMember() as user (user.id)}
-						<div class="option">
+						<div>
 							{user.name}
 							<input
 								type="checkbox"
@@ -270,7 +369,7 @@
 				{#if getMembers().length}
 					<p>Ban member:</p>
 					{#each getMembers() as user (user.id)}
-						<div class="option">
+						<div>
 							{user.name}
 							<input
 								type="checkbox"
@@ -287,7 +386,7 @@
 				{#if getMembers().length}
 					<p>Block member:</p>
 					{#each getMembers() as user (user.id)}
-						<div class="option">
+						<div>
 							{user.name}
 							<input
 								type="checkbox"
@@ -304,7 +403,7 @@
 				{#if $contact.blacklist?.length}
 					<p>Unblock member:</p>
 					{#each $contact.blacklist as user (user.id)}
-						<div class="option">
+						<div>
 							{user.name}
 							<input
 								type="checkbox"
@@ -321,7 +420,7 @@
 				{#if $contact.members?.length}
 					<p>Add member:</p>
 					{#each $contact.members as member (member.id)}
-						<div class="option">
+						<div>
 							{member.name}
 							<input
 								type="checkbox"
@@ -338,7 +437,7 @@
 				{#if $contact.mods?.length}
 					<p>Remove member:</p>
 					{#each $contact.mods as member (member.id)}
-						<div class="option">
+						<div>
 							{member.name}
 							<input
 								type="checkbox"
@@ -349,6 +448,19 @@
 					{:else}
 					<p>All your contacts are members of this group.</p>
 				{/if}
+			</span>
+			{:else if option === AdminOptions.AVATAR}
+			<span class="span span-flex">
+				Load the new image (max. 500KB):
+				<label>
+					<img src={src} alt={$contact.name}>
+					<input type="file" name="avatar" on:change={handleAvatar}>
+				</label>
+			</span>
+			{:else if option === AdminOptions.DESCRIPTION}
+			<span class="span span-flex">
+				Insert the new description (max. 420 characters):
+				<textarea name="description" bind:value={description} rows="5"></textarea>
 			</span>
 			{:else if option === AdminOptions.STATE}
 			<span class="span span-flex">
@@ -404,7 +516,7 @@
 {/if}
 
 <div class="contact">
-	<img src={DIR + '/uploads/avatar/' + $contact.avatar} alt={$contact.name}>
+	<img src={DIR + selectAvatarURL($contact)} alt={$contact.name}>
 	<div>
 		<h2>{$contact.name}</h2>
 		{#if typeof $contact.logged === 'boolean'}
@@ -439,6 +551,8 @@
 		{#if $user.id === $contact.admin}
 			<li on:mousedown={() => handleGroup(AdminOptions.ADDMOD)}>Add Mod</li>
 			<li on:mousedown={() => handleGroup(AdminOptions.REMOVEMOD)}>Remove Mod</li>
+			<li on:mousedown={() => handleGroup(AdminOptions.AVATAR)}>Change Avatar</li>
+			<li on:mousedown={() => handleGroup(AdminOptions.DESCRIPTION)}>Change Description</li>
 			<li on:mousedown={() => handleGroup(AdminOptions.STATE)}>Change State</li>
 			<li on:mousedown={() => handleGroup(AdminOptions.DESTROY)}>Destroy Group</li>
 		{/if}
@@ -449,18 +563,38 @@
 		<div
 			class='chat {$user.id === chat.from ? 'me' : ''}'
 			on:dblclick={() => handleDelete(chat._id, chat.from)}
+			role='main'
 		>
 			{#if chat.username}
 				<p class="username">{chat.username}</p>
 			{/if}
-			<p>{chat.content}</p>
+			{#if (chat.content instanceof Array)}
+				{#each chat.content as image (image)}
+					<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+					<img
+						src={DIR + '/uploads/' + image}
+						alt={chat._id}
+						on:mousedown={handleImage}
+					>				
+				{/each}
+				{:else if validator.isURL(chat.content)}
+				<a href='{chat.content}' target="_blank">{chat.content}</a>
+				{:else}
+				<p>{@html chat.content}</p>
+			{/if}
 			<p class="left">{format(chat.createdAt)}</p>
 		</div>
 	{/each}
 </div>
-<form class="message" on:submit|preventDefault={sendMessage}>
-	<input type="text" bind:value={message}>
-</form>
+<div class="message">
+	<form class="text" on:submit|preventDefault={sendMessage}>
+		<input type="text" bind:value={message}>
+	</form>
+	<label>
+		<i class="fa-solid fa-images"></i>
+		<input type="file" on:change|preventDefault={sendImage} multiple>
+	</label>
+</div>
 
 <style lang="postcss">
 	.title {
@@ -498,6 +632,23 @@
 
 	.span input[type='checkbox'] {
 		@apply ml-auto;
+	}
+
+	.span input[type='file'] {
+		@apply hidden;
+	}
+
+	.span label {
+		@apply w-60 h-60;
+	}
+
+	.span img {
+		@apply w-full h-full rounded-full;
+	}
+
+	.span textarea {
+		outline: 1px solid #b1b1b1;
+		@apply w-full p-2 rounded-lg;
 	}
 
 	.contact, .chats, .message {
@@ -550,8 +701,11 @@
 		color: #ffffff;
 	}
 
-	img {
-		@apply w-10 h-10 rounded-full;
+	.contact img {
+		min-width: 40px;
+		min-heigth: 40px;
+		box-shadow: 0 0 5px #999999;
+		@apply w-10 h-10 object-cover rounded-full;
 	}
 
 	.chats {
@@ -564,20 +718,36 @@
 	}
 
 	.chat {
+		grid-template-columns: repeat(2, 1fr);
+		grid-auto-rows: min-content;
 		max-width: 60%;
 		min-width: 200px;
 		background-color: #ffffff;
 		box-shadow: 0 0 0 1px #aaaaaa;
-		user-select: none;
-		@apply grid w-fit p-2.5 rounded-lg gap-x-px;
+		@apply grid w-fit p-2.5 rounded-lg gap-x-1 gap-y-1 select-none;
+	}
+
+	.chat img {
+		@apply w-full self-start object-cover object-top cursor-pointer;
 	}
 
 	.chat p {
+		grid-column: 1 / span 2;
 		@apply overflow-hidden leading-tight break-words;
 	}
 
+	.chat a {
+		grid-column: 1 / span 2;
+		color: #346eb1;
+		@apply overflow-hidden leading-tight break-words;
+	}
+
+	.chat:hover a {
+		color: #7b24a3;
+	}
+
 	.me {
-		@apply ml-auto cursor-pointer;
+		@apply ml-auto;
 	}
 
 	.left {
@@ -590,10 +760,23 @@
 
 	.message {
 		grid-row: 3 / span 1;
+		@apply flex gap-2.5;
+	}
+
+	.message .text {
+		@apply w-full;
 	}
 
 	.message input {
 		box-shadow: 0 0 0 1px #777777;
 		@apply w-full p-2.5 rounded-lg;
+	}
+
+	.message label {
+		min-width: 40px;
+		min-height: 40px;
+		background-color: #ffffff;
+		box-shadow: 0 0 0 1px #777777;
+		@apply flex justify-center items-center w-10 h-10 rounded-full cursor-pointer;
 	}
 </style>

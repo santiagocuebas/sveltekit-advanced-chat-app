@@ -1,5 +1,10 @@
 import type { IKeys } from "./global";
 
+export const selectJoin: IKeys<string> = {
+	'Group': 'joinGroupRoom',
+	'User': 'joinUserRoom'
+};
+
 export const OptionUser: IKeys<string> = {
 	LEAVE: 'emitLeave',
 	DESTROY: 'emitDestroy',
@@ -22,6 +27,8 @@ export const OptionMod: IKeys<string> = {
 export const OptionAdmin: IKeys<string> = {
 	ADDMOD: 'emitAddMod',
 	REMOVEMOD: 'emitRemoveMod',
+  AVATAR: 'emitChangeAvatar',
+  DESCRIPTION: 'emitChangeDescription',
 	STATE: 'emitChangeState',
 	DESTROY: 'emitDestroyGroup'
 };

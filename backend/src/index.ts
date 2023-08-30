@@ -52,6 +52,7 @@ const io = new Server(server, {
 		methods: ['GET', 'POST', 'PUT', 'DELETE'],
 		credentials: true
 	},
+	maxHttpBufferSize: 1e7 * 2.1,
 	adapter: createAdapter(mongoCollection)
 });
 

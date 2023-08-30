@@ -1,27 +1,48 @@
+import type { IGroup, Members } from '../types/global.js';
+import fs from 'fs-extra';
+import { resolve } from 'path';
 import { User } from '../models/index.js';
-import { IGroup, Members } from '../types/global.js';
 
 export const isString = (value: unknown): boolean => typeof value === 'string';
 
 export const isObject = (value: unknown): boolean => typeof value === 'object';
 
-export const isLength = (value: string, min: number, max: number): boolean => {
+export const isArray = (value: unknown): boolean => value instanceof Array;
+
+export const isLength = (value: string | string[], min: number, max: number): boolean => {
 	return value.length > min && value.length <= max;
 };
 
-export const groupList = (group: IGroup) => {
-	const adminID = group.admin;
-	const memberIDs = group.members.map(member => member.id);
-	const modIDs = group.mods.map(member => member.id);
-	const blockedIDs = group.blacklist.map(member => member.id);
+export const existsImage = async (values: string[]): Promise<boolean> => {
+	let match = true;
 
+	for (const value of values) {
+		if (!isString(value)) {
+			match = false;
+			break;
+		}
+
+		const data = await fs
+			.readFile(resolve(`uploads/${value}`))
+			.catch(err => err);
+
+		if (!(data instanceof Buffer)) {
+			match = false;
+			break;
+		}
+	}
+
+	return match;
+};
+
+export const groupList = ({ admin, memberIDs, modIDs, blockedIDs }: IGroup) => {
 	return {
-		adminID,
+		adminID: admin,
 		memberIDs,
 		modIDs,
 		blockedIDs,
-		validIDs: [adminID, ...modIDs],
-		allIDs: [adminID, ...modIDs, ...memberIDs, ...blockedIDs]
+		validIDs: [admin, ...modIDs],
+		allIDs: [admin, ...modIDs, ...memberIDs, ...blockedIDs]
 	};
 };
 

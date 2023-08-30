@@ -91,18 +91,20 @@
 		else editGroups(room, content, createdAt);
 	};
 
-	const leaveUser = (id: string) => {
+	const leaveUser = (id: string, room: string) => {
 		const reloadUsers = usersValues.filter(user => user.contactID !== id);
 		users.setContacts(reloadUsers);
 		switchs.resetOptions();
+		socket.emit('removeRoom', room);
 
 		if ($contact.contactID === id) contact.resetContact();
 	};
 
-	const leaveGroup = (id: string) => {
+	const leaveGroup = (id: string, room: string) => {
 		const reloadGroups = groupsValues.filter(user => user.contactID !== id);
 		groups.setContacts(reloadGroups);
 		switchs.resetOptions();
+		socket.emit('removeRoom', room);
 
 		if ($contact.contactID === id) contact.resetContact();
 	};
@@ -173,5 +175,5 @@
 	<ChatBox />
 {/if}
 {#if errorMessage}
-	<ErrorMessage error={errorMessage} />
+	<ErrorMessage bind:error={errorMessage} />
 {/if}

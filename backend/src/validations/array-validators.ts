@@ -7,7 +7,11 @@ import {
 	isValidExtension,
 	isValidSize,
 	isCorrectPassword,
-	isArrayString
+	isArrayString,
+	isArrayImages,
+	isUndefinedImages,
+	isValidLengthImages,
+	isValidSizesAndFormat
 } from './customs-validators.js';
 
 export const arraySignin: ValidationChain[] = [
@@ -41,6 +45,14 @@ export const arrayRegister: ValidationChain[] = [
 		.isLength({ max: 40 }).withMessage('The password must not have more than 40 characters'),
 	body('confirmPassword', 'Password not match')
 		.custom((value, { req }) => value === req.body.password)
+];
+
+export const arrayImages: ValidationChain[] = [
+	body('images', 'Enter a valid image archive')
+		.custom(isArrayImages).bail()
+		.custom(isValidLengthImages).bail()
+		.custom(isUndefinedImages).bail()
+		.custom(isValidSizesAndFormat)
 ];
 
 export const arrayAvatar: ValidationChain[] = [

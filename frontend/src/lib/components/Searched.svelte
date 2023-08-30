@@ -2,6 +2,7 @@
   import type { IKeys, IList } from "$lib/global";
 	import { DIR } from '$lib/config.js';
   import { socket } from "$lib/socket";
+    import { selectAvatarURL } from "$lib/services/libs";
 
   export let contact: IList;
 
@@ -16,7 +17,7 @@
 </script>
 
 <li>
-  <img src={DIR + '/uploads/avatar/' + contact.avatar} alt={contact.id}>
+  <img src={DIR + selectAvatarURL(contact)} alt={contact.id}>
   <p class="title" title={contact.name}>{contact.name}</p>
   {#if contact.description}
     <p class="content">{contact.description}</p>
@@ -38,7 +39,7 @@
 
 	img {
 		grid-row: 1 / span 2;
-		@apply w-16 h-16;
+		@apply w-16 h-16 rounded-full;
 	}
 
 	p {

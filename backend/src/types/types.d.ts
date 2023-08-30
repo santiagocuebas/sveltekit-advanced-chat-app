@@ -2,12 +2,6 @@ import type { Request, Response, NextFunction } from 'express';
 import type { IUser, IGroup, IChat, Blacklist, Members, Users } from './global.js';
 import type { StateOption, TypeContact } from './enums.js';
 
-export type ArgsType = string & string[] & Members[] & GroupInit;
-
-export type ListMembers = Members[] | string;
-
-export type ListIDs = string[] | string;
-
 export type Direction = (req: Request, res: Response, next: NextFunction) => void;
 
 export type Contact = (
@@ -36,7 +30,7 @@ export interface IContact {
 	members?: Members[];
 	mods?: Members[];
 	blacklist?: Members[];
-	content?: string;
+	content?: string | string[];
 	createdAt?: Date;
 }
 

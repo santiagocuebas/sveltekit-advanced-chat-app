@@ -32,14 +32,14 @@ export type BlacklistGroup = { id: string, name: string };
 
 export type PartialUser = (value: IUser) => IPartialUser;
 
-export type Chats = (ids: string[]) => Promise<IChat[]>
+export type Chats = (ids: string[], type?: TypeContact) => Promise<IChat[]>
 
 export interface IChat {
 	_id: string;
 	from: string;
 	to: string;
 	username?: string;
-	content: string;
+	content: string | string[];
 	createdAt: Date;
 }
 

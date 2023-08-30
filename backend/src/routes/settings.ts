@@ -1,7 +1,5 @@
 import { Router } from 'express';
-import multer from 'multer';
-import { join } from 'path';
-import { __dirname } from '../config.js';
+import { upload } from '../config.js';
 import { settingsCtrl } from '../controllers/index.js';
 import { isValidToken } from '../middlewares/logged.js';
 import { validateSettings } from '../middlewares/validator.js';
@@ -14,7 +12,6 @@ import {
 } from '../validations/array-validators.js';
 
 const router = Router();
-const upload = multer({ dest: join(__dirname, '../uploads/temp') });
 
 router.use(isValidToken);
 
@@ -24,6 +21,8 @@ router.post(
 	validateSettings(arrayAvatar),
 	settingsCtrl.postAvatar
 );
+
+router.use(upload.none());
 
 router.post(
 	'/username',

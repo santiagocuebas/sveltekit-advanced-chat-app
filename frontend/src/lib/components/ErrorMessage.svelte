@@ -1,12 +1,15 @@
 <script lang="ts">
 	import type { IKeys } from "$lib/global";
+  import { onMount } from "svelte";
 
-	export let error: IKeys<string>;
+	export let error: IKeys<string> | null;
+
+	onMount(() => setTimeout(() => error = null, 5000));
 </script>
 
 <div>
-	<h3>{error.error}</h3>
-	<p>{error.message}</p>
+	<h3>{error?.error}</h3>
+	<p>{error?.message}</p>
 </div>
 
 <style lang="postcss">

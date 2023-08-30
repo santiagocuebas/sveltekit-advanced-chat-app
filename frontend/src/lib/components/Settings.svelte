@@ -87,7 +87,6 @@
 	}
 
 	async function handleSubmit(this: HTMLFormElement) {
-		console.log(new FormData(this))
 		const data = await axios({
 			method: this.method,
 			url: this.action,
@@ -106,7 +105,7 @@
 
 			if (this.id === Settings.AVATAR) {
 				user.updateProp(data.filename, Settings.AVATAR);
-				username = '';
+				disabled = true;
 			}
 
 			if (this.id === Settings.USERNAME) {

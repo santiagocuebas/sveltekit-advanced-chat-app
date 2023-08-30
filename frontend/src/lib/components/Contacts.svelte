@@ -1,11 +1,12 @@
 <script lang="ts">
   import type { IContact, IList } from '$lib/global';
+  import { onDestroy, onMount } from 'svelte';
+  import axios from 'axios';
   import { DIR } from '$lib/config';
+  import { selectJoin } from '$lib/dictionary';
 	import { ButtonValue, TypeContact } from '$lib/enums';
   import { contact, switchs, users, groups, list, options } from '$lib/store';
 	import { socket } from '$lib/socket';
-  import { onDestroy, onMount } from 'svelte';
-  import axios from 'axios';
   import Button from './Button.svelte';
   import Contacts from './Contact.svelte';
 
@@ -33,11 +34,11 @@
 	}
 
 	const joinRoom = (foreign: IContact) => {
-		options.resetOptions();
 		id = foreign.contactID;
+		options.resetOptions();
 		contact.setContact(foreign);
 		switchs.setOption('chat');
-		socket.emit('joinRoom', foreign.contactID, foreign.roomID);
+		socket.emit(selectJoin[foreign.type], foreign.contactID, foreign.roomID);
 	};
 
 	const reloadUsers = (contact: IContact) => {
@@ -54,11 +55,34 @@
 		socket.emit('joinUpdate', contact.roomID);
 	};
 
+	const changeAvatar = (id: string, type: string, avatar: string) => {
+		if (type === TypeContact.USER) {
+			const reloadUsers = usersValues.map(user => {
+				if (user.contactID === id) user.avatar = avatar;
+				return user;
+			});
+
+			users.setContacts(reloadUsers);
+		}
+		else {
+			const reloadGroups = groupsValues.map(group => {
+				if (group.contactID === id) group.avatar = avatar;
+				return group;
+			});
+
+			groups.setContacts(reloadGroups);
+		};
+
+		if ($contact) contact.changeAvatar(avatar);
+	};
+
 	onMount(() => {
 		socket.on('updateContacts', reloadUsers);
+		socket.on('changeAvatar', changeAvatar);
 
 		return () => {
 			socket.off('updateContacts', reloadUsers);
+			socket.off('changeAvatar', changeAvatar);
 		}
 	});
 

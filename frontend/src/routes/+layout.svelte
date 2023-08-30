@@ -75,6 +75,10 @@
 		list-style-type: none;
 	}
 
+	:global(input[type='file']) {
+		@apply hidden;
+	}
+
 	.main {
 		min-height: 665px;
 		padding: 27.5px 35px;

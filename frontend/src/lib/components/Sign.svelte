@@ -3,6 +3,9 @@
 </script>
 
 <div>
+	{#if title === 'Loading'}
+		<img src="/images.svg" alt="title">
+	{/if}
   <h1>{title}</h1>
   <slot />
 </div>
@@ -15,7 +18,20 @@
 		@apply grid relative justify-items-center content-center w-full bg-white shadow-grey gap-5;
 	}
 
+	img {
+		width: 300px;
+		height: 300px;
+    animation: spin 4s linear infinite;
+		@apply rounded-full;
+	}
+
 	h1 {
-		@apply text-4xl;
+		@apply text-5xl;
+	}
+
+	@keyframes spin { 
+    100% { 
+      transform: rotate(360deg); 
+  	}
 	}
 </style>

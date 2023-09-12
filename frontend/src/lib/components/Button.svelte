@@ -1,13 +1,12 @@
 <script lang="ts">
-  import { ButtonValue } from "$lib/enums";
+  import { ButtonValue } from "$lib/types/enums";
 
   export let selected: string;
   export let text: string;
 
   function selectedClass() {
     if (text === ButtonValue.CHATS) return 'fa-solid fa-message';
-    else if (text === ButtonValue.ROOMS) return 'fa-solid fa-users';
-    return 'fa-solid fa-search';
+    return 'fa-solid fa-users';
   }
 </script>
 

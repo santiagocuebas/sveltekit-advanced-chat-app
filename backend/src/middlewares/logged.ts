@@ -15,7 +15,7 @@ export const isValidToken: Direction = async (req, res, next) => {
 
 		return next();
 	} catch {
-		return res.json({ error: 'loggedError' });
+		return res.status(401).json({ error: 'loggedError' });
 	}
 };
 
@@ -27,7 +27,7 @@ export const isNotValidToken: Direction = async (req, res, next) => {
 	
 		if (user === null) throw 'Error';
 	
-		return res.json({ error: 'notLoggedError' });
+		return res.status(401).json({ error: 'notLoggedError' });
 	} catch {
 		return next();
 	}

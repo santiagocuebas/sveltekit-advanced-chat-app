@@ -2,28 +2,13 @@
   import { clickOutside } from "$lib/services/out-click";
 
 	export let visible: boolean;
-	export let allowed: boolean;
-
-  function showBox() {
-		if (allowed) {
-			setTimeout(() => {
-				visible = true;
-				allowed = false;
-			}, 0);
-		}
-	}
-
-	function occultBox() {
-		visible = false;
-		setTimeout(() => allowed = true, 50);
-	}
 </script>
 
-<button on:click={showBox}>
+<button on:click={setTimeout(() => visible = true)} disabled={visible}>
   <i class="fa-solid fa-ellipsis-vertical"></i>
 </button>
 {#if visible}
-  <ul use:clickOutside on:outclick={occultBox}>
+  <ul use:clickOutside on:outclick={setTimeout(() => visible = false)}>
     <slot></slot>
   </ul>
 {/if}

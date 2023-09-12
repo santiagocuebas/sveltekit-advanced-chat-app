@@ -23,6 +23,7 @@ export const socketIndex: IKeys<(value: never, user: IUser) => true | IKeys<stri
 	'emitChangeDescription': check.description,
 	'emitChangeState': check.state,
 	'emitDestroyGroup': () => true,
+	'emitUnblock': check.unblock,
 	'joinUpdate': check.joinRoom,
 	'joinUser': check.joinUser,
 	'joinGroup': check.joinGroup,

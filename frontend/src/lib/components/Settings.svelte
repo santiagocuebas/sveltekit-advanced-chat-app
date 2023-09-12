@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type { ILoaded, IError, IKeys } from "$lib/global";
+	import type { ILoaded, IError, IKeys, SettingsData } from "$lib/types/global";
   import axios from "axios";
 	import validator from 'validator';
 	import { DIR } from "$lib/config";
-	import { Settings } from "$lib/enums";
-  import { isLoaded } from "$lib/function";
+	import { Settings } from "$lib/types/enums";
+  import { isLoaded } from "$lib/services/function";
   import { socket } from "$lib/socket";
   import { user, switchs, groups, users, register } from '$lib/store';
 	import { loadImage } from "$lib/services/handle-image.js";
@@ -66,6 +66,8 @@
 	}
 
 	async function handleDelete() {
+		socket.emit('emitDestroyUser');
+		
 		const data = await axios({
 			method: 'DELETE',
 			url: DIR + '/api/settings/deleteUser',
@@ -75,7 +77,6 @@
 		visibleBox = false;
 
 		if (data.delete) {
-			socket.emit('emitDestroyUser');
 			socket.disconnect();
 
 			user.resetUser();
@@ -87,12 +88,13 @@
 	}
 
 	async function handleSubmit(this: HTMLFormElement) {
-		const data = await axios({
+		const data: SettingsData = await axios({
 			method: this.method,
 			url: this.action,
 			data: this,
 			withCredentials: true
-		}).then(res => res.data);
+		}).then(res => res.data)
+			.catch(err => err);
 
 		if (data.errors) {
 			className = data.errors;
@@ -126,6 +128,7 @@
 
 			if (this.id === Settings.UNBLOCK) {
 				user.unblockUser(listUser);
+				socket.emit('emitUnblock', listUser);
 				listUser = [];
 			}
 		}

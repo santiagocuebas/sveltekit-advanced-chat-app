@@ -82,16 +82,39 @@ export const deleteUser: Direction = async (req, res) => {
 		.lean({ virtuals: true });
 
 	if (user !== null) {
-		for (const userId of userIDs) {
+		if (user.avatar !== 'avatar.png') {
+			const path = resolve(`uploads/avatar/${user.avatar}`);
+			await fs.unlink(path);
+		}
+
+		const chats = await Chat.find({
+			$or: [
+				{ from: id },
+				{ to: id }
+			]
+		});
+
+		for (const chat of chats) {
+			if (chat.content instanceof Array) {
+				for (const image of chat.content) {
+					const path = resolve(`uploads/${image}`);
+					await fs.unlink(path);
+				}
+			}
+
+			chat.deleteOne();
+		}
+
+		for (const userID of userIDs) {
 			await User.updateOne(
-				{ _id: userId },
+				{ _id: userID },
 				{ $pull: { users: { userID: id } } }
 			);
 		}
 
-		for (const groupId of groupRooms) {
+		for (const groupID of groupRooms) {
 			await Group.updateOne(
-				{ _id: groupId },
+				{ _id: groupID },
 				{
 					$pull: {
 						connectedUsers: { $in: userIDs },
@@ -102,14 +125,31 @@ export const deleteUser: Direction = async (req, res) => {
 			);
 		}
 
-		await Group.deleteMany({ admin: id });
+		const groups = await Group.find({ admin: id });
 
-		await Chat.deleteMany({
-			$or: [
-				{ from: id },
-				{ to: id }
-			]
-		});
+		for (const group of groups) {
+			if (group.avatar !== 'avatar.jpeg') {
+				const path = resolve(`uploads/group-avatar/${group.avatar}`);
+				await fs.unlink(path);
+			}
+
+			const groupID = String(group._id);
+
+			const chats = await Chat.find({ to: groupID });
+			
+			for (const chat of chats) {
+				if (chat.content instanceof Array) {
+					for (const image of chat.content) {
+						const path = resolve(`uploads/${image}`);
+						await fs.unlink(path);
+					}
+				}
+	
+				chat.deleteOne();
+			}
+
+			group.deleteOne();
+		}
 		
 		// Delete cookie authenticate
 		res.set('Set-Cookie', serialize('authenticate', '', {

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { IUser } from '$lib/global';
+	import type { IUser } from '$lib/types/global';
 	import axios from 'axios';
 	import { DIR } from '$lib/config.js';
   import { socket } from '$lib/socket';
@@ -9,11 +9,9 @@
   export let contactID: string;
 
 	let visible = false;
-	let allowed = true;
 
 	function loadChat(option: string) {
 		visible = false;
-		allowed = true;
 		contactID = '';
 		switchs.setOption(option);
 		contact.resetContact();
@@ -28,7 +26,6 @@
 		}).then(res => res.data);
 
 		visible = false;
-		allowed = true;
 
 		if (!data.user) {
 			socket.disconnect();
@@ -44,16 +41,16 @@
 <div>
 	<img src={`${DIR}/uploads/avatar/${$user.avatar}`} alt={$user.id}>
 	<p title={$user.username}>{$user.username}</p>
-	<Lists bind:visible={visible} bind:allowed={allowed}>
-		<li on:mousedown={() => loadChat('group')}>
+	<Lists bind:visible={visible}>
+		<li on:mousedown={() => loadChat('group')} role='none'>
 			<i class="fa-solid fa-circle-stop"></i>
 			Create Group
 		</li>
-		<li on:mousedown={() => loadChat('settings')}>
+		<li on:mousedown={() => loadChat('settings')} role='none'>
 			<i class="fa-solid fa-gear"></i>
 			Settings
 		</li>
-		<li on:mousedown={handleLogout}>
+		<li on:mousedown={handleLogout} role='none'>
 			<i class="fa-solid fa-right-from-bracket"></i>
 			Logout
 		</li>

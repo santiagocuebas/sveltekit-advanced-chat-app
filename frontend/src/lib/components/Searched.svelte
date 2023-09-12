@@ -1,18 +1,14 @@
 <script lang="ts">
-  import type { IKeys, IList } from "$lib/global";
+  import type { IList } from "$lib/types/global";
 	import { DIR } from '$lib/config.js';
   import { socket } from "$lib/socket";
-    import { selectAvatarURL } from "$lib/services/libs";
+  import { selectCreate } from "$lib/dictionary";
+  import { selectAvatarURL } from "$lib/services/chat-libs";
 
   export let contact: IList;
 
-	const options: IKeys<string> = {
-		'User': 'joinUser',
-		'Group': 'joinGroup'
-	};
-
 	function createRoom() {
-		socket.emit(options[contact.type], contact.id);
+		socket.emit(selectCreate[contact.type], contact.id);
 	}
 </script>
 

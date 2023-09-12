@@ -1,15 +1,19 @@
 <script lang="ts">
-  import type { IContact } from "$lib/global";
+  import type { IContact } from "$lib/types/global";
 	import { DIR } from '$lib/config.js';
-  import { selectAvatarURL } from "$lib/services/libs";
+  import { getDate } from "$lib/services/libs";
+  import { selectAvatarURL } from "$lib/services/chat-libs";
 
   export let contact: IContact;
   export let id: string;
   export let join: (value: IContact) => void;
 </script>
 
-<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-<li class:selected={id === contact.contactID} on:mousedown={() => join(contact)}>
+<li
+	class:selected={id === contact.contactID}
+	on:mousedown={() => join(contact)}
+	role='none'
+>
 	{#if contact.logged === true}
 		<span>&#149;</span>
 	{/if}
@@ -22,16 +26,13 @@
 					{contact.content[0]}
 					{:else}
 					{contact.content}
-					{/if}
+				{/if}
 			</p>
 		{/if}
 	</div>
   {#if contact.createdAt}
 		<p class="createdAt">
-			{
-				new Date(contact.createdAt).getHours() + ':' +
-				new Date(contact.createdAt).getMinutes()
-			}
+			{getDate(new Date(contact.createdAt))}
 		</p>
   {/if}
 </li>

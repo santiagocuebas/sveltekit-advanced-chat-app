@@ -5,19 +5,21 @@ import { getContact } from '../libs/index.js';
 import { User, Group, Chat } from '../models/index.js';
 import { TypeContact } from '../types/enums.js';
 
-export const genericSockets: GenericSockets = (socket, userID, username, users, groupRooms) => {
+export const genericSockets: GenericSockets = (socket, userID, user) => {
 	socket.on('joinUser', async (id: string) => {
 		const roomID = id + userID;
-		users.push({ userID: id, roomID });
+		user.users.push({ userID: id, roomID });
+		user.userIDs.push(id);
+		user.userRooms.push(roomID);
 
-		const user = await User
+		const foreignUser = await User
 			.findOneAndUpdate(
 				{ _id: id },
 				{ $push: { users: { userID, roomID } } }
 			)
 			.select('username avatar users logged tempId') as IUser;
 		
-		await User.updateOne({ _id: userID }, { users });
+		await User.updateOne({ _id: userID }, { users: user.users });
 
 		const chat = await Chat
 			.findOne({ from: id, to: userID })
@@ -27,12 +29,12 @@ export const genericSockets: GenericSockets = (socket, userID, username, users, 
 			.findOne({ from: userID, to: id })
 			.sort({ createdAt: -1 });
 
-		const contact = getContact(id, roomID, user, TypeContact.USER, chat);
-		const userContact = getContact(userID, roomID, socket.user, TypeContact.USER, chatUser);
+		const contact = getContact(id, roomID, foreignUser, TypeContact.USER, chat);
+		const userContact = getContact(userID, roomID, user, TypeContact.USER, chatUser);
 	
-		if (user.tempId) {
-			socket.to(user.tempId).emit('updateContacts', userContact);
-			socket.to(user.tempId).emit('loggedUser', userID, true);
+		if (foreignUser.logged) {
+			socket.to(foreignUser.tempId).emit('updateContacts', userContact, true);
+			socket.to(foreignUser.tempId).emit('loggedUser', userID, true);
 		}
 
 		socket.emit('updateContacts', contact);
@@ -40,14 +42,14 @@ export const genericSockets: GenericSockets = (socket, userID, username, users, 
 	});
 
 	socket.on('joinGroup', async (id: string) => {
+		user.groupRooms.push(id);
+		
 		const group = await Group.findOneAndUpdate(
 			{ _id: id },
-			{ $push: { members: { id: userID, name: username } } }
+			{ $push: { members: { id: userID, name: user.username } } }
 		) as IGroup;
 
-		groupRooms.push(id);
-
-		await User.updateOne({ _id: userID }, { groupRooms });
+		await User.updateOne({ _id: userID }, { groupRooms: user.groupRooms });
 
 		const chat = await Chat
 			.findOne({ to: id })
@@ -71,9 +73,9 @@ export const genericSockets: GenericSockets = (socket, userID, username, users, 
 		});
 
 		const groupID = String(group._id);
-		groupRooms.push(groupID);
+		user.groupRooms.push(groupID);
 
-		await User.updateOne({ _id: userID }, { groupRooms });
+		await User.updateOne({ _id: userID }, { groupRooms: user.groupRooms });
 
 		const contact = getContact(groupID, groupID, group, TypeContact.GROUP);
 
@@ -82,17 +84,14 @@ export const genericSockets: GenericSockets = (socket, userID, username, users, 
 		});
 
 		const contactsIDs = [...mods, ...members].map(user => user.id);
+		const roomIDs: string[] = [];
 
-		const rooms = users.map(({ userID, roomID }) => {
-			if (contactsIDs.includes(userID)) return roomID;
-
-			return '';
-		});
+		for (const { userID, roomID } of user.users) {
+			if (contactsIDs.includes(userID)) roomIDs.push(roomID);
+		}
 
 		socket.join(groupID);
 		socket.emit('updateContacts', contact);
-		socket.to(rooms).emit('updateContacts', contact);
+		socket.to(roomIDs).emit('updateContacts', contact, true);
 	});
-
-	return [users, groupRooms];
 };

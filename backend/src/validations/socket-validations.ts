@@ -1,5 +1,5 @@
-import type { IUser, Members } from '../types/global.js';
-import type { GroupInit, IKeys } from '../types/types.js';
+import type { IGroup, IUser, Members } from '../types/global.js';
+import type { GroupInit, IContact, IKeys } from '../types/types.js';
 import {
 	existsImage,
 	groupList,
@@ -11,7 +11,7 @@ import {
 	isValidUsers
 } from './socket-custom.js';
 import { Chat, Group, User } from '../models/index.js';
-import { StateOption } from '../types/enums.js';
+import { StateOption, TypeContact } from '../types/enums.js';
 
 export const joinUserRoom = (
 	[contactID, roomID]: [string, string],
@@ -78,7 +78,12 @@ export const addMembers = async (
 	[members, groupID]: [Members[], string],
 	{ id, groupRooms }: IUser
 ) => {
-	if (isString(groupID) && groupRooms.includes(groupID) && isArray(members)) {
+	if (
+		isString(groupID) &&
+		groupRooms.includes(groupID) &&
+		isArray(members) &&
+		isLength(members, 0, 2^10)
+	) {
 		const group = await Group.findOne({ _id: groupID });
 
 		if (group !== null) {
@@ -117,7 +122,12 @@ export const banMembers = async (
 	[userIDs, groupID]: [string[], string],
 	{ id, groupRooms }: IUser
 ) => {
-	if (isString(groupID) && groupRooms.includes(groupID) && isArray(userIDs)) {
+	if (
+		isString(groupID) &&
+		groupRooms.includes(groupID) &&
+		isArray(userIDs) &&
+		isLength(userIDs, 0, 2^10)
+	) {
 		const group = await Group.findOne({ _id: groupID });
 
 		if (group !== null) {
@@ -154,7 +164,12 @@ export const blockMembers = async (
 	[members, groupID]: [Members[], string],
 	{ id, groupRooms }: IUser
 ) => {
-	if (isString(groupID) && groupRooms.includes(groupID) && isArray(members)) {
+	if (
+		isString(groupID) &&
+		groupRooms.includes(groupID) &&
+		isArray(members) &&
+		isLength(members, 0, 2^10)
+	) {
 		const group = await Group.findOne({ _id: groupID });
 
 		if (group !== null) {
@@ -193,7 +208,12 @@ export const unblockMembers = async (
 	[userIDs, groupID]: [string[], string],
 	{ id, groupRooms }: IUser
 ) => {
-	if (isString(groupID) && groupRooms.includes(groupID) && isArray(userIDs)) {
+	if (
+		isString(groupID) &&
+		groupRooms.includes(groupID) &&
+		isArray(userIDs) &&
+		isLength(userIDs, 0, 2^10)
+	) {
 		const group = await Group.findOne({ _id: groupID });
 
 		if (group !== null) {
@@ -226,18 +246,29 @@ export const unblockMembers = async (
 };
 
 export const addMods = async (
-	[userIDs, groupID]: [string[], string],
+	[members, groupID]: [Members[], string],
 	{ id, groupRooms }: IUser
 ) => {
-	if (isString(groupID) && groupRooms.includes(groupID) && isArray(userIDs)) {
+	if (
+		isString(groupID) &&
+		groupRooms.includes(groupID) &&
+		isArray(members) &&
+		isLength(members, 0, 2^10)
+	) {
 		const group = await Group.findOne({ _id: groupID });
 
 		if (group !== null) {
 			const { memberIDs, adminID } = groupList(group);
 			let match: boolean | IKeys<string> = true;
 
-			for (const userID of userIDs) {
-				if (!isString(userID) || id !== adminID || !memberIDs.includes(userID)) {
+			for (const member of members) {
+				if (
+					!isObject(member) || 
+					!isString(member.id) ||
+					!isString(member.name) ||
+					id !== adminID ||
+					!memberIDs.includes(member.id)
+				) {
 					match = {
 						error: 'Group Error',
 						message: 'An error occurred while trying add the mod'
@@ -258,18 +289,29 @@ export const addMods = async (
 };
 
 export const removeMods = async (
-	[userIDs, groupID]: [string[], string],
+	[members, groupID]: [Members[], string],
 	{ id, groupRooms }: IUser
 ) => {
-	if (isString(groupID) && groupRooms.includes(groupID) && isArray(userIDs)) {
+	if (
+		isString(groupID) &&
+		groupRooms.includes(groupID) &&
+		isArray(members) &&
+		isLength(members, 0, 2^10)
+	) {
 		const group = await Group.findOne({ _id: groupID });
 
 		if (group !== null) {
 			const { modIDs, adminID } = groupList(group);
 			let match: boolean | IKeys<string> = true;
 
-			for (const userID of userIDs) {
-				if (!isString(userID) || id !== adminID || !modIDs.includes(userID)) {
+			for (const member of members) {
+				if (
+					!isObject(member) ||
+					!isString(member.id) ||
+					!isString(member.name) ||
+					id !== adminID ||
+					!modIDs.includes(member.id)
+				) {
 					match = {
 						error: 'Group Error',
 						message: 'An error occurred while trying remove the mod'
@@ -321,12 +363,44 @@ export const state = ([state]: [string]) => {
 	};
 };
 
+export const unblock = ([unblockIDs]: [string[]], { blacklist }: IUser) => {
+	if (isArray(unblockIDs)) {
+		const listUsers = blacklist.filter(({ id }) => unblockIDs.includes(id));
+
+		if (listUsers.length >= unblockIDs.length) return true;
+	}
+
+	return {
+		error: 'Unblock Error',
+		message: 'Please reload the page'
+	};
+};
+
 export const joinRoom = async (
-	[id]: [string],
-	{ userRooms, groupRooms }: IUser
+	[{ contactID, roomID, type }]: [IContact],
+	{ id, userIDs, userRooms, groupRooms }: IUser
 ) => {
-	if (isString(id) && (userRooms.includes(id) || groupRooms.includes(id))) {
-		return true;
+	if (
+		isString(contactID) &&
+		isString(roomID) &&
+		(
+			(type === TypeContact.USER && !userIDs.includes(contactID) && !userRooms.includes(roomID)) ||
+			(type === TypeContact.GROUP && !groupRooms.includes(roomID))
+		)
+	) {
+		let match: IUser | IGroup | null = null;
+
+		if (type === TypeContact.USER) {
+			match = await User.findOne(
+				{ _id: id, users: { $elemMatch: { userID: contactID, roomID } } }
+			);
+		} else {
+			match = await Group.findOne(
+				{ _id: roomID, members: { $elemMatch: { id } } }
+			);
+		}
+
+		if (match !== null) return true;
 	}
 
 	return {
@@ -336,12 +410,16 @@ export const joinRoom = async (
 };
 
 export const removeRoom = async (
-	[id]: [string],
+	[id, type]: [string, TypeContact],
 	{ userRooms, groupRooms }: IUser
 ) => {
-	if (isString(id) && (userRooms.includes(id) || groupRooms.includes(id))) {
-		return true;
-	}
+	const typeContacts = Object.values(TypeContact);
+
+	if (
+		isString(id) &&
+		(userRooms.includes(id) || groupRooms.includes(id)) &&
+		typeContacts.includes(type)
+	) return true;
 
 	return {
 		error: 'Join Error',
@@ -350,9 +428,7 @@ export const removeRoom = async (
 };
 
 export const joinUser = async ([id]: [string]) => {
-	if (isString(id) && await User.findOne({ _id: id })) {
-		return true;
-	}
+	if (isString(id) && await User.findOne({ _id: id })) return true;
 
 	return {
 		error: 'Join Error',
@@ -361,9 +437,7 @@ export const joinUser = async ([id]: [string]) => {
 };
 
 export const joinGroup = async ([id]: [string]) => {
-	if (isString(id) && await Group.findOne({ _id: id })) {
-		return true;
-	}
+	if (isString(id) && await Group.findOne({ _id: id })) return true;
 
 	return {
 		error: 'Join Error',
@@ -382,9 +456,7 @@ export const groupInit = async ([group]: [GroupInit], { userIDs }: IUser) => {
 		group.members instanceof Array &&
 		group.mods instanceof Array &&
 		await isValidUsers([...group.members, ...group.mods], userIDs)
-	) {
-		return true;
-	}
+	) return true;
 
 	return {
 		error: 'Group Error',

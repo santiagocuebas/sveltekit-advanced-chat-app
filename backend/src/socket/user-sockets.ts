@@ -1,87 +1,71 @@
-import type { IUser } from '../types/global.js';
 import type { UserSockets } from '../types/sockets.js';
-import { updateUser } from '../libs/index.js';
-import { User, Chat } from '../models/index.js';
-import { TypeContact } from '../types/enums.js';
+import { User } from '../models/index.js';
+import { actUser, deleteChats } from '../libs/update-user.js';
 
-export const userSockets: UserSockets = (socket, [userID, contactID, roomID], users, userRooms, blacklist) => {
+export const userSockets: UserSockets = (socket, [userID, contactID, roomID], user) => {
 	socket.on('emitLeave', async () => {
-		const user = await User.findOne({ _id: contactID }, 'users') as IUser;
+		socket.to(roomID).emit('leaveUser', userID, roomID, true);
 
-		await updateUser(userID, contactID, users);
-		await updateUser(contactID, userID, user.users);
+		await User.updateOne({ _id: contactID }, { $pull: { users: { id: userID } } });
 
-		userRooms = userRooms.filter(id => id !== roomID);
+		user = actUser(contactID, roomID, user);
 
-		socket.to(roomID).emit('leaveUser', userID, roomID);
+		await User.updateOne({ _id: userID }, { users: user.users });
+
 		socket.leave(roomID);
 	});
 
 	socket.on('emitBlock', async () => {
-		const user = await User
-			.findOne({ _id: contactID })
-			.select('username users') as IUser;
+		socket.to(roomID).emit('leaveUser', userID, roomID, true);
 
-		blacklist.push({
-			id: contactID,
-			name: user.username,
-			type: TypeContact.USER
-		});
+		const foreignUser = await User.findOneAndUpdate(
+			{ _id: contactID },
+			{ $pull: { users: { id: userID } } }
+		);
 
-		await updateUser(userID, contactID, users, blacklist);
-		await updateUser(contactID, userID, user.users);
+		user = actUser(contactID, roomID, user, foreignUser?.username);
 
-		userRooms = userRooms.filter(id => id !== roomID);
+		await User.updateOne(
+			{ _id: userID },
+			{ users: user.users, blacklist: user.blacklist }
+		);
 		
-		socket.to(roomID).emit('leaveUser', userID, roomID);
 		socket.leave(roomID);
 	});
 
 	socket.on('emitDestroy', async () => {
-		const user = await User.findOne({ _id: contactID }, 'users') as IUser;
+		socket.to(roomID).emit('leaveUser', userID, roomID, true);
 
-		await updateUser(userID, contactID, users);
-		await updateUser(contactID, userID, user.users);
+		await User.updateOne({ _id: contactID }, { $pull: { users: { id: userID } } });
 
-		Chat.deleteMany({
-			$or: [
-				{ from: userID, to: contactID },
-				{ from: contactID, to: userID }
-			]
-		});
+		user = actUser(contactID, roomID, user);
 
-		userRooms = userRooms.filter(id => id !== roomID);
-		
-		socket.to(roomID).emit('leaveUser', userID, roomID);
+		await User.updateOne({ _id: userID }, { users: user.users });
+
+		await deleteChats(userID, contactID);
+
 		socket.leave(roomID);
 	});
 
 	socket.on('emitBlockDestroy', async () => {
-		const user = await User
-			.findOne({ _id: contactID })
-			.select('username users') as IUser;
+		socket.to(roomID).emit('leaveUser', userID, roomID, true);
 
-		blacklist.push({
-			id: contactID,
-			name: user.username,
-			type: TypeContact.USER
-		});
+		const foreignUser = await User.findOneAndUpdate(
+			{ _id: contactID },
+			{ $pull: { users: { id: userID } } }
+		);
 
-		await updateUser(userID, contactID, users, blacklist);
-		await updateUser(contactID, userID, user.users);
+		user = actUser(contactID, roomID, user, foreignUser?.username);
 
-		await Chat.deleteMany({
-			$or: [
-				{ from: userID, to: contactID },
-				{ from: contactID, to: userID }
-			]
-		});
+		await User.updateOne(
+			{ _id: userID },
+			{ users: user.users, blacklist: user.blacklist }
+		);
 
-		userRooms = userRooms.filter(id => id !== roomID);
+		await deleteChats(userID, contactID);
 		
-		socket.to(roomID).emit('leaveUser', userID, roomID);
 		socket.leave(roomID);
 	});
 
-	return [userRooms, blacklist];
+	return user;
 };

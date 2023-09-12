@@ -1,20 +1,22 @@
 <script lang='ts'>
+	import type { ResponseData } from '$lib/types/global';
+	import { onMount } from 'svelte';
 	import axios from 'axios';
   import { DIR } from '$lib/config';
   import { socket } from '$lib/socket';
+  import * as sockets from '$lib/sockets.js';
   import { user, register } from '$lib/store';
   import Sign from '$lib/components/Sign.svelte';
   import Signin from '$lib/components/Signin.svelte';
   import Register from '$lib/components/Register.svelte';
 
-	async function testFunction() {
-		const data = await axios({
+	async function loadUser() {
+		const data: ResponseData = await axios({
 			method: 'GET',
 			url: DIR + '/api/home/main',
 			withCredentials: true
-		}).then(res => res.data);
-
-		console.log(data.user);
+		}).then(res => res.data)
+			.catch(err => err);
 
 		if (data.user) {
 			user.setUser(data.user);
@@ -26,9 +28,45 @@
 			console.log(data.error);
 		}
 	}
+	
+	onMount(() => {
+		socket.on('loggedUser', sockets.loggedUser);
+		socket.on('countMembers', sockets.countMembers);
+		socket.on('editUser', sockets.editUsers);
+		socket.on('editGroup', sockets.editGroups);
+		socket.on('leaveUser', sockets.leaveUser);
+		socket.on('leaveGroup', sockets.leaveGroup);
+		socket.on('addMembers', sockets.addMembers);
+		socket.on('banMembers', sockets.banMembers);
+		socket.on('blockMembers', sockets.blockMembers);
+		socket.on('unblockMembers', sockets.unblockMembers);
+		socket.on('addMods', sockets.addMods);
+		socket.on('removeMods', sockets.removeMods);
+		socket.on('changeAvatar', sockets.changeAvatar);
+		socket.on('destroyUser', sockets.destroyUser);
+		socket.on('connect_error', sockets.connectError);
+
+		return () => {
+			socket.off('loggedUser', sockets.loggedUser);
+			socket.off('countMembers', sockets.countMembers);
+			socket.off('editUsers', sockets.editUsers);
+			socket.off('editGroups', sockets.editGroups);
+			socket.off('leaveUser', sockets.leaveUser);
+			socket.off('leaveGroup', sockets.leaveGroup);
+			socket.off('addMembers', sockets.addMembers);
+			socket.off('banMembers', sockets.banMembers);
+			socket.off('blockMembers', sockets.blockMembers);
+			socket.off('unblockMembers', sockets.unblockMembers);
+			socket.off('addMods', sockets.addMods);
+			socket.off('removeMods', sockets.removeMods);
+			socket.off('changeAvatar', sockets.changeAvatar);
+			socket.off('destroyUser', sockets.destroyUser);
+			socket.off('connect_error', sockets.connectError);
+		}
+	});
 </script>
 
-<svelte:document on:load={testFunction()} />
+<svelte:document on:load={loadUser()} />
 
 <div class="main">
 	<div class="banner"></div>

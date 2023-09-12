@@ -1,4 +1,4 @@
-import type { Check, IKeys } from '$lib/global';
+import type { Check, IKeys } from '$lib/types/global';
 import validator from 'validator';
 
 const checkUsername: Check = (input, customResponse) => {

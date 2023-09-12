@@ -1,4 +1,4 @@
-import type { IKeys } from "$lib/global";
+import type { IKeys } from "$lib/types/global";
 import { writable } from "svelte/store";
 
 function createSwitch(options: IKeys<boolean>) {

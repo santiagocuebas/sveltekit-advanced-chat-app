@@ -20,7 +20,7 @@ export const validate = (validations: ValidationChain[]) => {
 			
 			const errors = getErrorMessages(errs.array());
 
-			return res.json({ errors });
+			return res.status(401).json({ errors });
 		}
 
 		return next();
@@ -38,7 +38,7 @@ export const validateSettings = (validations: ValidationChain[]) => {
 
 			const errors = getErrorMessages(errs.array());
 
-			return res.json({
+			return res.status(401).json({
 				errors: 'errors-settings',
 				message: errors
 			});

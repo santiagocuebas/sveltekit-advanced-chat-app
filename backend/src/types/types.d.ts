@@ -4,6 +4,13 @@ import type { StateOption, TypeContact } from './enums.js';
 
 export type Direction = (req: Request, res: Response, next: NextFunction) => void;
 
+export type ActUser = (
+	contactID: string,
+	roomID: string,
+	user: IUser,
+	name?: string
+) => IUser;
+
 export type Contact = (
 	contactID: string,
 	roomID: string,

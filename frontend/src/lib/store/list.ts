@@ -1,4 +1,4 @@
-import type { IList, IContact } from "$lib/global";
+import type { IList, IContact } from "$lib/types/global";
 import { writable } from "svelte/store";
 
 function createContacts(contacts: IContact[] | IList[]) {

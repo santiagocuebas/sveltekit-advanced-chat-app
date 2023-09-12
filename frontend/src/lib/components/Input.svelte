@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Check } from "$lib/global";
+  import type { Check } from "$lib/types/global";
   import { afterUpdate } from "svelte";
 
 	export let text: string;

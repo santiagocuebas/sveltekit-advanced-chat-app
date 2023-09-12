@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { IList } from '$lib/global';
+	import type { IList } from '$lib/types/global';
 	import { list } from '$lib/store';
 	import Searched from './Searched.svelte';
 	

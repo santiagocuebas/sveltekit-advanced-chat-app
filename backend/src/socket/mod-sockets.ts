@@ -2,15 +2,18 @@ import type { Members } from '../types/global.js';
 import type { ModSockets } from '../types/sockets.js';
 import { User, Group } from '../models/index.js';
 
-export const modSockets: ModSockets = (socket, [userID, contactID]) => {
+export const modSockets: ModSockets = (socket, contactID, user) => {
 	socket.on('emitAddMember', async (members: Members[]) => {
-		await Group.updateOne({ _id: contactID }, { $push: { members } });
+		await Group.updateOne(
+			{ _id: contactID },
+			{ $push: { members: { $each: members } } }
+		);
 
 		for (const { id } of members) {
 			await User.updateOne({ _id: id }, { $push: { groupRooms: [contactID] } });
 		}
 		
-		socket.to(contactID).emit('updateMember', userID);
+		socket.to(user.groupRooms).emit('addMembers', contactID, members);
 	});
 
 	socket.on('emitBanMember', async (userIDs: string[]) => {
@@ -29,7 +32,7 @@ export const modSockets: ModSockets = (socket, [userID, contactID]) => {
 			await User.updateOne({ _id: id }, { $pull: { groupRooms: contactID } });
 		}
 		
-		socket.to(contactID).emit('updateMember', userID);
+		socket.to(user.groupRooms).emit('banMembers', contactID, userIDs);
 	});
 
 	socket.on('emitBlockMember', async (members: Members[]) => {
@@ -38,7 +41,7 @@ export const modSockets: ModSockets = (socket, [userID, contactID]) => {
 		await Group.updateOne(
 			{ _id: contactID },
 			{
-				$push: { blacklist: members },
+				$push: { blacklist: { $each: members } },
 				$pull: {
 					connectedUsers: { $in: userIDs },
 					members: { id: { $in: userIDs } },
@@ -51,7 +54,7 @@ export const modSockets: ModSockets = (socket, [userID, contactID]) => {
 			await User.updateOne({ _id: id }, { $pull: { groupRooms: contactID } });
 		}
 		
-		socket.to(contactID).emit('updateMember', userID);
+		socket.to(user.groupRooms).emit('blockMembers', contactID, members);
 	});
 
 	socket.on('emitUnblockMember', async (userIDs: string[]) => {
@@ -59,5 +62,7 @@ export const modSockets: ModSockets = (socket, [userID, contactID]) => {
 			{ _id: contactID },
 			{ $pull: { blacklist: { id: { $in: userIDs } } } }
 		);
+		
+		socket.to(user.groupRooms).emit('unblockMembers', contactID, userIDs);
 	});
 };

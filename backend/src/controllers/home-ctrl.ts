@@ -23,11 +23,13 @@ export const getSearch: Direction = async (req, res) => {
 			]
 		})
 		.lean({ virtuals: true })
-		.select('id username avatar description users blacklist');
+		.select('id username avatar description users blacklist')
+		.limit(150);
 		
 	const groups = await Group
 		.find({ name: { $regex: '.*' + param + '.*' } })
-		.lean({ virtuals: true });
+		.lean({ virtuals: true })
+		.limit(150);
 
 	const contacts: IKeys<string>[] = [];
 

@@ -1,20 +1,41 @@
-import type { Blacklist, Users } from '../types/global.js';
-import type { IOption } from '../types/types.js';
-import { User } from '../models/index.js';
+import type { ActUser } from '../types/types.js';
+import fs from 'fs-extra';
+import { resolve } from 'path';
+import { Chat } from '../models/index.js';
+import { TypeContact } from '../types/enums.js';
 
-export const updateUser = async (
-	userID: string,
-	contactID: string,
-	contacts: Users[],
-	blacklist?: Blacklist[]
-) => {
-	const options: IOption = { users: [] };
+export const actUser: ActUser = (contactID, roomID, user, name) => {
+	user.users = user.users.filter(user => user.userID !== contactID);
+	user.userIDs = user.userIDs.filter(id => id !== contactID);
+	user.userRooms = user.userRooms.filter(id => id !== roomID);
 	
-	for (const user of contacts) {
-		if (user.userID !== contactID) options.users.push(user);
+	if (name) {
+		user.blacklist.push({
+			id: contactID,
+			name,
+			type: TypeContact.USER
+		});
 	}
 
-	if (blacklist) options.blacklist = blacklist;
+	return user;
+};
 
-	await User.updateOne({ _id: userID }, options);
+export const deleteChats = async (userID: string, contactID: string) => {
+	const chats = await Chat.find({
+		$or: [
+			{ from: userID, to: contactID },
+			{ from: contactID, to: userID }
+		]
+	});
+
+	for (const chat of chats) {
+		if (chat.content instanceof Array) {
+			for (const url of chat.content) {
+				const path = resolve(`uploads/${url}`);
+				await fs.unlink(path);
+			}
+		}
+
+		chat.deleteOne();
+	}
 };

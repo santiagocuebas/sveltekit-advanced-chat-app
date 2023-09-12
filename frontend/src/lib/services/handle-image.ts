@@ -1,4 +1,4 @@
-import { LoadError } from "$lib/enums";
+import { LoadError } from "$lib/types/enums";
 
 export function loadImage(file: File) {
 	return new Promise((resolve, reject) => {

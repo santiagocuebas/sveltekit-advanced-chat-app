@@ -15,7 +15,10 @@ export const chatSockets: ChatSockets = (socket, [userID, contactID, roomID], us
 
 		socket.emit('loadChatID', chat.id, tempID);
 		socket.to(roomID).emit('loadChat', chat);
-		socket.to(roomID).emit('editContacts', roomID, chat.content, chat.createdAt);
+
+		username
+			? socket.to(roomID).emit('editGroup', roomID, chat)
+			: socket.to(roomID).emit('editUser', roomID, chat);
 	});
 
 	socket.on('emitDelete', async (id: string) => {
@@ -28,7 +31,7 @@ export const chatSockets: ChatSockets = (socket, [userID, contactID, roomID], us
 					.unlink(path)
 					.catch(err => err);
 				
-				console.log(err);
+				if (err) console.log(err);
 			}
 		}
 

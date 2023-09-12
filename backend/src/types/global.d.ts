@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-empty-interface */
 import type { TypeContact } from './enums.js';
+import type { IKeys } from './types.js';
 
 declare global {
 	namespace Express {
@@ -12,7 +11,7 @@ declare global {
 
 declare module 'http' {
 	interface IncomingMessage {
-		cookies: any;
+		cookies: IKeys<string>;
 	}
 }
 
@@ -46,7 +45,7 @@ export interface IChat {
 export interface IUser {
 	_id: string;
 	id: string;
-	tempId?: string;
+	tempId: string;
 	email: string;
 	password: string;
 	username: string;

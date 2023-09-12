@@ -9,7 +9,7 @@ export const isObject = (value: unknown): boolean => typeof value === 'object';
 
 export const isArray = (value: unknown): boolean => value instanceof Array;
 
-export const isLength = (value: string | string[], min: number, max: number): boolean => {
+export const isLength = (value: string | string[] | Members[], min: number, max: number): boolean => {
 	return value.length > min && value.length <= max;
 };
 

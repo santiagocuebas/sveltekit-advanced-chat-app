@@ -1,4 +1,4 @@
-import type { IKeys } from "$lib/global";
+import type { IKeys } from "$lib/types/global";
 import { checks } from './validations.js';
 
 export const isValidLength = (inputs: IKeys<string>): boolean => {

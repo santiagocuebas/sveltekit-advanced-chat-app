@@ -1,12 +1,12 @@
 <script lang="ts">
-  import type { IContact, IList } from '$lib/global';
+  import type { IContact, Contacts as IContacts, IList } from '$lib/types/global';
   import { onDestroy, onMount } from 'svelte';
   import axios from 'axios';
   import { DIR } from '$lib/config';
   import { selectJoin } from '$lib/dictionary';
-	import { ButtonValue, TypeContact } from '$lib/enums';
-  import { contact, switchs, users, groups, list, options } from '$lib/store';
+	import { ButtonValue, TypeContact } from '$lib/types/enums';
 	import { socket } from '$lib/socket';
+  import { contact, switchs, users, groups, list, options, user } from '$lib/store';
   import Button from './Button.svelte';
   import Contacts from './Contact.svelte';
 
@@ -16,7 +16,7 @@
 	let usersValues: IContact[];
 	let groupsValues: IContact[];
 	let listValues: IList[];
-	let selected = ButtonValue.CHATS;
+	let selected: string;
 
 	const unsubUsers = users.subscribe(value => usersValues = value as IContact[]);
 	const unsubGroups = groups.subscribe(value => groupsValues = value as IContact[]);
@@ -41,7 +41,16 @@
 		socket.emit(selectJoin[foreign.type], foreign.contactID, foreign.roomID);
 	};
 
-	const reloadUsers = (contact: IContact) => {
+	export const loadContacts = ([contactsUsers, contactsGroups]: IContacts) => {
+		users.setContacts(contactsUsers);
+		groups.setContacts(contactsGroups);
+
+		if (contactsUsers.length > 0) selected = ButtonValue.CHATS;
+		else if (contactsGroups.length > 0) selected = ButtonValue.ROOMS
+		else selected = ButtonValue.CHATS;
+	};
+
+	const updateContacts = (contact: IContact, emit: boolean) => {
 		if (contact.type === TypeContact.GROUP) {
 			selected = ButtonValue.ROOMS;
 			groups.setContacts([...groupsValues, contact]);
@@ -52,37 +61,17 @@
 
 		const actList = listValues.filter(user => user.id !== contact.contactID);
 		list.setContacts(actList);
-		socket.emit('joinUpdate', contact.roomID);
-	};
-
-	const changeAvatar = (id: string, type: string, avatar: string) => {
-		if (type === TypeContact.USER) {
-			const reloadUsers = usersValues.map(user => {
-				if (user.contactID === id) user.avatar = avatar;
-				return user;
-			});
-
-			users.setContacts(reloadUsers);
-		}
-		else {
-			const reloadGroups = groupsValues.map(group => {
-				if (group.contactID === id) group.avatar = avatar;
-				return group;
-			});
-
-			groups.setContacts(reloadGroups);
-		};
-
-		if ($contact) contact.changeAvatar(avatar);
+		
+		if (emit) socket.emit('joinUpdate', contact);
 	};
 
 	onMount(() => {
-		socket.on('updateContacts', reloadUsers);
-		socket.on('changeAvatar', changeAvatar);
+		socket.on('loadContacts', loadContacts);
+		socket.on('updateContacts', updateContacts);
 
 		return () => {
-			socket.off('updateContacts', reloadUsers);
-			socket.off('changeAvatar', changeAvatar);
+			socket.off('loadContacts', loadContacts);
+			socket.off('updateContacts', updateContacts);
 		}
 	});
 
@@ -121,6 +110,11 @@
 				{:else}
 				<div>Hasn't joined any groups yet</div>
 			{/if}
+			{:else}
+			<div class="loading">
+				<img src="/loading.png" alt="images">
+				Loading
+			</div>
 		{/if}
 	</ul>
 </div>
@@ -157,8 +151,23 @@
 		@apply flex flex-wrap w-full overflow-auto;
 	}
 
+	img {
+    animation: spin 4s linear infinite;
+		@apply w-8 h-8 rounded-full;
+	}
+
 	.sidebar div {
 		color: #666666;
 		@apply flex items-center justify-center w-full p-2.5 text-center text-2xl font-semibold leading-tight break-words;
+	}
+
+	.sidebar .loading {
+		@apply flex gap-x-1;
+	}
+
+	@keyframes spin { 
+		100% {
+			transform: rotate(360deg); 
+		}
 	}
 </style>

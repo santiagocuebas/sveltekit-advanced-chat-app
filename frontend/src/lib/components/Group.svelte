@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { IContact, Members } from '$lib/global';
-	import { StateOption } from '$lib/enums';
+	import type { IContact, Members } from '$lib/types/global';
+	import { StateOption } from '$lib/types/enums';
   import { switchs, users } from '$lib/store';
   import { socket } from "$lib/socket";
 
@@ -74,6 +74,7 @@
 		Select moderators:
 		<ul>
 			{#each usersValues as user}
+				<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 				<li
 					class='members {modIDs.includes(user.contactID) ? 'selected' : ''}'
 					on:mousedown={addMods(user.contactID, user.name)}
@@ -85,6 +86,7 @@
 		Select members:
 		<ul>
 			{#each usersValues as user}
+				<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 				<li
 					class='members {memberIDs.includes(user.contactID) ? 'selected' : ''}'
 					on:mousedown={addMembers(user.contactID, user.name)}

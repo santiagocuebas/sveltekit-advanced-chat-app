@@ -1,7 +1,8 @@
 <script lang="ts">
+	import type { IKeys } from '$lib/types/global';
+  import { onDestroy, onMount } from 'svelte';
 	import { DIR } from '$lib/config.js';
-	import { DataSignin } from '$lib/register.js';
-  import { register } from '$lib/store';
+  import { register, valueInput, errorMessage, activeError } from '$lib/store';
 	import Input from '$lib/components/Input.svelte';
 	import Form from '$lib/components/Form.svelte';
 	import Box from '$lib/components/ErrorBox.svelte';
@@ -10,23 +11,30 @@
 
 	const properInput = ['email', 'password'];
 	let visible = false;
+	let input = $valueInput as IKeys<string>;
+	let error: IKeys<string>;
+	let active: IKeys<boolean>;
 
-	const valueInput = new DataSignin('', '');
-	const errorMessage = new DataSignin('', '');
-	const activeError = new DataSignin(false, false);
+	const unsubInput = valueInput.subscribe(value => input = value as IKeys<string>);
+	const unsubError = errorMessage.subscribe(value => error = value as IKeys<string>);
+	const unsubActive = activeError.subscribe(value => active = value as IKeys<boolean>);
 
-	const setMessage = (key: string, message: string) => {
-		activeError[key] = true;
-		errorMessage[key] = message;
-	};
+	onMount(() => {
+		valueInput.setOptions({ email: '', password: '' });
+		errorMessage.setOptions({ email: '', password: '' });
+		activeError.setOptions({ email: false, password: false });
+	});
+	
+	onDestroy(() => {
+		return {
+			unsubInput,
+			unsubError,
+			unsubActive
+		}
+	});
 </script>
 
-<Form
-	action={DIR + '/api/auth/signin'}
-	inputs={valueInput}
-	set={setMessage}
-	bind:visible={visible}
->
+<Form action={DIR + '/api/auth/signin'} bind:visible={visible}>
 	{#if visible}
 		<Box />
 	{/if}
@@ -35,9 +43,9 @@
 			text={setUppercaseFirstLetter(key)}
 			type={setType(key)}
 			name={key}
-			bind:input={valueInput[key]}
-			bind:error={errorMessage[key]}
-			bind:active={activeError[key]}
+			bind:input={input[key]}
+			bind:error={error[key]}
+			bind:active={active[key]}
 			check={checks[key]}
 		/>
 	{/each}

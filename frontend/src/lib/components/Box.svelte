@@ -1,12 +1,12 @@
 <script lang="ts">
-  import type { IKeys } from "$lib/global";
+  import type { IKeys } from "$lib/types/global";
   import { onMount } from "svelte";
 
 	export let visible: boolean;
 	export let className: string;
 	export let message: string | IKeys<string>;
 
-	onMount(() => setTimeout(() => visible = false, 10000));
+	onMount(() => setTimeout(() => visible = false, 5000));
 </script>
 
 <div class={className}>

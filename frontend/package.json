@@ -28,7 +28,6 @@
 		"axios": "1.4.0",
 		"dotenv": "16.3.1",
 		"socket.io-client": "4.7.2",
-		"timeago.js": "4.0.2",
 		"validator": "13.11.0"
 	}
 }

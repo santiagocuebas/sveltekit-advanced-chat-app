@@ -9,8 +9,9 @@ import {
 	modSockets,
 	userSockets
 } from './socket/index.js';
-import { socketIndex } from './validations/socket-index.js';
 import { TypeContact } from './types/enums.js';
+import { socketIndex } from './validations/socket-index.js';
+import { IContact } from './types/types.js';
 
 export default async (socket: Socket) => {
 	console.log(socket.id, '==== connected');
@@ -19,29 +20,28 @@ export default async (socket: Socket) => {
 		'emitChat', 'emitDelete', 'emitLeave', 'emitBlock', 'emitDestroy', 'emitBlockDestroy', 'emitLeaveGroup', 'emitBlockGroup', 'emitAddMember', 'emitBanMember', 'emitBlockMember', 'emitUnblockMember', 'emitAddMod', 'emitRemoveMod', 'emitChangeAvatar', 'emitChangeDescription', 'emitChangeState', 'emitDestroyGroup'
 	];
 	const userID = socket.user.id;
-	const { username } = socket.user;
-	let { users, userRooms, groupRooms, blacklist } = socket.user;
 
 	await User.updateOne({ _id: userID }, { logged: true, tempId: socket.id });
 
-	const [contacts, removedUsers] = await getUserContacts(userID, users);
-	const [groups, removedGroups] = await getGroupContacts(userID, groupRooms);
+	const [contacts, removedUsers] = await getUserContacts(userID, socket.user.users);
+	const [groups, removedGroups] = await getGroupContacts(userID, socket.user.groupRooms);
 
 	if (removedUsers.length) {
-		userRooms = userRooms.filter(room => removedUsers.includes(room));
+		socket.user.userRooms = socket.user.userRooms.filter(room => removedUsers.includes(room));
 	}
 
 	if (removedGroups.length) {
-		groupRooms = groupRooms.filter(room => removedGroups.includes(room));
+		socket.user.groupRooms = socket.user.groupRooms.filter(room => removedGroups.includes(room));
 	}
 
-	socket.join([...userRooms, ...groupRooms]);
+	socket.join([...socket.user.userRooms, ...socket.user.groupRooms]);
 	socket.emit('loadContacts', [contacts, groups]);
-	socket.to(userRooms).emit('loggedUser', userID, true);
-	socket.to(groupRooms).emit('countMembers', userID, 1);
+	socket.to(socket.user.userRooms).emit('loggedUser', userID, true);
+	socket.to(socket.user.groupRooms).emit('countMembers', userID, 1);
 	
 	socket.use(async ([event, ...args], next) => {
 		console.log(event, args);
+
 		if (typeof event === 'string' && socketIndex[event] !== undefined) {
 			const match = await socketIndex[event](args as never, socket.user);
 
@@ -49,7 +49,7 @@ export default async (socket: Socket) => {
 
 			socket.emit('socketError', match);
 		} else {
-			socket.emit('invalidEvent');
+			socket.emit('socketError', { error: 'Socket Error', message: 'The socket emitted no exist' });
 		}
 	});
 
@@ -63,7 +63,7 @@ export default async (socket: Socket) => {
 
 		chatSockets(socket, IDs);
 
-		[userRooms, blacklist] = userSockets(socket, IDs, users, userRooms, blacklist);
+		userSockets(socket, IDs, socket.user);
 	});
 
 	socket.on('joinGroupRoom', async (contactID: string) => {
@@ -74,44 +74,59 @@ export default async (socket: Socket) => {
 
 		socket.emit('loadChats', messages);
 
-		chatSockets(socket, IDs, username);
+		chatSockets(socket, IDs, socket.user.username);
 
-		[groupRooms, blacklist] = memberSockets(socket, IDs, groupRooms, blacklist);
+		memberSockets(socket, IDs, socket.user);
 
-		modSockets(socket, IDs);
+		modSockets(socket, contactID, socket.user);
 
-		groupRooms = adminSockets(socket, IDs, groupRooms);
+		adminSockets(socket, IDs, socket.user);
+	});
+	
+	socket.on('emitUnblock', (listUsers: string[]) => {
+		socket.user.blacklist = socket.user.blacklist.filter(({ id }) => !listUsers.includes(id));
 	});
 
-	socket.on('joinUpdate', (id: string) => {
-		if (!userRooms.includes(id) || !groupRooms.includes(id)) {
-			socket.join(id);
+	socket.on('joinUpdate', ({ contactID, roomID, type }: IContact) => {
+		if (type === TypeContact.USER) {
+			socket.user.users.push({ userID: contactID, roomID });
+			socket.user.userIDs.push(contactID);
+			socket.user.userRooms.push(roomID);
+		} else socket.user.groupRooms.push(roomID);
+
+		socket.join(roomID);
+	});
+
+	socket.on('removeRoom', (roomID: string, type: TypeContact) => {
+		if (type === TypeContact.USER) {
+			const leaveRoom = socket.user.users.filter(user => user.roomID === roomID);
+			socket.user.users = socket.user.users.filter(user => user.roomID !== roomID);
+			socket.user.userIDs = socket.user.userIDs.filter(id => id !== leaveRoom[0].userID);
+			socket.user.userRooms = socket.user.userRooms.filter(id => id !== roomID);
+		} else {
+			socket.user.groupRooms = socket.user.groupRooms.filter(id => id !== roomID);
 		}
+
+		socket.leave(roomID);
 	});
 
-	socket.on('removeRoom', (roomID: string) => {
-		if (userRooms.includes(roomID) || groupRooms.includes(roomID)) {
-			socket.leave(roomID);
-		}
-	});
-
-	[users, groupRooms] = genericSockets(socket, userID, username, users, groupRooms);
+	genericSockets(socket, userID, socket.user);
 
 	socket.on('emitDestroyUser', () => {
-		socket.to(userRooms).emit('leaveUser', userID);
-		socket.to(groupRooms).emit('updateMember', userID);
+		socket.to(socket.user.userRooms).emit('leaveUser', userID);
+		socket.to(socket.user.groupRooms).emit('destroyUser', userID);
 	});
 
 	socket.on('disconnect', async () => {
 		console.log(socket.id, '==== disconnected');
-		await User.updateOne({ _id: userID }, { logged: false, tempId: undefined });
+		await User.updateOne({ _id: userID }, { logged: false });
 
-		for (const _id of groupRooms) {
+		for (const _id of socket.user.groupRooms) {
 			await Group.updateOne({ _id }, { $pull: { connectedUsers: userID } });
 		}
 
-		socket.to(userRooms).emit('loggedUser', userID, false);
-		socket.to(groupRooms).emit('countMembers', userID, -1);
+		socket.to(socket.user.userRooms).emit('loggedUser', userID, false);
+		socket.to(socket.user.groupRooms).emit('countMembers', userID, -1);
 		socket.removeAllListeners();
 	});
 };

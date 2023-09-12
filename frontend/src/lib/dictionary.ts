@@ -1,8 +1,13 @@
-import type { IKeys } from "./global";
+import type { IKeys } from "./types/global";
 
 export const selectJoin: IKeys<string> = {
-	'Group': 'joinGroupRoom',
-	'User': 'joinUserRoom'
+	Group: 'joinGroupRoom',
+	User: 'joinUserRoom'
+};
+
+export const selectCreate: IKeys<string> = {
+	User: 'joinUser',
+	Group: 'joinGroup'
 };
 
 export const OptionUser: IKeys<string> = {

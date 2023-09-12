@@ -1,4 +1,4 @@
-import type { Blacklist, IUser } from "$lib/global";
+import type { Blacklist, IUser } from "$lib/types/global";
 import { writable } from "svelte/store";
 
 function createUser() {

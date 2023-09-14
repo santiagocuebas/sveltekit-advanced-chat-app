@@ -1,10 +1,10 @@
 <script lang='ts'>
 	import type { ResponseData } from '$lib/types/global';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import axios from 'axios';
   import { DIR } from '$lib/config';
   import { socket } from '$lib/socket';
-  import * as sockets from '$lib/sockets.js';
+  import sockets, { unsubContact, unsubUsers, unsubGroups } from '$lib/sockets';
   import { user, register } from '$lib/store';
   import Sign from '$lib/components/Sign.svelte';
   import Signin from '$lib/components/Signin.svelte';
@@ -62,6 +62,14 @@
 			socket.off('changeAvatar', sockets.changeAvatar);
 			socket.off('destroyUser', sockets.destroyUser);
 			socket.off('connect_error', sockets.connectError);
+		}
+	});
+
+	onDestroy(() => {
+		return {
+			unsubContact,
+			unsubUsers,
+			unsubGroups
 		}
 	});
 </script>

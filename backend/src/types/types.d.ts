@@ -1,5 +1,12 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { IUser, IGroup, IChat, Blacklist, Members, Users } from './global.js';
+import type {
+	IUser,
+	IGroup,
+	IChat,
+	Blacklist,
+	Members,
+	Users
+} from './global.js';
 import type { StateOption, TypeContact } from './enums.js';
 
 export type Direction = (req: Request, res: Response, next: NextFunction) => void;
@@ -48,12 +55,4 @@ export interface IOption {
 
 export interface IKeys<T> {
 	[index: string]: T;
-}
-
-export interface IMessage {
-	[index: string]: string;
-}
-
-export interface IError {
-	[index: string]: string;
 }

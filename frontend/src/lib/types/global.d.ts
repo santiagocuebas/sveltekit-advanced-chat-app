@@ -82,9 +82,13 @@ export interface IInitPropsExtended extends IInitProps {
 }
 
 export interface ResponseData {
-	[index: string]: IUser | IKeys<string>;
+	[index: string]: string | string[] | boolean | IKeys<string> | IList[] | IUser;
 	user: IUser;
 	errors: IKeys<string>;
+	filename: string;
+	filenames: string[];
+	contacts: IList[];
+	logout: boolean;
 	error: IKeys<string>;
 }
 
@@ -94,14 +98,5 @@ export interface SettingsData {
 	success: string;
 	filename: string;
 	message: string | IKeys<string>;
-}
-
-export interface ILoaded {
-	image: string;
-	enabled: boolean;
-}
-
-export interface IError {
-	message: string;
-	error: boolean;
+	error: IKeys<string>;
 }

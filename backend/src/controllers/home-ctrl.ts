@@ -91,7 +91,7 @@ export const getSearch: Direction = async (req, res) => {
 		}
 	}
 
-	return res.json(contacts);
+	return res.json({ contacts });
 };
 
 export const postPassword: Direction = async (req, res) => {

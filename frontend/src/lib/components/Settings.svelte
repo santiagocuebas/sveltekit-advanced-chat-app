@@ -1,13 +1,11 @@
 <script lang="ts">
-	import type { ILoaded, IError, IKeys, SettingsData } from "$lib/types/global";
+	import type { IKeys, SettingsData } from "$lib/types/global";
   import axios from "axios";
 	import validator from 'validator';
 	import { DIR } from "$lib/config";
-	import { Settings } from "$lib/types/enums";
-  import { isLoaded } from "$lib/services/function";
+	import { Formats, Settings } from "$lib/types/enums";
   import { socket } from "$lib/socket";
   import { user, switchs, groups, users, register } from '$lib/store';
-	import { loadImage } from "$lib/services/handle-image.js";
   import EditChat from "./EditChat.svelte";
   import Box from "./Box.svelte";
 	
@@ -26,18 +24,18 @@
 	let message: string | IKeys<string>;
 
 	async function handleAvatar(this: HTMLInputElement) {
-		const files = this.files as FileList;
-		
-		const data: ILoaded | IError = await loadImage(files[0])
-			.then((res: any) => res)
-			.catch(err => err);
+		const fileReader = new FileReader();
+		const validFormats: string[] = Object.values(Formats);
+		const files = this.files;
 
-		if (isLoaded(data)) {
-			src = data.image;
-			disabled = data.enabled;
-		} else {
-			console.log(data);
-		}		
+		fileReader.addEventListener('load', ({ target }) => {
+			src = target?.result as string;
+			disabled = false;
+		});
+
+		if (files && files[0].size <= 512000 && validFormats.includes(files[0].type)) {
+			fileReader.readAsDataURL(files[0]);
+		}
 	}
 
 	async function isValidOldPassword() {

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { IChat } from "$lib/types/global";
+  import type { IChat, ResponseData } from "$lib/types/global";
   import { afterUpdate, beforeUpdate, onMount } from "svelte";
   import axios from "axios";
 	import validator from 'validator';
 	import { DIR } from "$lib/config";
-  import { TypeContact } from "$lib/types/enums";
+  import { Formats, TypeContact } from "$lib/types/enums";
 	import { socket } from "$lib/socket";
   import { getDate } from "$lib/services/libs";
   import { getChat } from "$lib/services/chat-libs";
@@ -19,34 +19,37 @@
 	const	observer = new IntersectionObserver(showMoreChats, {
 		root: null,
 		rootMargin: '0px',
-		threshold: 1.0
 	});
 	let div: HTMLElement;
-	let boxElement: HTMLElement | null;
 	let autoscroll: boolean;
+	let boxElement: HTMLElement | null;
+	let chatID = '';
+	let input: HTMLInputElement;
 	let counter = 0;
 	let chats: IChat[] = [];
 	let visibleChats: IChat[] = [];
 	let message = '';
 
-	function sendMessage() {
-		const chat = getChat($user, $contact, message);
+	function sendMessage(this: HTMLFormElement) {
+		const message = new FormData(this).get('message') as string;
 
-		loadChat(chat);
+		if (message.length) {
+			const chat = getChat($user, $contact, message);
 
-		socket.emit('emitChat', message, chat._id);
+			loadChat(chat);
 
-		if ($contact.type === TypeContact.GROUP && typeof chat.content === 'string') {
-			editGroups($contact.roomID, chat);
+			socket.emit('emitChat', message, chat._id);
+
+			if ($contact.type === TypeContact.GROUP) editGroups($contact.roomID, chat);
 		}
 
-		message = '';
+		input.value = '';
 	}
 
 	async function sendImage(this: HTMLInputElement) {
 		if (this.files && this.files.length < 4) {
 			const formData = new FormData();
-			const validFormat = ['image/png', 'image/jpeg', 'image/gif'];
+			const validFormat: string[] = Object.values(Formats);
 			let match = true;
 
 			for (const file of this.files) {
@@ -59,7 +62,7 @@
 			}
 
 			if (match) {
-				const data = await axios({
+				const data: ResponseData = await axios({
 					method: 'POST',
 					url: DIR + '/api/home/images',
 					data: formData,
@@ -100,16 +103,17 @@
 	}
 
 	function showMoreChats([entry]: IntersectionObserverEntry[]) {
-		if (entry?.isIntersecting && chats.length > counter + 5) return showChats(5);
-		if (boxElement) return observer.unobserve(boxElement)
+		if (entry?.isIntersecting && chats.length > counter) return showChats(50);
 	}
 
 	function showChats(num: number) {
 		for (let i = 0; i < num; i++) {
 			if (chats[counter+i]) {
 				visibleChats = [chats[counter+i], ...visibleChats];
+				chatID = chats[counter+i]._id;
 			} else {
 				if (boxElement) observer.unobserve(boxElement);
+				chatID = '';
 				break;
 			}
 		}
@@ -117,16 +121,15 @@
 		counter += num;
 	}
 
-	const loadChat = (message: IChat) => visibleChats = [...visibleChats, message];
-
 	const loadChats = (messages: IChat[]) => {
 		div.scrollTo(0, div.scrollHeight);
 		counter = 0;
-		if (boxElement) observer.unobserve(boxElement);
 		chats = messages.reverse();
 		visibleChats = [];
-		showChats(10);
+		showChats(50);
 	};
+
+	const loadChat = (message: IChat) => visibleChats = [...visibleChats, message];
 
 	const deleteChat = (id: string) => visibleChats = visibleChats.filter(({ _id }) => _id !== id);
 
@@ -158,7 +161,10 @@
 	afterUpdate(() => {
 		if (autoscroll) div.scrollTo(0, div.scrollHeight);
 
-		boxElement = document.querySelector('.chat');
+		if (chatID) {
+			if (boxElement) observer.unobserve(boxElement);
+			boxElement = document.getElementById(chatID);
+		}
 
 		if (boxElement) observer.observe(boxElement);
 	});
@@ -170,13 +176,13 @@
 	</EditChat>
 {/if}
 
-<div class="chats" bind:this={div} on:load={() => console.log('Hola')}>
+<div class="chats" bind:this={div}>
 	{#each visibleChats as chat (chat._id)}
 		<div
 			id={chat._id}
 			class='chat {$user.id === chat.from ? 'me' : ''}'
 			on:dblclick={() => handleDelete(chat._id, chat.from)}
-			role='main'
+			role='none'
 		>
 			{#if chat.username}
 				<p class="username">{chat.username}</p>
@@ -201,7 +207,7 @@
 </div>
 <div class="message">
 	<form class="text" on:submit|preventDefault={sendMessage}>
-		<input type="text" bind:value={message}>
+		<input type="text" name='message' bind:this={input}>
 	</form>
 	<label>
 		<i class="fa-solid fa-images"></i>

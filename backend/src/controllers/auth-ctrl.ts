@@ -45,5 +45,5 @@ export const postLogout: Direction = async (_req, res) => {
 		secure: NODE_ENV === 'production'
 	}));
 
-	return res.json({ user: undefined });
+	return res.json({ logout: true });
 };

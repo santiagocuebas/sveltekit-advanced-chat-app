@@ -11,26 +11,16 @@
 	export let active: boolean;
 	export let check: Check;
 
-	let selectClass = { label: '', paragraph: '', input: '' };
+	let selectClass = '';
 
 	const changeClass = () => {
-		if (!error) {
-			selectClass = {
-				label: 'focus-label',
-				paragraph: 'focus-p',
-				input: 'visible-input'
-			};
-		}
+		if (!error) selectClass = 'focus';
 	};
 
 	const changeError = () => {
 		if (!input.length) {
 			error = undefined;
-			selectClass = {
-				label: '',
-				paragraph: '',
-				input: ''
-			};
+			selectClass = '';
 		}
 	};
 
@@ -40,52 +30,40 @@
 		if (name === 'confirmPassword') error = check(input, undefined, pass);
 		else error = check(input);
 
-		if (error) {
-			selectClass.label = 'error-label';
-			selectClass.paragraph = 'error-p';
-		}
-
-		if (!error) {
-			selectClass = {
-				label: 'focus-label',
-				paragraph: 'focus-p',
-				input: 'visible-input'
-			};
-		}
+		if (error) selectClass = 'error';
+		else selectClass = 'focus';
 	}
 
 	afterUpdate(() => {
 		if (active) {
-			selectClass.label = 'error-label';
-			selectClass.paragraph = 'error-p';
+			selectClass = 'error';
 			active = false;
-		};
-	})
+		}
+	});
 </script>
 
-<div>
-	<label class={selectClass.label}>
-		<p class={selectClass.paragraph}>
-			{text}
-		</p>
-		<input
-			class={selectClass.input}
-			type={type}
-			name={name}
-			value={input}
-			autocomplete="off"
-			on:keyup={setInput}
-			on:focus={changeClass}
-			on:blur={changeError}
-		>
-	</label>
-	{#if error}
-		<div>
-			<i class="fa-solid fa-xmark"></i>
-			{error}
-		</div>
-	{/if}
-</div>
+{#if (name !== 'confirmPassword' || pass)}
+	<div>
+		<label class={selectClass}>
+			<p>{text}</p>
+			<input
+				type={type}
+				name={name}
+				value={input}
+				autocomplete="off"
+				on:keyup={setInput}
+				on:focus={changeClass}
+				on:blur={changeError}
+			>
+		</label>
+		{#if error}
+			<div>
+				<i class="fa-solid fa-xmark"></i>
+				{error}
+			</div>
+		{/if}
+	</div>
+{/if}
 
 <style lang="postcss">
 	div {
@@ -119,31 +97,31 @@
 		@apply self-start text-xl leading-tight;
 	}
 
-	.focus-label {
+	.focus {
 		box-shadow: 0 0 0 2px #4288d8;
 	}
 
-	.focus-p {
+	.focus p {
 		font-size: 14px;
 		line-height: 1.071;
 		color: #4288d8;
 		@apply font-semibold;
 	}
 
-	.visible-input {
-		height: 20px;
-		transition-delay: 0.1s;
-	}
-
-	.error-label {
+	.error {
 		box-shadow: 0 0 0 2px #df3c3c;
 		@apply flex-wrap;
 	}
 
-	.error-p {
+	.error p {
 		font-size: 14px;
 		line-height: 1.071;
 		color: #df3c3c;
 		@apply font-semibold;
+	}
+
+	.focus input, .error input {
+		height: 20px;
+		transition-delay: 0.1s;
 	}
 </style>

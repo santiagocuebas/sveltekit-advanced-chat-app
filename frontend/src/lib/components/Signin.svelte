@@ -6,12 +6,12 @@
 	import Input from '$lib/components/Input.svelte';
 	import Form from '$lib/components/Form.svelte';
 	import Box from '$lib/components/ErrorBox.svelte';
-	import { setType, setUppercaseFirstLetter } from '$lib/services/libs.js';
+	import { setType, changeName } from '$lib/services/libs.js';
 	import { checks } from '$lib/services/validations.js';
 
 	const properInput = ['email', 'password'];
 	let visible = false;
-	let input = $valueInput as IKeys<string>;
+	let input: IKeys<string>;
 	let error: IKeys<string>;
 	let active: IKeys<boolean>;
 
@@ -40,7 +40,7 @@
 	{/if}
 	{#each properInput as key (key)}
 		<Input
-			text={setUppercaseFirstLetter(key)}
+			text={changeName(key)}
 			type={setType(key)}
 			name={key}
 			bind:input={input[key]}

@@ -2,14 +2,14 @@
 	import type { IKeys } from '$lib/types/global';
 	import { onDestroy, onMount } from 'svelte';
 	import { DIR } from '$lib/config.js';
-	import { setUppercaseFirstLetter, setType } from '$lib/services/libs';
+	import { changeName, setType } from '$lib/services/libs';
 	import { checks } from '$lib/services/validations.js';
   import { register, valueInput, errorMessage, activeError } from '$lib/store';
 	import Input from '$lib/components/Input.svelte';
 	import Form from '$lib/components/Form.svelte';
 	import Box from '$lib/components/ErrorBox.svelte';
 
-	const properInput = ['username', 'email', 'password'];
+	const properInput = ['username', 'email', 'password', 'confirmPassword'];
 	let visible = false;
 	let input: IKeys<string>;
 	let error: IKeys<string>;
@@ -55,27 +55,16 @@
 	{/if}
 	{#each properInput as key (key)}
 		<Input
-			text={setUppercaseFirstLetter(key)}
+			text={changeName(key)}
 			type={setType(key)}
 			name={key}
 			bind:input={input[key]}
 			bind:error={error[key]}
 			bind:active={active[key]}
 			check={checks[key]}
-		/>
-	{/each}
-	{#if input['password']}
-		<Input
-			text='Confirm Password'
-			type={'password'}
-			name='confirmPassword'
-			bind:input={input['confirmPassword']}
-			bind:error={error['confirmPassword']}
-			bind:active={active['confirmPassword']}
-			check={checks['confirmPassword']}
 			bind:pass={input['password']}
 		/>
-	{/if}
+	{/each}
 	<button class="signin">
 		Register
 	</button>

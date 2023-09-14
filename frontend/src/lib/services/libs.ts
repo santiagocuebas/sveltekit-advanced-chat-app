@@ -1,4 +1,5 @@
-export const setUppercaseFirstLetter = (value: string) => {
+export const changeName = (value: string) => {
+  if (value === 'confirmPassword') return 'Confirm Password';
   const firstLetter = value.at(0) as string;
   return value.replace(value.at(0) as string, firstLetter.toUpperCase());
 };

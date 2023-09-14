@@ -9,7 +9,7 @@ const groupSchema = new Schema<IGroup>({
 	mods: [Object],
 	members: [Object],
 	name: { type: String, allowNull: false, required: true },
-	description: { type: String, default: 'It&#39;s just another description of a group' },
+	description: { type: String, default: "It's just another description of a group" },
 	avatar: { type: String, default: 'avatar.png' },
 	connectedUsers: [String],
 	state: { type: String, default: StateOption.PUBLIC },

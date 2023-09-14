@@ -1,3 +1,4 @@
+/* eslint-disable quotes */
 import { Schema, model } from 'mongoose';
 import MLV from 'mongoose-lean-virtuals';
 import { IUser } from '../types/global.js';
@@ -9,7 +10,7 @@ const userSchema = new Schema<IUser>({
 	logged: { type: Boolean, default: false },
 	tempId: { type: String },
 	avatar: { type: String, default: 'avatar.png' },
-	description: { type: String, default: 'It &#39; s just another description of a user' },
+	description: { type: String, default: "It's just another description of a user" },
 	users: [Object],
 	groupRooms: [String],
 	blacklist: [Object]

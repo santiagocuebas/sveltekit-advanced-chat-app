@@ -1,12 +1,12 @@
 <script lang="ts">
-  import type { IContact, Contacts as IContacts, IList } from '$lib/types/global';
+  import type { IContact, Contacts as IContacts, IList, ResponseData } from '$lib/types/global';
   import { onDestroy, onMount } from 'svelte';
   import axios from 'axios';
   import { DIR } from '$lib/config';
   import { selectJoin } from '$lib/dictionary';
 	import { ButtonValue, TypeContact } from '$lib/types/enums';
 	import { socket } from '$lib/socket';
-  import { contact, switchs, users, groups, list, options, user } from '$lib/store';
+  import { contact, switchs, users, groups, list, options } from '$lib/store';
   import Button from './Button.svelte';
   import Contacts from './Contact.svelte';
 
@@ -23,14 +23,19 @@
 	const unsubList = list.subscribe(value => listValues = value as IList[]);
 
 	async function searchUser() {
-		const data: IList[] = await axios({
+		const data: ResponseData = await axios({
 			method: 'GET',
 			url: DIR + '/api/home/search/' + input,
 			withCredentials: true
-		}).then(res => res.data);
+		}).then(res => res.data)
+			.catch(err => err);
 
-		list.setContacts(data);
-		switchs.setOption('search');
+		if (data.contacts) {
+			list.setContacts(data.contacts);
+			switchs.setOption('search');
+		}
+
+		switchs.resetOptions();
 	}
 
 	const joinRoom = (foreign: IContact) => {

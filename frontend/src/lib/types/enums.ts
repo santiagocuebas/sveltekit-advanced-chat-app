@@ -3,6 +3,28 @@ export enum ButtonValue {
   ROOMS = 'rooms'
 }
 
+export enum Option {
+  USER = 'user',
+  GROUP = 'group'
+}
+
+export enum Name {
+  SPAN = 'span',
+  FLEX = 'span-flex',
+  GRID = 'span-grid'
+}
+
+export enum TypeContact {
+  USER = 'User',
+  GROUP = 'Group'
+}
+
+export enum Formats {
+  PNG = 'image/png',
+  JPEG = 'image/jpeg',
+  GIF = 'image/gif'
+}
+
 export enum Settings {
   AVATAR = 'avatar',
   USERNAME = 'username',
@@ -43,15 +65,4 @@ export enum AdminOptions {
   DESCRIPTION = 'DESCRIPTION',
   STATE = 'STATE',
   DESTROY = 'DESTROY'
-}
-
-export enum LoadError {
-  InvalidFormat = 'The format is invalid',
-  TooHeavy = 'The image is too heavy',
-  OtherError = 'An indeterminate error has occurred'
-}
-
-export enum TypeContact {
-  USER = 'User',
-  GROUP = 'Group'
 }

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { IContact, IKeys } from "$lib/types/global";
+	import type { IContact, IKeys, ResponseData } from "$lib/types/global";
+  import { onDestroy } from "svelte";
   import axios from "axios";
 	import { DIR } from "$lib/config";
   import {
@@ -14,7 +15,12 @@
 		ModOptions,
 		AdminOptions,
 		TypeContact,
-    StateOption
+    StateOption,
+    Formats,
+    Option,
+
+    Name
+
 	} from "$lib/types/enums";
 	import { socket } from "$lib/socket";
   import { leaveUser, leaveGroup } from '$lib/sockets.js';
@@ -42,41 +48,38 @@
 	let optionValue: IKeys<boolean>;
 	let visible = false;
 	let option = '';
+	let className = '';
 	let imgSRC: string;
 	let altSRC: string;
 	let src = DIR + selectAvatarURL($contact);
 	let socketFile: File;
+
+	console.log($contact)
 	
-	users.subscribe(value => usersValues = value as IContact[]);
-	groups.subscribe(value => groupsValues = value as IContact[]);
-	options.subscribe(value => optionValue = value);
+	const unsubUsers = users.subscribe(value => usersValues = value as IContact[]);
+	const unsubGroups = groups.subscribe(value => groupsValues = value as IContact[]);
+	const unsubOptions = options.subscribe(value => optionValue = value);
 
-	function handleUser(value: string) {
+	function selectContact(value: string, opt: string, name: string) {
 		visible = false;
 		option = value;
-		options.setOption('user');
-	}
-
-	function handleGroup(value: string) {
-		visible = false;
-		option = value;
-		options.setOption('group');
+		className = name;
+		options.setOption(opt);
 	}
 
 	async function handleAvatar(this: HTMLInputElement) {
-		const files = this.files as FileList;
-		const file = files[0];
 		const reader = new FileReader();
-		const validFormats = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif'];
+		const validFormat: string[] = Object.values(Formats);
+		const files = this.files as FileList;
 
 		reader.addEventListener('load', async ({ target }) => {
-			if (file.size <= 512000 && validFormats.includes(file.type)) {
-				src = target?.result as string;
-				socketFile = file;
-			}
+			src = target?.result as string;
+			socketFile = files[0];
 		});
 
-		reader.readAsDataURL(file);
+		if (files && files[0].size <= 512000 && validFormat.includes(files[0].type)) {
+			reader.readAsDataURL(files[0]);
+		}
 	}
 
 	function handleImage(this: HTMLImageElement) {
@@ -106,7 +109,7 @@
 			formData.append('avatar', socketFile);
 			formData.append('id', $contact.contactID);
 
-			const data = await axios({
+			const data: ResponseData = await axios({
 				method: 'POST',
 				url: DIR + '/api/home/group',
 				data: formData,
@@ -131,6 +134,14 @@
 		groupProps = initProps.resetProps(groupProps);
 		options.resetOptions();
 	}
+	
+	onDestroy(() => {
+		return {
+			unsubUsers,
+			unsubGroups,
+			unsubOptions
+		}
+	});
 </script>
 
 {#if optionValue.image}
@@ -140,186 +151,171 @@
 {#if optionValue.user}
 	<EditChat bind:visible={optionValue.user} option={option} handle={userOptions}>
 		<h2 class="title">Are you sure you want to do this action?</h2>
-		{#if option === UserOptions.LEAVE}
-			<span class="span">
-				This user will be removed from your contact list.
-			</span>
-			{:else if option === UserOptions.BLOCK}
-			<span class="span">
-				This user will be removed from your contact list and blocked.
-				If you want unblock this user go to Settings > Blocked Users.
-			</span>
-			{:else if option === UserOptions.DESTROY}
-			<span class="span">
-				This user will be removed from your contact list and all messages will be deleted.
-			</span>
-			{:else if option === UserOptions.BAD}
-			<span class="span">
-				This user will be removed and blocked from your contact list and all messages will be deleted.
-				If you want unblock this user go to Settings > Blocked Users.
-			</span>
-		{/if}
+		<span class={className}>
+			{#if option === UserOptions.LEAVE}
+					This user will be removed from your contact list.
+				{:else if option === UserOptions.BLOCK}
+					This user will be removed from your contact list and blocked.
+					If you want unblock this user go to Settings > Blocked Users.
+				{:else if option === UserOptions.DESTROY}
+					This user will be removed from your contact list and all messages will be deleted.
+				{:else if option === UserOptions.BAD}
+					This user will be removed and blocked from your contact list and all messages will be deleted.
+					If you want unblock this user go to Settings > Blocked Users.
+			{/if}
+		</span>
 	</EditChat>
 {/if}
 
 {#if optionValue.group}
 	<EditChat bind:visible={optionValue.group} option={option} handle={groupOptions}>
 		<h2 class="title">Are you sure you want to do this action?</h2>
-		{#if option === MemberOptions.LEAVE}
-			<span class="span">
-				This group will be removed from your contact list.
-			</span>
-			{:else if option === MemberOptions.BLOCKGROUP}
-			<span class="span">
-				This group will be removed from your contact list and blocked.
-				If you want unblock this user go to Settings > Blocked Users.
-			</span>
-			{:else if option === ModOptions.ADD}
-			<span class="span span-grid">
-				{#if isNotMember(usersValues, $contact).length}
-					<p>Add member:</p>
-					{#each isNotMember(usersValues, $contact) as user (user.id)}
+		<span class={className}>
+			{#if option === MemberOptions.LEAVE}
+					This group will be removed from your contact list.
+				{:else if option === MemberOptions.BLOCKGROUP}
+					This group will be removed from your contact list and blocked.
+					If you want unblock this user go to Settings > Blocked Users.
+				{:else if option === ModOptions.ADD}
+					{#if isNotMember(usersValues, $contact).length}
+						<p>Add member:</p>
+						{#each isNotMember(usersValues, $contact) as user (user.id)}
 						<div>
 							{user.name}
-							<input
-								type="checkbox"
-								on:click={() => groupProps.ADD = addMembers(user, groupProps.ADD)}
-							>
-						</div>
-					{/each}
+								<input
+									type="checkbox"
+									on:click={() => groupProps.ADD = addMembers(user, groupProps.ADD)}
+								>
+							</div>
+						{/each}
 					{:else}
-					<p>All your contacts are members of this group.</p>
-				{/if}
-			</span>
-			{:else if option === ModOptions.BAN}
-			<span class="span span-grid">
-				{#if getMembers($contact).length}
-					<p>Ban member:</p>
-					{#each getMembers($contact) as user (user.id)}
-						<div>
-							{user.name}
-							<input
-								type="checkbox"
-								on:click={() => groupProps.BAN = banMembers(user.id, groupProps.BAN)}
-							>
-						</div>
-					{/each}
-					{:else}
-					<p>This group has no contacts.</p>
-				{/if}
-			</span>
-			{:else if option === ModOptions.BLOCK}
-			<span class="span span-grid">
-				{#if getMembers($contact).length}
-					<p>Block member:</p>
-					{#each getMembers($contact) as user (user.id)}
-						<div>
-							{user.name}
-							<input
-								type="checkbox"
-								on:click={() => groupProps.BLOCK = addMembers(user, groupProps.BLOCK)}
-							>
-						</div>
-					{/each}
-					{:else}
-					<p>This group has no contacts.</p>
-				{/if}
-			</span>
-			{:else if option === ModOptions.UNBLOCK}
-			<span class="span span-grid">
-				{#if $contact.blacklist?.length}
-					<p>Unblock member:</p>
-					{#each $contact.blacklist as user (user.id)}
-						<div>
-							{user.name}
-							<input
-								type="checkbox"
-								on:click={() => groupProps.UNBLOCK = banMembers(user.id, groupProps.UNBLOCK)}
-							>
-						</div>
-					{/each}
-					{:else}
-					<p>This group has no contacts blocked.</p>
-				{/if}
-			</span>
-			{:else if option === AdminOptions.ADDMOD}
-			<span class="span span-grid">
-				{#if $contact.members?.length}
-					<p>Add member:</p>
-					{#each $contact.members as member (member.id)}
-						<div>
-							{member.name}
-							<input
-								type="checkbox"
-								on:click={() => groupProps.ADDMOD = addMembers(member, groupProps.ADDMOD)}
-							>
-						</div>
-					{/each}
-					{:else}
-					<p>All your contacts are members of this group.</p>
-				{/if}
-			</span>
-			{:else if option === AdminOptions.REMOVEMOD}
-			<span class="span span-grid">
-				{#if $contact.mods?.length}
-					<p>Remove member:</p>
-					{#each $contact.mods as member (member.id)}
-						<div>
-							{member.name}
-							<input
-								type="checkbox"
-								on:click={() => groupProps.REMOVEMOD = addMembers(member, groupProps.REMOVEMOD)}
-							>
-						</div>
-					{/each}
-					{:else}
-					<p>All your contacts are members of this group.</p>
-				{/if}
-			</span>
-			{:else if option === AdminOptions.AVATAR}
-			<span class="span span-flex">
-				Load the new image (max. 500KB):
-				<label>
-					<img src={src} alt={$contact.name}>
-					<input type="file" name="avatar" on:change={handleAvatar}>
-				</label>
-			</span>
-			{:else if option === AdminOptions.DESCRIPTION}
-			<span class="span span-flex">
-				Insert the new description (max. 420 characters):
-				<textarea name="description" bind:value={groupProps.DESCRIPTION} rows="5"></textarea>
-			</span>
-			{:else if option === AdminOptions.STATE}
-			<span class="span span-flex">
-				<p>Choose visibility:</p>
-				<label>
-					<input type="radio" name="option" on:click={() => groupProps.STATE = StateOption.PUBLIC} checked>
-					Public
-				</label>
-				<label>
-					<input type="radio" name="option" on:click={() => groupProps.STATE =  StateOption.PROTECTED}>
-					Protected
-				</label>
-				<label>
-					<input type="radio" name="option" on:click={() => groupProps.STATE = StateOption.PRIVATE}>
-					Private
-				</label>
-				<span>
-					{#if groupProps.STATE === StateOption.PUBLIC}
-						Everyone can join the group
-						{:else if groupProps.STATE === StateOption.PROTECTED}
-						Only member contacts can join
-						{:else}
-						Only members with authorization from the admin or moderators can join
+						<p>All your contacts are members of this group.</p>
 					{/if}
-				</span>
-			</span>
-			{:else if option === AdminOptions.DESTROY}
-			<span class="span">
-				This group will be removed from your contact list and blocked.
-				If you want unblock this user go to Settings > Blocked Users.
-			</span>
-		{/if}
+				{:else if option === ModOptions.BAN}
+					{#if getMembers($contact).length}
+						<p>Ban member:</p>
+						{#each getMembers($contact) as user (user.id)}
+							<div>
+								{user.name}
+								<input
+									type="checkbox"
+									on:click={() => groupProps.BAN = banMembers(user.id, groupProps.BAN)}
+								>
+							</div>
+						{/each}
+						{:else}
+						<p>This group has no contacts.</p>
+					{/if}
+				{:else if option === ModOptions.BLOCK}
+					{#if getMembers($contact).length}
+						<p>Block member:</p>
+						{#each getMembers($contact) as user (user.id)}
+							<div>
+								{user.name}
+								<input
+									type="checkbox"
+									on:click={() => groupProps.BLOCK = addMembers(user, groupProps.BLOCK)}
+								>
+							</div>
+						{/each}
+						{:else}
+						<p>This group has no contacts.</p>
+					{/if}
+				{:else if option === ModOptions.UNBLOCK}
+					{#if $contact.blacklist?.length}
+						<p>Unblock member:</p>
+						{#each $contact.blacklist as user (user.id)}
+							<div>
+								{user.name}
+								<input
+									type="checkbox"
+									on:click={() => groupProps.UNBLOCK = banMembers(user.id, groupProps.UNBLOCK)}
+								>
+							</div>
+						{/each}
+						{:else}
+						<p>This group has no contacts blocked.</p>
+					{/if}
+				{:else if option === AdminOptions.ADDMOD}
+					{#if $contact.members?.length}
+						<p>Add member:</p>
+						{#each $contact.members as member (member.id)}
+							<div>
+								{member.name}
+								<input
+									type="checkbox"
+									on:click={() => groupProps.ADDMOD = addMembers(member, groupProps.ADDMOD)}
+								>
+							</div>
+						{/each}
+						{:else}
+						<p>All your contacts are members of this group.</p>
+					{/if}
+				{:else if option === AdminOptions.REMOVEMOD}
+					{#if $contact.mods?.length}
+						<p>Remove member:</p>
+						{#each $contact.mods as member (member.id)}
+							<div>
+								{member.name}
+								<input
+									type="checkbox"
+									on:click={() => groupProps.REMOVEMOD = addMembers(member, groupProps.REMOVEMOD)}
+								>
+							</div>
+						{/each}
+						{:else}
+						<p>All your contacts are members of this group.</p>
+					{/if}
+				{:else if option === AdminOptions.AVATAR}
+					Load the new image (max. 500KB):
+					<label class="label-image">
+						<img src={src} alt={$contact.name}>
+						<input type="file" name="avatar" on:change={handleAvatar}>
+					</label>
+				{:else if option === AdminOptions.DESCRIPTION}
+					Insert the new description (max. 420 characters):
+					<textarea name="description" bind:value={groupProps.DESCRIPTION} rows="5"></textarea>
+				{:else if option === AdminOptions.STATE}
+					<p>Choose visibility:</p>
+					<label>
+						<input
+							type="radio"
+							name="option"
+							on:click={() => groupProps.STATE = StateOption.PUBLIC}
+							checked
+						>
+						Public
+					</label>
+					<label>
+						<input
+							type="radio"
+							name="option"
+							on:click={() => groupProps.STATE = StateOption.PROTECTED}
+						>
+						Protected
+					</label>
+					<label>
+						<input
+							type="radio"
+							name="option"
+							on:click={() => groupProps.STATE = StateOption.PRIVATE}
+						>
+						Private
+					</label>
+					<span>
+						{#if groupProps.STATE === StateOption.PUBLIC}
+							Everyone can join the group
+							{:else if groupProps.STATE === StateOption.PROTECTED}
+							Only member contacts can join
+							{:else}
+							Only members with authorization from the admin or moderators canjoin
+						{/if}
+					</span>
+				{:else if option === AdminOptions.DESTROY}
+					This group will be removed from your contact list and blocked.
+					If you want unblock this user go to Settings > Blocked Users.
+			{/if}
+		</span>
 	</EditChat>
 {/if}
 
@@ -341,58 +337,58 @@
 	</div>
 	<List bind:visible={visible}>
 		{#if $contact.type === TypeContact.USER}
-			<li on:mousedown={() => handleUser(UserOptions.LEAVE)} role='none'>
+			<li on:mousedown={() => selectContact(UserOptions.LEAVE, Option.USER, Name.SPAN)} role='none'>
 				Leave Room
 			</li>
-			<li on:mousedown={() => handleUser(UserOptions.BLOCK)} role='none'>
+			<li on:mousedown={() => selectContact(UserOptions.BLOCK, Option.USER, Name.SPAN)} role='none'>
 				Block User
 			</li>
-			<li on:mousedown={() => handleUser(UserOptions.DESTROY)} role='none'>
+			<li on:mousedown={() => selectContact(UserOptions.DESTROY, Option.USER, Name.SPAN)} role='none'>
 				Destroy Chat
 			</li>
-			<li on:mousedown={() => handleUser(UserOptions.BAD)} role='none'>
+			<li on:mousedown={() => selectContact(UserOptions.BAD, Option.USER, Name.SPAN)} role='none'>
 				Destroy and Block
 			</li>
 		{/if}
 		{#if isMember($contact.members, $user.id) || isMod($contact.mods, $user.id)}
-			<li on:mousedown={() => handleGroup(MemberOptions.LEAVE)} role='none'>
+			<li on:mousedown={() => selectContact(MemberOptions.LEAVE, Option.GROUP, Name.SPAN)} role='none'>
 				Leave Group
 			</li>
-			<li on:mousedown={() => handleGroup(MemberOptions.BLOCKGROUP)} role='none'>
+			<li on:mousedown={() => selectContact(MemberOptions.BLOCKGROUP, Option.GROUP, Name.SPAN)} role='none'>
 				Block Group
 			</li>
 		{/if}
 		{#if isMod($contact.mods, $user.id) || $user.id === $contact.admin}
-			<li on:mousedown={() => handleGroup(ModOptions.ADD)} role='none'>
+			<li on:mousedown={() => selectContact(ModOptions.ADD, Option.GROUP, Name.GRID)} role='none'>
 				Add Member
 			</li>
-			<li on:mousedown={() => handleGroup(ModOptions.BAN)} role='none'>
+			<li on:mousedown={() => selectContact(ModOptions.BAN, Option.GROUP, Name.GRID)} role='none'>
 				Ban Member
 			</li>
-			<li on:mousedown={() => handleGroup(ModOptions.BLOCK)} role='none'>
+			<li on:mousedown={() => selectContact(ModOptions.BLOCK, Option.GROUP, Name.GRID)} role='none'>
 				Block Member
 			</li>
-			<li on:mousedown={() => handleGroup(ModOptions.UNBLOCK)} role='none'>
+			<li on:mousedown={() => selectContact(ModOptions.UNBLOCK, Option.GROUP, Name.GRID)} role='none'>
 				Unblock Member
 			</li>
 		{/if}
 		{#if $user.id === $contact.admin}
-			<li on:mousedown={() => handleGroup(AdminOptions.ADDMOD)} role='none'>
+			<li on:mousedown={() => selectContact(AdminOptions.ADDMOD, Option.GROUP, Name.GRID)} role='none'>
 				Add Mod
 			</li>
-			<li on:mousedown={() => handleGroup(AdminOptions.REMOVEMOD)} role='none'>
+			<li on:mousedown={() => selectContact(AdminOptions.REMOVEMOD, Option.GROUP, Name.GRID)} role='none'>
 				Remove Mod
 			</li>
-			<li on:mousedown={() => handleGroup(AdminOptions.AVATAR)} role='none'>
+			<li on:mousedown={() => selectContact(AdminOptions.AVATAR, Option.GROUP, Name.FLEX)} role='none'>
 				Change Avatar
 			</li>
-			<li on:mousedown={() => handleGroup(AdminOptions.DESCRIPTION)} role='none'>
+			<li on:mousedown={() => selectContact(AdminOptions.DESCRIPTION, Option.GROUP, Name.FLEX)} role='none'>
 				Change Description
 			</li>
-			<li on:mousedown={() => handleGroup(AdminOptions.STATE)} role='none'>
+			<li on:mousedown={() => selectContact(AdminOptions.STATE, Option.GROUP, Name.FLEX)} role='none'>
 				Change State
 			</li>
-			<li on:mousedown={() => handleGroup(AdminOptions.DESTROY)} role='none'>
+			<li on:mousedown={() => selectContact(AdminOptions.DESTROY, Option.GROUP, Name.SPAN)} role='none'>
 				Destroy Group
 			</li>
 		{/if}
@@ -406,7 +402,7 @@
 		line-height: 1.09;
 	}
 
-	.span {
+	.span, .span-flex, .span-grid {
 		background-color: #ececec;
 		color: #404040;
 		@apply w-full p-2.5 rounded font-medium gap-1.5;
@@ -417,42 +413,42 @@
 		@apply grid;
 	}
 
+	.span-grid div {
+		@apply flex;
+	}
+
+	.span-grid input[type='checkbox'] {
+		@apply ml-auto;
+	}
+
 	.span-flex {
 		@apply flex flex-wrap gap-1;
 	}
 
-	.span p {
-		grid-column: 1 / span 2;
-		width: 100%;
-	}
-
-	.span div {
-		@apply flex;
-	}
-
-	.span span {
-		@apply w-full text-center;
-	}
-
-	.span input[type='checkbox'] {
-		@apply ml-auto;
-	}
-
-	.span input[type='file'] {
+	.span-flex input[type='file'] {
 		@apply hidden;
 	}
 
-	.span label {
+	.span-flex .label-image {
 		@apply w-60 h-60;
 	}
 
-	.span img {
+	.span-flex img {
 		@apply w-full h-full rounded-full;
 	}
 
-	.span textarea {
+	.span-flex textarea {
 		outline: 1px solid #b1b1b1;
 		@apply w-full p-2 rounded-lg;
+	}
+
+	.span-flex span {
+		@apply w-full text-center;
+	}
+
+	.span-flex p, .span-grid p {
+		grid-column: 1 / span 2;
+		width: 100%;
 	}
 
 	.contact {

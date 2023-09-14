@@ -1,9 +1,17 @@
 <script lang="ts">
-	import type { IUser } from '$lib/types/global';
+	import type { IUser, ResponseData } from '$lib/types/global';
 	import axios from 'axios';
 	import { DIR } from '$lib/config.js';
   import { socket } from '$lib/socket';
-  import { user, contact, switchs, list, register, users, groups } from '$lib/store';
+  import {
+		user,
+		contact,
+		switchs,
+		list,
+		register,
+		users,
+		groups
+	} from '$lib/store';
   import Lists from "./List.svelte";
 
   export let contactID: string;
@@ -19,15 +27,16 @@
 	}
 
 	async function handleLogout() {
-		const data = await axios({
+		const data: ResponseData = await axios({
 			method: 'POST',
 			url: DIR + '/api/auth/logout',
 			withCredentials: true
-		}).then(res => res.data);
+		}).then(res => res.data)
+			.catch(err => err);
 
 		visible = false;
 
-		if (!data.user) {
+		if (data.logout) {
 			socket.disconnect();
 			register.setOption('signin');
 			switchs.resetOptions();

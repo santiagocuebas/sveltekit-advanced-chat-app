@@ -11,7 +11,7 @@ import {
 } from './socket/index.js';
 import { TypeContact } from './types/enums.js';
 import { socketIndex } from './validations/socket-index.js';
-import { IContact } from './types/types.js';
+import { IContact, IKeys } from './types/types.js';
 
 export default async (socket: Socket) => {
 	console.log(socket.id, '==== connected');
@@ -27,11 +27,11 @@ export default async (socket: Socket) => {
 	const [groups, removedGroups] = await getGroupContacts(userID, socket.user.groupRooms);
 
 	if (removedUsers.length) {
-		socket.user.userRooms = socket.user.userRooms.filter(room => removedUsers.includes(room));
+		socket.user.userRooms = socket.user.userRooms.filter(room => !removedUsers.includes(room));
 	}
 
 	if (removedGroups.length) {
-		socket.user.groupRooms = socket.user.groupRooms.filter(room => removedGroups.includes(room));
+		socket.user.groupRooms = socket.user.groupRooms.filter(room => !removedGroups.includes(room));
 	}
 
 	socket.join([...socket.user.userRooms, ...socket.user.groupRooms]);
@@ -55,7 +55,6 @@ export default async (socket: Socket) => {
 
 	socket.on('joinUserRoom', async (contactID: string, roomID: string) => {
 		emitArray.forEach(emitString => socket.removeAllListeners(emitString));
-
 		const IDs = [userID, contactID, roomID];
 		const messages = await getChats(IDs);
 
@@ -69,7 +68,6 @@ export default async (socket: Socket) => {
 	socket.on('joinGroupRoom', async (contactID: string) => {
 		emitArray.forEach(emitString => socket.removeAllListeners(emitString));
 		const IDs = [userID, contactID, contactID];
-
 		const messages = await getChats(IDs, TypeContact.GROUP);
 
 		socket.emit('loadChats', messages);
@@ -78,13 +76,16 @@ export default async (socket: Socket) => {
 
 		memberSockets(socket, IDs, socket.user);
 
-		modSockets(socket, contactID, socket.user);
+		modSockets(socket, contactID);
 
-		adminSockets(socket, IDs, socket.user);
+		adminSockets(socket, IDs);
 	});
 	
-	socket.on('emitUnblock', (listUsers: string[]) => {
-		socket.user.blacklist = socket.user.blacklist.filter(({ id }) => !listUsers.includes(id));
+	socket.on('emitUnblock', ({ users, groups }: IKeys<string[]>) => {
+		socket.user.blockedUsers = socket.user.blockedUsers.filter(({ id }) => !users.includes(id));
+		socket.user.blockedUsersIDs = socket.user.blockedUsersIDs.filter(id => !users.includes(id));
+		socket.user.blockedGroups = socket.user.blockedGroups.filter(({ id }) => !groups.includes(id));
+		socket.user.blockedGroupsIDs = socket.user.blockedGroupsIDs.filter(id => !groups.includes(id));
 	});
 
 	socket.on('joinUpdate', ({ contactID, roomID, type }: IContact) => {

@@ -6,7 +6,15 @@ function createRegister() {
 	
 	return {
 		subscribe,
-		setOptions: (values: IKeys<string | boolean>) => set(values),
+		setOptions: (keys: string[], value: string | boolean) => {
+			const options: IKeys<string | boolean> = {};
+
+			for (const key of keys) {
+				options[key] = value;
+			}
+
+			set(options)
+		},
 		setOption: (key: string, value: string | boolean) => update((option: IKeys<string | boolean>) => {
 			option[key] = value;
 			return option;

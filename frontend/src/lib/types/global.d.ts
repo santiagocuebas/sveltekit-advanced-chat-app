@@ -1,49 +1,67 @@
-export type Contacts = [IContact[], IContact[]];
+export type Contact = IForeign & IGroup;
+
+export type Contacts = [IForeign[], IGroup[]];
 
 export type Members = { id: string, name: string };
 
-export type Blacklist = { id: string, name: string, type: TypeContact };
-
-export type Check = (value: string, custom?: string, pass?: string) => string | undefined;
+export type Check = (
+	value: string,
+	custom?: string,
+	pass?: string
+) => string | undefined;
 
 export type GroupProps = { id: string, name: string, type: TypeContact };
 
-export type ChoiceSocket = (
-	groups: IContact[],
-	contact: IContact
-) => IKeys<(value: any) => any>;
+export type ChoiceSocket = (contact: Contact) => IKeys<(value: any) => any>;
 
 export interface IKeys<Type> {
 	[index: string]: Type;
 }
 
-export interface IUser {
+export interface RawUser {
 	id: string;
 	username: string;
 	avatar: string;
 	description: string;
-	blacklist: Blacklist[];
+	blockedUsers: Members[];
+	blockedGroups: Members[];
 }
 
-export interface IContact {
+export interface IUser {
+	[index: string]: string | IKeys<Members[]>;
+	id: string;
+	username: string;
+	avatar: string;
+	description: string;
+	blocked: IKeys<Members[]>;
+}
+
+interface IContact {
 	contactID: string;
 	roomID: string;
 	name: string;
 	avatar: string;
-	description: string;
 	logged: boolean | number;
 	type: string;
-	admin?: string;
-	mods?: Members[];
-	members?: Members[];
-	blacklist?: Members[];
-	state?: string;
 	content?: string | string[];
 	createdAt?: string;
 }
 
+export interface IForeign extends IContact {
+	blockedIDs: string[];
+}
+
+export interface IGroup extends IContact {
+	admin: string;
+	mods: Members[];
+	members: Members[];
+	blacklist: Members[];
+	description: string;
+	state: string;
+}
+
 export interface IList {
-	id: string;
+	contactID: string;
 	name: string;
 	avatar: string;
 	description: string;
@@ -60,30 +78,31 @@ export interface IChat {
 }
 
 export interface IGroupProps {
-	getProps: (contact: IContact) => IInitPropsExtended;
-	resetProps: (contact: IInitPropsExtended) => IInitPropsExtended;
+	[index: string]: Members[] | string[] | string | ((key: string) => void) | undefined;
+	add: Members[];
+	ban: string[];
+	block: Members[];
+	unblock: string[];
+	addMod: Members[];
+	removeMod: Members[];
+	description: string;
+	state: string;
+	destroy?;
 }
 
-export interface IInitProps {
-	[index: string]: Members[] | string[];
-	ADD: Members[];
-	BAN: string[];
-	BLOCK: Members[];
-	UNBLOCK: string[];
-	ADDMOD: Members[];
-	REMOVEMOD: Members[];
-}
-
-export interface IInitPropsExtended extends IInitProps {
-	[index: string]: Members[] | string[] | string | undefined;
-	DESCRIPTION: string;
-	STATE: string;
-	DESTROY?;
+export interface ISettingsProps {
+	[index: string]: string | IKeys<boolean> | IKeys<string[]> | ((key: string) => void);
+	avatar: string;
+  username: string;
+	description: string;
+	password: IKeys<boolean>;
+  unblock: IKeys<string[]>;
+	resetProps: (key: string) => ISettingsProps;
 }
 
 export interface ResponseData {
 	[index: string]: string | string[] | boolean | IKeys<string> | IList[] | IUser;
-	user: IUser;
+	user: RawUser;
 	errors: IKeys<string>;
 	filename: string;
 	filenames: string[];

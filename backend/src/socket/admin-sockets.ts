@@ -3,9 +3,8 @@ import type { AdminSockets } from '../types/sockets.js';
 import fs from 'fs-extra';
 import { resolve } from 'path';
 import { User, Group, Chat } from '../models/index.js';
-import { TypeContact } from '../types/enums.js';
 
-export const adminSockets: AdminSockets = (socket, [userID, contactID], user) => {
+export const adminSockets: AdminSockets = (socket, [userID, contactID]) => {
 	socket.on('emitAddMod', async (mods: Members[]) => {
 		const userIDs = mods.map(mods => mods.id);
 
@@ -17,7 +16,7 @@ export const adminSockets: AdminSockets = (socket, [userID, contactID], user) =>
 			}
 		);
 		
-		socket.to(contactID).emit('addMod', contactID, mods);
+		socket.to(contactID).emit('addMods', contactID, mods);
 	});
 
 	socket.on('emitRemoveMod', async (members: Members[]) => {
@@ -31,11 +30,11 @@ export const adminSockets: AdminSockets = (socket, [userID, contactID], user) =>
 			}
 		);
 		
-		socket.to(contactID).emit('removeMod', contactID, members);
+		socket.to(contactID).emit('removeMods', contactID, members);
 	});
 
 	socket.on('emitChangeAvatar', async (filename: string) => {
-		socket.to(user.groupRooms).emit('changeAvatar', contactID, TypeContact.GROUP, filename);
+		socket.to(contactID).emit('changeAvatar', contactID, filename);
 	});
 
 	socket.on('emitChangeDescription', async (description: string) => {
@@ -47,7 +46,7 @@ export const adminSockets: AdminSockets = (socket, [userID, contactID], user) =>
 	});
 
 	socket.on('emitDestroyGroup', async () => {
-		socket.to(contactID).emit('leaveGroup', contactID);
+		socket.to(contactID).emit('leaveGroup', userID, contactID);
 
 		const group = await Group
 			.findOneAndDelete({ _id: contactID, admin: userID })
@@ -76,7 +75,7 @@ export const adminSockets: AdminSockets = (socket, [userID, contactID], user) =>
 				await fs.unlink(path);
 			}
 
-			user.groupRooms = user.groupRooms.filter(id => id !== contactID);
+			socket.user.groupRooms = socket.user.groupRooms.filter(id => id !== contactID);
 		
 			socket.leave(contactID);
 		}

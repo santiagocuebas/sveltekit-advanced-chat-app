@@ -7,7 +7,8 @@ import {
 	isValidExtension,
 	isValidSize,
 	isCorrectPassword,
-	isArrayString,
+	existsUsers,
+	existsGroups,
 	isArrayImages,
 	isUndefinedImages,
 	isValidLengthImages,
@@ -90,7 +91,10 @@ export const arrayPassword: ValidationChain[] = [
 ];
 
 export const arrayUnblock: ValidationChain[] = [
-	body('userIDs')
-		.isArray().bail()
-		.custom(isArrayString)
+	body('unblockUsers', 'Unblock error')
+		.exists({ values: 'falsy' }).bail()
+		.custom(existsUsers),
+	body('unblockGroups', 'Unblock error')
+		.exists({ values: 'falsy' }).bail()
+		.custom(existsGroups)
 ];

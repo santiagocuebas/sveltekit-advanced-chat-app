@@ -1,39 +1,36 @@
 <script lang="ts">
-  import type { IContact } from "$lib/types/global";
+  import type { IForeign, IGroup } from "$lib/types/global";
 	import { DIR } from '$lib/config.js';
+  import { avatarURL } from "$lib/dictionary";
+	import { contact as user } from '$lib/store';
   import { getDate } from "$lib/services/libs";
-  import { selectAvatarURL } from "$lib/services/chat-libs";
 
-  export let contact: IContact;
-  export let id: string;
-  export let join: (value: IContact) => void;
+  export let contact: IForeign | IGroup;
+  export let join: (value: IForeign | IGroup) => void;
 </script>
 
 <li
-	class:selected={id === contact.contactID}
+	class:selected={$user.contactID === contact.contactID}
 	on:mousedown={() => join(contact)}
 	role='none'
 >
 	{#if contact.logged === true}
 		<span>&#149;</span>
 	{/if}
-  <img src={DIR + selectAvatarURL(contact)} alt={contact.contactID}>
+  <img
+		src={DIR + avatarURL[contact.type] + contact.avatar}
+		alt={contact.contactID}
+	>
   <div>
-		<p class="title" title={contact.name}>{contact.name}</p>
+		<p class="contact-title" title={contact.name}>{contact.name}</p>
 		{#if contact.content}
 			<p class="content">
-				{#if contact.content instanceof Array}
-					{contact.content[0]}
-					{:else}
-					{contact.content}
-				{/if}
+				{contact.content instanceof Array ? contact.content[0] : contact.content}
 			</p>
 		{/if}
 	</div>
   {#if contact.createdAt}
-		<p class="createdAt">
-			{getDate(new Date(contact.createdAt))}
-		</p>
+		<p class="createdAt">{getDate(contact.createdAt)}</p>
   {/if}
 </li>
 
@@ -72,7 +69,7 @@
 		@apply overflow-hidden text-ellipsis break-words;
 	}
 
-	.title {
+	.contact-title {
 		@apply w-full h-5 max-h-5 text-lg font-semibold leading-none;
 	}
 
@@ -82,6 +79,8 @@
 	}
 
 	.createdAt {
-		@apply ml-auto self-start w-16 text-center;
+		min-width: 44px;
+		max-width: 44px;
+		@apply w-11 ml-auto self-start text-center;
 	}
 </style>

@@ -1,18 +1,32 @@
-import type { IChat, IContact, Members } from '$lib/types/global';
+import type {
+	Contact,
+	IForeign,
+	IGroup,
+	Members,
+	IChat
+} from '$lib/types/global';
 import { socket } from './socket';
 import { isMember, isMod } from './services/chat-libs';
-import { contact, switchs, groups, users, user, register } from './store';
-import { TypeContact } from './types/enums';
+import {
+	contact,
+	switchs,
+	groups,
+	users,
+	user,
+	register,
+	options
+} from './store';
+import { Option } from './types/enums';
 
-let contactValue: IContact;
-let usersValues: IContact[];
-let groupsValues: IContact[];
+let contactValue: Contact;
+let usersValues: IForeign[];
+let groupsValues: IGroup[];
 
 export const unsubContact = contact.subscribe(value => contactValue = value);
 
-export const unsubUsers = users.subscribe(value => usersValues = value as IContact[]);
+export const unsubUsers = users.subscribe(value => usersValues = value as IForeign[]);
 
-export const unsubGroups = groups.subscribe(value => groupsValues = value as IContact[]);
+export const unsubGroups = groups.subscribe(value => groupsValues = value as IGroup[]);
 
 export const editGroups = (room: string, { content, createdAt }: IChat) => {
 	const reloadGroups = groupsValues.map(group => {
@@ -24,25 +38,138 @@ export const editGroups = (room: string, { content, createdAt }: IChat) => {
 		return group;
 	})
 
-	groups.setContacts(reloadGroups);
+	groups.setGroups(reloadGroups);
 };
 
 export const leaveUser = (id: string, room: string, remove?: boolean) => {
 	const reloadUsers = usersValues.filter(user => user.contactID !== id);
-	users.setContacts(reloadUsers);
+	users.setUsers(reloadUsers);
 	switchs.resetOptions();
 
-	if (remove) socket.emit('removeRoom', room, TypeContact.USER);
+	if (remove) socket.emit('removeRoom', room, Option.USER);
 	if (contactValue.contactID === id) contact.resetContact();
 };
 
-export const leaveGroup = (id: string, remove?: boolean) => {
-	const reloadGroups = groupsValues.filter(group => group.contactID !== id);
-	groups.setContacts(reloadGroups);
-	switchs.resetOptions();
+export const leaveGroup = (id: string, contactID?: string) => {
+	let reloadGroups: IGroup[] = [];
 
-	if (remove) socket.emit('removeRoom', id, TypeContact.GROUP);
-	if (contactValue.contactID === id) contact.resetContact();
+	if (contactValue.contactID === id) {
+		reloadGroups = groupsValues.filter(group => group.contactID !== id);
+		contact.resetContact();
+		switchs.resetOptions();
+		socket.emit('removeRoom', id, Option.GROUP);
+	} else if (contactID) {
+		reloadGroups = groupsValues.map(group => {
+			if (group.contactID === id) {
+				group.mods = group.mods.filter(({ id }) => id !== contactID);
+				group.members = group.members.filter(({ id }) => id !== contactID);
+			}
+
+			return group;
+		});
+		
+		options.resetOptions();
+	}
+
+	groups.setGroups(reloadGroups);
+};
+
+export const addMembers = (id: string, members: Members[]) => {
+	const reloadGroups = groupsValues.map(group => {
+		if (group.contactID === id) {
+			group.members = [...members, ...group.members];
+		}
+
+		return group;
+	});
+
+	groups.setGroups(reloadGroups);
+	options.resetOptions();
+};
+
+export const banMembers = (id: string, banIDs: string[]) => {
+	const reloadGroups = groupsValues.map(group => {
+		if (group.contactID === id) {
+			group.members = group.members.filter(({ id }) => !banIDs.includes(id));
+		}
+		
+		return group;
+	});
+
+	groups.setGroups(reloadGroups);
+	options.resetOptions();
+};
+
+export const blockMembers = (id: string, blockedUsers: Members[]) => {
+	const reloadGroups = groupsValues.map(group => {
+		if (group.contactID === id) {
+			const blockedIDs = blockedUsers.map(member => member.id);
+
+			group.members = group.members.filter(({ id }) => !blockedIDs.includes(id));
+			group.blacklist = [...blockedUsers, ...group.blacklist];
+		}
+		
+		return group;
+	});
+
+	groups.setGroups(reloadGroups);
+	options.resetOptions();
+};
+
+export const unblockMembers = (id: string, unblockIDs: string[]) => {
+	const reloadGroups = groupsValues.map(group => {
+		if (group.contactID === id) {
+			group.blacklist = group.blacklist.filter(({ id }) => !unblockIDs.includes(id));
+		}
+		
+		return group;
+	});
+
+	groups.setGroups(reloadGroups);
+	options.resetOptions();
+};
+
+export const addMods = (id: string, mods: Members[]) => {
+	const reloadGroups = groupsValues.map(group => {
+		if (group.contactID === id) {
+			const modIDs = mods.map(mod => mod.id);
+
+			group.mods = [...mods, ...group.mods];
+			group.members = group.members.filter(({ id }) => !modIDs.includes(id));
+		}
+		
+		return group;
+	});
+
+	groups.setGroups(reloadGroups);
+	options.resetOptions();
+};
+
+export const removeMods = (id: string, members: Members[]) => {
+	const reloadGroups = groupsValues.map(group => {
+		if (group.contactID === id) {
+			const modIDs = members.map(members => members.id);
+
+			group.members = [...members, ...group.members];
+			group.mods = group.mods.filter(mod => !modIDs.includes(mod.id));
+		}
+		
+		return group;
+	});
+
+	groups.setGroups(reloadGroups);
+	options.resetOptions();
+};
+
+export const changeAvatar = (id: string, avatar: string) => {
+	const reloadGroups = groupsValues.map(group => {
+		if (group.contactID === id) group.avatar = avatar;
+		return group;
+	});
+
+	groups.setGroups(reloadGroups);
+
+	if (contactValue.contactID === id) contact.changeAvatar(avatar);
 };
 
 export default {
@@ -55,15 +182,18 @@ export default {
 			return user;
 		});
 	
-		if (contactValue.contactID === id && contactValue.type === TypeContact.USER) {
+		if (contactValue.contactID === id && contactValue.type === Option.USER) {
 			contact.changeLogged(logged);
 		}
 	
-		users.setContacts(reloadUsers);
+		users.setUsers(reloadUsers);
 	},
 	countMembers: (id: string, num: number) => {
 		const reloadGroups = groupsValues.map(group => {
-			if (typeof group.logged === 'number' && group.contactID === id)
+			const allIDs = [...group.mods, ...group.members].map(({ id }) => id);
+			allIDs.push(group.admin);
+
+			if (typeof group.logged === 'number' && allIDs.includes(id))
 			group.logged = group.logged + num;
 	
 			return group;
@@ -75,7 +205,7 @@ export default {
 			isMember(contactValue.members, id)
 		) contact.countLogged(num);
 	
-		groups.setContacts(reloadGroups);
+		groups.setGroups(reloadGroups);
 	},
 	editUsers: (room: string, { content, createdAt }: IChat) => {
 		const reloadUsers = usersValues.map(user => {
@@ -87,111 +217,34 @@ export default {
 			return user;
 		});
 	
-		users.setContacts(reloadUsers);
+		users.setUsers(reloadUsers);
 	},
 	editGroups,
 	leaveUser,
 	leaveGroup,
-	addMembers: (id: string, members: Members[]) => {
-		const reloadGroups = groupsValues.map(group => {
-			if (group.contactID === id) {
-				if (group.members) group.members = [...members, ...group.members];
-			}
-	
-			return group;
-		});
-	
-		groups.setContacts(reloadGroups);
-	},
-	banMembers: (id: string, banIDs: string[]) => {
-		const reloadGroups = groupsValues.map(group => {
-			if (group.contactID === id) {
-				if (group.members) group.members = group.members = group.members.filter(member => !banIDs.includes(member.id));
-			}
-			
-			return group;
-		});
-	
-		groups.setContacts(reloadGroups);
-	},
-	blockMembers: (id: string, blockedUsers: Members[]) => {
-		const reloadGroups = groupsValues.map(group => {
-			if (group.contactID === id) {
-				const blockedIDs = blockedUsers.map(member => member.id);
-	
-				if (group.members) group.members = group.members.filter(member => !blockedIDs.includes(member.id));
-				if (group.blacklist) group.blacklist = [...blockedUsers, ...group.blacklist];
-			}
-			
-			return group;
-		});
-	
-		groups.setContacts(reloadGroups);
-	},
-	unblockMembers: (id: string, unblockIDs: string[]) => {
-		const reloadGroups = groupsValues.map(group => {
-			if (group.contactID === id) {
-				if (group.blacklist) group.blacklist = group.blacklist.filter(member => !unblockIDs.includes(member.id));
-			}
-			
-			return group;
-		});
-	
-		groups.setContacts(reloadGroups);
-	},
-	addMods: (id: string, mods: Members[]) => {
-		const reloadGroups = groupsValues.map(group => {
-			if (group.contactID === id) {
-				const modIDs = mods.map(mod => mod.id);
-	
-				if (group.mods) group.mods = [...mods, ...group.mods];
-				if (group.members) group.members = group.members.filter(member => !modIDs.includes(member.id));
-			}
-			
-			return group;
-		});
-	
-		groups.setContacts(reloadGroups);
-	},
-	removeMods: (id: string, mods: Members[]) => {
-		const reloadGroups = groupsValues.map(group => {
-			if (group.contactID === id) {
-				const modIDs = mods.map(mod => mod.id);
-	
-				if (group.members) group.members = [...mods, ...group.members];
-				if (group.mods) group.mods = group.mods.filter(mod => !modIDs.includes(mod.id));
-			}
-			
-			return group;
-		});
-	
-		groups.setContacts(reloadGroups);
-	},
-	changeAvatar: (id: string, avatar: string) => {
-		const reloadGroups = groupsValues.map(group => {
-			if (group.contactID === id) group.avatar = avatar;
-			return group;
-		});
-	
-		groups.setContacts(reloadGroups);
-	
-		if (contactValue.contactID === id) contact.changeAvatar(avatar);
-	},
+	addMembers,
+	banMembers,
+	blockMembers,
+	unblockMembers,
+	addMods,
+	removeMods,
+	changeAvatar,
 	destroyUser: (id: string) => {
-		const reloadGroups: IContact[] = [];
+		const reloadGroups = groupsValues.filter(group => {
+			if (group.admin !== id) {
+				group.mods = group.mods.filter(mod => mod.id !== id);
+				group.members = group.members.filter(member => member.id !== id);
 	
-		for (const group of groupsValues) {
-			if (group.admin && group.admin !== id) {
-				if (group.mods) group.mods = group.mods.filter(mod => mod.id !== id);
-				if (group.members) group.members = group.members.filter(member => member.id !== id);
-	
-				reloadGroups.push(group);
+				return group;
 			}
+		});
+	
+		groups.setGroups(reloadGroups);
+	
+		if (contactValue.admin === id) {
+			switchs.resetOptions();
+			contact.resetContact();
 		}
-	
-		groups.setContacts(reloadGroups);
-	
-		if (contactValue.admin === id) contact.resetContact();
 	},
 	connectError: (err: Error) => {
 		if (err.message === 'Unauthorized') {
@@ -199,7 +252,7 @@ export default {
 			users.resetContacts();
 			groups.resetContacts();
 			switchs.resetOptions();
-			register.setOption('signin');
+			register.setOption(Option.SIGNIN);
 		}
 	}
-}
+};

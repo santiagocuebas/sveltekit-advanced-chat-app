@@ -1,101 +1,77 @@
 import type {
-  IContact,
-  IGroupProps,
-  IInitProps,
-  IInitPropsExtended,
-  IList,
-  IUser,
-  Members
+	Contact,
+	IForeign,
+	IGroup,
+	IGroupProps,
+	IUser,
+	Members
 } from "$lib/types/global";
-import { TypeContact } from "$lib/types/enums";
+import { Option } from "$lib/types/enums";
 import { getId } from "./libs";
 
-export const initGroupProps = (): IGroupProps => {
-  const initGroup: IInitProps = {
-    ADD: [],
-    BAN: [],
-    BLOCK: [],
-    UNBLOCK: [],
-    ADDMOD: [],
-    REMOVEMOD: []
-  };
-
+export const initGroupProps = ({ description, state }: IGroup): IGroupProps => {
 	return {
-		getProps: ({ description, state }: IContact) => {
-      return {
-        ...initGroup,
-        DESCRIPTION: description,
-        STATE: state as string,
-        DESTROY: undefined
-      }
-    },
-    resetProps: (values: IInitPropsExtended) => {
-      Object.entries(initGroup).forEach(([key, value]) => values[key] = value);
-      return values;
-    }
+		add: [],
+		ban: [],
+		block: [],
+		unblock: [],
+		addMod: [],
+		removeMod: [],
+		description: description,
+		state: state,
+		destroy: undefined
 	}
 };
 
-export const getChat = (user: IUser, contact: IContact, message: string | string[]) => {
-  return {
-    _id: getId(),
+export const getChat = (user: IUser, contact: Contact, message: string | string[]) => {
+	return {
+		_id: getId(),
 		from: user.id,
 		to: contact.contactID,
-		username: contact.type === TypeContact.GROUP ? user.username : undefined,
+		username: contact.type === Option.GROUP ? user.username : undefined,
 		content: message,
 		createdAt: Date()
-  }
+	}
 };
 
-export const selectAvatarURL = ({ avatar, type }: IContact | IList) => {
-  if (type === TypeContact.USER) return '/uploads/avatar/' + avatar;
-  return '/uploads/group-avatar/' + avatar;
+export const isNotMember = (
+	users: IForeign[],
+	{ contactID, admin, mods, members, blacklist }: IGroup
+) => {
+	const newMembers: Members[] = [];
+	const id = contactID;
+	const allIDs = [...mods, ...members, ...blacklist].map(({ id }) => id);
+	if (admin) allIDs.push(admin);
+
+	for (const { contactID, name, blockedIDs } of users) {
+		if (!allIDs.includes(contactID) && !blockedIDs.includes(id)) {
+			newMembers.push({ id: contactID, name });
+		}
+	}
+
+	return newMembers;
 };
 
-export const getMembers = (contact: IContact) => {
-  const members: Members[] = contact.members ? contact.members : [];
-
-  return members;
+export const addMember = (member: Members, members: Members[]): Members[] => {
+	return !isMember(members, member.id)
+		? [member, ...members]
+		: members.filter(user => user.id !== member.id);
 };
 
-export const isNotMember = (users: IContact[], contact: IContact) => {
-  const newMembers: Members[] = [];
-  const mods: Members[] = contact.mods ? contact.mods : [];
-  const members: Members[] = contact.members ? contact.members : [];
-  const memberIDs = [...mods, ...members].map(member => member.id);
-  if (contact.admin) memberIDs.push(contact.admin);
-
-  for (const { contactID, name } of users) {
-    if (!memberIDs.includes(contactID)) newMembers.push({ id: contactID, name });
-  }
-
-  return newMembers;
+export const banMember = ({ id }: Members, banIDs: string[]): string[] => {
+	return !banIDs.includes(id)
+		? [id, ...banIDs]
+		: banIDs.filter(banID => banID !== id);
 };
 
-export const addMembers = (member: Members, members: Members[]): Members[] => {
-  if (
-    !members
-      .map(user => user.id)
-      .includes(member.id)
-  ) return [member, ...members];
-  
-  return members.filter(user => user.id !== member.id);
+export const isMod = (mods: Members[], id: string) => {
+	return mods
+		?.map(({ id }) => id)
+		.includes(id);
 };
 
-export const banMembers = (id: string, banIDs: string[]): string[] => {
-  if (!banIDs.includes(id)) return [id, ...banIDs];
-
-  return banIDs.filter(memberID => memberID !== id);
-};
-
-export const isMod = (mods: Members[] | undefined, id: string) => {
-  return mods
-    ?.map(({ id }) => id)
-    .includes(id);
-};
-
-export const isMember = (member: Members[] | undefined, id: string) => {
-  return member
-    ?.map(({ id }) => id)
-    .includes(id);
+export const isMember = (member: Members[], id: string) => {
+	return member
+		?.map(({ id }) => id)
+		.includes(id);
 };

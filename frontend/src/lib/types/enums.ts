@@ -1,22 +1,26 @@
-export enum ButtonValue {
-  CHATS = 'chats',
-  ROOMS = 'rooms'
+export enum Inputs {
+  USERNAME = 'username',
+  EMAIL = 'email',
+  PASSWORD = 'password',
+  CONFIRM = 'confirmPassword'
+}
+
+export enum InputsSignin {
+  EMAIL = 'email',
+  PASSWORD = 'password'
 }
 
 export enum Option {
   USER = 'user',
-  GROUP = 'group'
-}
-
-export enum Name {
-  SPAN = 'span',
-  FLEX = 'span-flex',
-  GRID = 'span-grid'
-}
-
-export enum TypeContact {
-  USER = 'User',
-  GROUP = 'Group'
+  GROUP = 'group',
+  REGISTER = 'register',
+  SIGNIN = 'signin',
+  SETTINGS = 'settings',
+  CHAT = 'chat',
+  IMAGE = 'image',
+  SEARCH = 'search',
+  CHATS = 'chats',
+  ROOMS = 'rooms'
 }
 
 export enum Formats {
@@ -30,7 +34,8 @@ export enum Settings {
   USERNAME = 'username',
   DESCRIPTION = 'description',
   PASSWORD = 'password',
-  UNBLOCK = 'unblock'
+  UNBLOCK = 'unblock',
+  DELETE = 'delete'
 }
 
 export enum StateOption {
@@ -40,29 +45,29 @@ export enum StateOption {
 }
 
 export enum UserOptions {
-  LEAVE = 'LEAVE',
-  DESTROY = 'DESTROY',
-  BLOCK = 'BLOCK',
-  BAD = 'BAD'
+  LEAVE = 'leave',
+  DESTROY = 'destroy',
+  BLOCK = 'block',
+  BAD = 'bad'
 }
 
 export enum MemberOptions {
-  LEAVE = 'LEAVE',
-  BLOCKGROUP = 'BLOCKGROUP'
+  LEAVE = 'leave',
+  BLOCKGROUP = 'blockGroup'
 }
 
 export enum ModOptions {
-  ADD = 'ADD',
-  BAN = 'BAN',
-  BLOCK = 'BLOCK',
-  UNBLOCK = 'UNBLOCK'
+  ADD = 'add',
+  BAN = 'ban',
+  BLOCK = 'block',
+  UNBLOCK = 'unblock'
 }
 
 export enum AdminOptions {
-  ADDMOD = 'ADDMOD',
-  REMOVEMOD = 'REMOVEMOD',
-  AVATAR = 'AVATAR',
-  DESCRIPTION = 'DESCRIPTION',
-  STATE = 'STATE',
-  DESTROY = 'DESTROY'
+  ADDMOD = 'addMod',
+  REMOVEMOD = 'removeMod',
+  AVATAR = 'avatar',
+  DESCRIPTION = 'description',
+  STATE = 'state',
+  DESTROY = 'destroy'
 }

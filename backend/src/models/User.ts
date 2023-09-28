@@ -13,13 +13,15 @@ const userSchema = new Schema<IUser>({
 	description: { type: String, default: "It's just another description of a user" },
 	users: [Object],
 	groupRooms: [String],
-	blacklist: [Object]
+	blockedUsers: [Object],
+	blockedGroups: [Object]
 }, {
 	timestamps: {
 		createdAt: true,
 		updatedAt: false
 	},
-	toJSON: { virtuals: true }
+	toJSON: { virtuals: true },
+	virtuals: true
 });
 
 userSchema
@@ -38,6 +40,18 @@ userSchema
 	.virtual('userRooms')
 	.get(function(this): string[] {
 		return this.users.map(users => users.roomID);
+	});
+
+userSchema
+	.virtual('blockedUsersIDs')
+	.get(function(this): string[] {
+		return this.blockedUsers?.map(users => users.id);
+	});
+
+userSchema
+	.virtual('blockedGroupsIDs')
+	.get(function(this): string[] {
+		return this.blockedGroups?.map(groups => groups.id);
 	});
 
 userSchema.plugin(MLV);

@@ -47,7 +47,7 @@ export const isValidSize: CustomValidator = (_value, { req }) => {
 	return req.file.size < 1048576;
 };
 
-export const isCorrectPassword: CustomValidator = async (value: string, { req }): Promise<boolean> => {
+export const isCorrectPassword: CustomValidator = async (value, { req }): Promise<boolean> => {
 	const match: boolean = await matchPassword(value, req.user.password);
 
 	if (!match) throw new Error('Incorrect password');
@@ -55,19 +55,42 @@ export const isCorrectPassword: CustomValidator = async (value: string, { req })
 	return true;
 };
 
-export const isArrayString: CustomValidator = (value: string[]): boolean => {
+export const existsUsers: CustomValidator = (value, { req }): boolean => {
 	let match = true;
 
-	for (const id of value) {
-		if (typeof id !== 'string') {
-			match = false;
-			break;
+	if (typeof value === 'string') {
+		if (!req.user?.blockedUsersIDs.includes(value)) match = false;
+	} else if (value instanceof Array) {
+		for (const id of value) {
+			if (!req.user?.blockedUsersIDs.includes(id)) {
+				match = false;
+				break;
+			}
 		}
 	}
 
 	if (!match) throw new Error('An error has occurred');
 
-	return true;
+	return match;
+};
+
+export const existsGroups: CustomValidator = (value, { req }): boolean => {
+	let match = true;
+
+	if (typeof value === 'string') {
+		if (!req.user?.blockedGroupsIDs.includes(value)) match = false;
+	} else if (value instanceof Array) {
+		for (const id of value) {
+			if (!req.user?.blockedGroupsIDs.includes(id)) {
+				match = false;
+				break;
+			}
+		}
+	}
+
+	if (!match) throw new Error('An error has occurred');
+
+	return match;
 };
 
 export const isArrayImages: CustomValidator = (_value, { req }) => {

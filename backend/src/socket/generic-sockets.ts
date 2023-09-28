@@ -46,7 +46,10 @@ export const genericSockets: GenericSockets = (socket, userID, user) => {
 		
 		const group = await Group.findOneAndUpdate(
 			{ _id: id },
-			{ $push: { members: { id: userID, name: user.username } } }
+			{
+				$push: { members: { id: userID, name: user.username } },
+				$pull: { blockUsers: userID }
+			}
 		) as IGroup;
 
 		await User.updateOne({ _id: userID }, { groupRooms: user.groupRooms });
@@ -75,12 +78,26 @@ export const genericSockets: GenericSockets = (socket, userID, user) => {
 		const groupID = String(group._id);
 		user.groupRooms.push(groupID);
 
-		await User.updateOne({ _id: userID }, { groupRooms: user.groupRooms });
+		if (user.blockedGroupsIDs.includes(groupID)) {
+			user.blockedGroups = user.blockedGroups.filter(group => group.id !== groupID);
+			user.blockedGroupsIDs = user.blockedGroupsIDs.filter(groupID => groupID !== groupID);
+		}
+
+		await User.updateOne(
+			{ _id: userID },
+			{ groupRooms: user.groupRooms, blockedGroups: user.blockedGroups }
+		);
 
 		const contact = getContact(groupID, groupID, group, TypeContact.GROUP);
 
 		[...mods, ...members].forEach(async ({ id }) => {
-			await User.updateOne({ _id: id }, { $push: { groupRooms: [groupID] } });
+			await User.updateOne(
+				{ _id: id },
+				{
+					$push: { groupRooms: [groupID] },
+					$pull: { blockedGroups: { id: groupID } }
+				}
+			);
 		});
 
 		const contactsIDs = [...mods, ...members].map(user => user.id);

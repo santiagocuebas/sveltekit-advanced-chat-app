@@ -4,8 +4,9 @@ import { extname, resolve } from 'path';
 import { getId, getUser, matchPassword } from '../libs/index.js';
 import { Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
+import { matchId } from '../libs/get-data.js';
 
-export const getData: Direction = (req, res) => {
+export const getData: Direction = async (req, res) => {
 	const user = getUser(req.user);
 		
 	return res.json({ user });
@@ -13,7 +14,13 @@ export const getData: Direction = (req, res) => {
 
 export const getSearch: Direction = async (req, res) => {
 	const { param } = req.params;
-	const { id, userIDs, groupRooms } = req.user;
+	const {
+		id,
+		userIDs,
+		groupRooms,
+		blockedUsersIDs,
+		blockedGroupsIDs
+	} = req.user;
 
 	const users = await User
 		.find({
@@ -23,7 +30,7 @@ export const getSearch: Direction = async (req, res) => {
 			]
 		})
 		.lean({ virtuals: true })
-		.select('id username avatar description users blacklist')
+		.select('id username avatar description users blockedUsers')
 		.limit(150);
 		
 	const groups = await Group
@@ -34,21 +41,11 @@ export const getSearch: Direction = async (req, res) => {
 	const contacts: IKeys<string>[] = [];
 
 	for (const user of users) {
-		const isBlockedUsers = user.blacklist
-			.filter(({ type }) => type === TypeContact.USER)
-			.map(({ id }) => id)
-			.includes(id);
-
-		const isBlockedGroups = user.blacklist
-			.filter(({ type }) => type === TypeContact.GROUP)
-			.map(({ id }) => id)
-			.includes(id);
-		
 		if (
 			user.id !== id &&
 			!userIDs.includes(user.id) &&
-			!isBlockedUsers &&
-			!isBlockedGroups
+			!blockedUsersIDs.includes(user.id) &&
+			!user.blockedUsersIDs.includes(id)
 		) {
 			contacts.push({
 				id: user.id,
@@ -61,25 +58,11 @@ export const getSearch: Direction = async (req, res) => {
 	}
 
 	for (const group of groups) {
-		let match = false;
-
-		if (group.state === StateOption.PROTECTED) {
-			for (const id of [group.admin, ...group.modIDs, ...group.memberIDs]) {
-				if (userIDs.includes(id)) {
-					match = true;
-					break;
-				}
-			}
-		}
-
-		const isBlockedUsers = group.blacklist
-			.map(({ id }) => id)
-			.includes(id);
-
 		if (
 			!groupRooms.includes(group.id) &&
-			!isBlockedUsers &&
-			(group.state === StateOption.PUBLIC || match)
+			!blockedGroupsIDs.includes(group.id) &&
+			!group.blockedIDs.includes(id) &&
+			(group.state === StateOption.PUBLIC || matchId(group, userIDs))
 		) {
 			contacts.push({
 				id: group.id,

@@ -8,7 +8,8 @@ import {
 	isObject,
 	isString,
 	isValidKey,
-	isValidUsers
+	isValidUsers,
+	isValidUser
 } from './socket-custom.js';
 import { Chat, Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
@@ -97,7 +98,7 @@ export const addMembers = async (
 					!isString(member.name) ||
 					allIDs.includes(member.id) ||
 					!validIDs.includes(id) ||
-					!(await User.findOne({ _id: member.id, username: member.name }))
+					await isValidUser(groupID, member)
 				) {
 					match = {
 						error: 'Group Error',
@@ -363,11 +364,17 @@ export const state = ([state]: [string]) => {
 	};
 };
 
-export const unblock = ([unblockIDs]: [string[]], { blacklist }: IUser) => {
-	if (isArray(unblockIDs)) {
-		const listUsers = blacklist.filter(({ id }) => unblockIDs.includes(id));
+export const unblock = (
+	[{ users, groups }]: [IKeys<string[]>],
+	{ blockedUsers, blockedGroups }: IUser
+) => {
+	if (isArray(users), isArray(groups)) {
+		const listUsers = blockedUsers.filter(({ id }) => users.includes(id));
+		const listGroups = blockedGroups.filter(({ id }) => groups.includes(id));
 
-		if (listUsers.length >= unblockIDs.length) return true;
+		if (listUsers.length === users.length && listGroups.length === groups.length) {
+			return true;
+		}
 	}
 
 	return {
@@ -427,8 +434,21 @@ export const removeRoom = async (
 	};
 };
 
-export const joinUser = async ([id]: [string]) => {
-	if (isString(id) && await User.findOne({ _id: id })) return true;
+export const joinUser = async (
+	[userID]: [string],
+	{ id, userIDs, blockedUsersIDs }: IUser
+) => {
+	if (
+		isString(userID) &&
+		!userIDs.includes(userID) &&
+		!blockedUsersIDs.includes(userID)
+	) {
+		const user = await User
+			.findOne({ _id: userID })
+			.lean({ virtuals: true });
+		
+		if (user && !user.blockedUsersIDs.includes(id)) return true;
+	}
 
 	return {
 		error: 'Join Error',
@@ -436,8 +456,21 @@ export const joinUser = async ([id]: [string]) => {
 	};
 };
 
-export const joinGroup = async ([id]: [string]) => {
-	if (isString(id) && await Group.findOne({ _id: id })) return true;
+export const joinGroup = async (
+	[groupID]: [string],
+	{ id, groupRooms, blockedGroupsIDs }: IUser
+) => {
+	if (
+		isString(groupID) &&
+		!groupRooms.includes(groupID) &&
+		!blockedGroupsIDs.includes(groupID)
+	) {
+		const group = await Group
+			.findOne({ _id: groupID })
+			.lean({ virtuals: true });
+		
+		if (group && !group.blockedIDs.includes(id)) return true;
+	}
 
 	return {
 		error: 'Join Error',

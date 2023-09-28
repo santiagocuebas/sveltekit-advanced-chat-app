@@ -65,7 +65,12 @@ export const postPassword: Direction = async (req, res) => {
 export const postUnblock: Direction = async (req, res) => {
 	await User.updateOne(
 		{ _id: req.user.id },
-		{ $pull: { blacklist: { id: { $in: req.body.userIDs } } } }
+		{
+			$pull: {
+				blockedUsers: { id: { $in: req.body.unblockUsers } },
+				blockedGroups: { id: { $in: req.body.unblockGroups } }
+			}
+		}
 	);
 
 	return res.json({

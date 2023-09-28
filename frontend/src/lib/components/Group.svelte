@@ -1,42 +1,33 @@
 <script lang="ts">
-	import type { IContact, Members } from '$lib/types/global';
-	import { StateOption } from '$lib/types/enums';
-  import { switchs, users } from '$lib/store';
+	import type { Members } from '$lib/types/global';
+  import { Messages } from '$lib/dictionary';
   import { socket } from "$lib/socket";
+  import { isMember, isMod } from '$lib/services/chat-libs';
+  import { changeName } from '$lib/services/libs';
+  import { switchs, users } from '$lib/store';
+	import { StateOption } from '$lib/types/enums';
 
-	let usersValues: IContact[];
 	let name = '';
 	let mods: Members[] = [];
 	let members: Members[] = [];
-	let modIDs: string[] = [];
-	let memberIDs: string[] = [];
 	let state = StateOption.PUBLIC;
 
-	users.subscribe(value => usersValues = value as IContact[]);
-
-	function addMods(id: string, name: string) {
-		if (!modIDs.includes(id)) {
-			if (memberIDs.includes(id)) {
-				memberIDs = memberIDs.filter(memberID => memberID !== id);
+	function addMods(id: string, name: string, mods: Members[], members: Members[]) {
+		if (!isMod(mods, id)) {
+			if (isMember(members, id)) {
 				members = members.filter(member => member.id !== id);
 			}
 
-			modIDs = [id, ...modIDs];
-			return mods = [{ id, name }, ...mods];
-		}
+			mods = [{ id, name }, ...mods];
+		} else mods = mods.filter(member => member.id !== id);
 
-		modIDs = modIDs.filter(memberID => memberID !== id);
-		return mods = mods.filter(member => member.id !== id);
+		return [mods, members];
 	}
 
-	function addMembers(id: string, name: string) {
-		if (!memberIDs.includes(id) && !modIDs.includes(id)) {
-			memberIDs = [id, ...memberIDs];
-			return members = [{ id, name }, ...members];
-		}
-
-		memberIDs = memberIDs.filter(memberID => memberID !== id);
-		return members = members.filter(member => member.id !== id);
+	function addMembers(id: string, name: string, members: Members[]) {
+		return (!isMember(members, id) && !isMod(mods, id))
+			? [{ id, name }, ...members]
+			: members.filter(member => member.id !== id);
 	}
 
 	function handleSubmit() {
@@ -44,131 +35,86 @@
 		name = '';
 		mods = [];
 		members = [];
-		modIDs = [];
-		memberIDs = [];
 		state = StateOption.PUBLIC;
 	}
 </script>
 
-<form on:submit|preventDefault={handleSubmit}>
-	<button class="close" on:click|preventDefault={() => switchs.resetOptions()}>
+<div class="container-box">
+	<button class="close" on:click={() => switchs.resetOptions()}>
 		<i class="fa-solid fa-xmark"></i>
 	</button>
 	<h1>Create Group</h1>
-	<div class='select {(name.length > 0 && name.length < 3) || name.length > 40 ? 'error' : ''}'>
-		Choice name:
-		<input type="text" bind:value={name}>
-		{#if name.length > 0 && name.length < 3}
-			<p>
-				<i class="fa-solid fa-xmark"></i>
-				The group name is too short
-			</p>
-			{:else if name.length > 40}
-			<p>
-				<i class="fa-solid fa-xmark"></i>
-				The group name is too long
-			</p>
-		{/if}
-	</div>
-	<div class="select">
-		Select moderators:
-		<ul>
-			{#each usersValues as user}
-				<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-				<li
-					class='members {modIDs.includes(user.contactID) ? 'selected' : ''}'
-					on:mousedown={addMods(user.contactID, user.name)}
-				>{user.name}</li>
-			{/each}
-		</ul>
-	</div>
-	<div class="select">
-		Select members:
-		<ul>
-			{#each usersValues as user}
-				<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-				<li
-					class='members {memberIDs.includes(user.contactID) ? 'selected' : ''}'
-					on:mousedown={addMembers(user.contactID, user.name)}
-				>{user.name}</li>
-			{/each}
-		</ul>
-	</div>
-	<div class="select">
-		Choose visibility:
-		<div class="choise-visibility">
-			<label>
-				<input
-					type="radio"
-					name="option"
-					on:click={() => state = StateOption.PUBLIC}
-					checked
-				>
-				Public
-			</label>
-			<label>
-				<input
-					type="radio"
-					name="option"
-					on:click={() => state = StateOption.PROTECTED}
-				>
-				Protected
-			</label>
-			<label>
-				<input
-					type="radio"
-					name="option"
-					on:click={() => state = StateOption.PRIVATE}
-				>
-				Private
-			</label>
-			<span>
-				{#if state === StateOption.PUBLIC}
-					Everyone can join the group
-					{:else if state === StateOption.PROTECTED}
-					Only member contacts can join
-					{:else}
-					Only members with authorization from the admin or moderators can join
-				{/if}
-			</span>
+	<form on:submit|preventDefault={handleSubmit}>
+		<div class='select {(name.length > 0 && name.length < 3) || name.length > 40 ? 'error' : ''}'>
+			Choice name:
+			<input type="text" bind:value={name}>
+			{#if (name.length > 0 && name.length < 3) || name.length > 40}
+				<p>
+					<i class="fa-solid fa-xmark"></i>
+					The name is too {name.length > 40 ? 'long' : 'short'}
+				</p>
+			{/if}
 		</div>
-	</div>
-	<button
-		class='create {name.length < 3 || name.length > 40 ? 'disabled' : ''}'
-		disabled={name.length < 3 || name.length > 40}
-	>Create</button>
-</form>
+		<div class="select">
+			Select moderators:
+			<ul>
+				{#each $users as { contactID, name } (contactID)}
+					<li
+						class:selected={isMod(mods, contactID)}
+						on:click={() => [mods, members] = addMods(contactID, name, mods, members)}
+						role='none'
+					>{name}</li>
+				{/each}
+			</ul>
+		</div>
+		<div class="select">
+			Select members:
+			<ul>
+				{#each $users as { contactID, name } (contactID)}
+					<li
+						class:selected={isMember(members, contactID)}
+						on:click={() => members = addMembers(contactID, name, members)}
+						role='none'
+					>{name}</li>
+				{/each}
+			</ul>
+		</div>
+		<div class="select">
+			Choose visibility:
+			<div class="choise-visibility">
+				{#each Object.values(StateOption) as option}
+					<label>
+						<input
+							type="radio"
+							name="option"
+							on:click={() => state = option}
+							checked={state === option}
+						>
+						{changeName(option)}
+					</label>
+				{/each}
+				<span>{Messages[state]}</span>
+			</div>
+		</div>
+		<div class="select">
+			<button class='create' disabled={name.length < 3 || name.length > 40}>
+				Create
+			</button>
+		</div>
+	</form>
+</div>
 
 <style lang="postcss">
-	form {
-		grid-column: 2 / span 1;
-		grid-row: 1 / span 3;
-		background-color: #ffffff;
-		scrollbar-width: none;
-		z-index: 200;
-		@apply grid relative content-start justify-items-center p-2.5 overflow-y-scroll gap-10;
-	}
-
-	.close {
-		@apply flex absolute items-center justify-center w-9 h-9 top-2.5 right-2.5 font-bold leading-none;
-	}
-
-	.close i {
-		color: #b2b2b2;
-		@apply text-4xl font-bold leading-none cursor-pointer;
-	}
-
-	.close i:hover {
-		color: #a3a3a3;
-	}
-
 	h1 {
 		font-size: 40px;
-		@apply mt-8;
+	}
+
+	form {
+		@apply flex flex-wrap h-full content-between justify-center gap-y-10;
 	}
 
 	.select {
-		min-width: 260px;
+		min-width: 280px;
 		@apply grid w-3/5 gap-2;
 	}
 
@@ -182,11 +128,11 @@
 		padding: 10px;
 	}
 
-	.members {
+	.select li {
 		@apply block w-full font-medium leading-tight cursor-context-menu;
 	}
 
-	.members:hover {
+	.select li:hover {
 		background-color: #3d7cf1;
 		color: #ffffff;
 	}
@@ -208,7 +154,7 @@
 	.choise-visibility {
 		grid-template-columns: repeat(3, 1fr);
 		grid-auto-rows: 1fr;
-		@apply grid justify-items-center items-center font-medium leading-tight;
+		@apply grid justify-items-center items-center font-medium leading-tight gap-y-2;
 	}
 
 	.choise-visibility span {
@@ -219,20 +165,20 @@
 	.create {
 		background-color: #3b8fc7;
 		color: #ffffff;
-		@apply mb-10 py-2.5 px-10 rounded text-xl font-bold leading-none cursor-pointer;
+		@apply justify-self-center w-min h-min py-2.5 px-10 rounded text-xl font-bold leading-none cursor-pointer;
 	}
 
 	.create:hover {
 		background-color: #2091db;
 	}
 
-	.disabled {
+	.create[disabled] {
 		background-color: #d7d7d7;
 		color: #666666;
 		cursor: default;
 	}
 
-	.disabled:hover {
+	.create[disabled]:hover {
 		background-color: #d7d7d7;
 	}
 </style>

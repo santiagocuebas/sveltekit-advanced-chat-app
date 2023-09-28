@@ -38,12 +38,15 @@ export interface IContact {
 	roomID: string;
 	name: string;
 	avatar: string;
+	description: string;
 	logged: boolean | number;
 	type: TypeContact;
 	admin?: string;
 	members?: Members[];
 	mods?: Members[];
 	blacklist?: Members[];
+	blockedIDs?: string[];
+	state?: string;
 	content?: string | string[];
 	createdAt?: Date;
 }

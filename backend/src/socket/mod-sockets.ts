@@ -2,7 +2,7 @@ import type { Members } from '../types/global.js';
 import type { ModSockets } from '../types/sockets.js';
 import { User, Group } from '../models/index.js';
 
-export const modSockets: ModSockets = (socket, contactID, user) => {
+export const modSockets: ModSockets = (socket, contactID) => {
 	socket.on('emitAddMember', async (members: Members[]) => {
 		await Group.updateOne(
 			{ _id: contactID },
@@ -13,7 +13,7 @@ export const modSockets: ModSockets = (socket, contactID, user) => {
 			await User.updateOne({ _id: id }, { $push: { groupRooms: [contactID] } });
 		}
 		
-		socket.to(user.groupRooms).emit('addMembers', contactID, members);
+		socket.to(contactID).emit('addMembers', contactID, members);
 	});
 
 	socket.on('emitBanMember', async (userIDs: string[]) => {
@@ -32,7 +32,7 @@ export const modSockets: ModSockets = (socket, contactID, user) => {
 			await User.updateOne({ _id: id }, { $pull: { groupRooms: contactID } });
 		}
 		
-		socket.to(user.groupRooms).emit('banMembers', contactID, userIDs);
+		socket.to(contactID).emit('banMembers', contactID, userIDs);
 	});
 
 	socket.on('emitBlockMember', async (members: Members[]) => {
@@ -54,7 +54,7 @@ export const modSockets: ModSockets = (socket, contactID, user) => {
 			await User.updateOne({ _id: id }, { $pull: { groupRooms: contactID } });
 		}
 		
-		socket.to(user.groupRooms).emit('blockMembers', contactID, members);
+		socket.to(contactID).emit('blockMembers', contactID, members);
 	});
 
 	socket.on('emitUnblockMember', async (userIDs: string[]) => {
@@ -63,6 +63,6 @@ export const modSockets: ModSockets = (socket, contactID, user) => {
 			{ $pull: { blacklist: { id: { $in: userIDs } } } }
 		);
 		
-		socket.to(user.groupRooms).emit('unblockMembers', contactID, userIDs);
+		socket.to(contactID).emit('unblockMembers', contactID, userIDs);
 	});
 };

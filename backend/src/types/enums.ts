@@ -1,6 +1,6 @@
 export enum TypeContact {
-  USER = 'User',
-  GROUP = 'Group'
+  USER = 'user',
+  GROUP = 'group'
 }
 
 export enum StateOption {

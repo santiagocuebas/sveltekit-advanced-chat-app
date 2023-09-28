@@ -35,6 +35,24 @@ export const existsImage = async (values: string[]): Promise<boolean> => {
 	return match;
 };
 
+export const isValidUser = async (
+	groupID: string,
+	{ id, name }: Members
+): Promise<boolean> => {
+	const user = await User
+		.findOne({ _id: id, username: name })
+		.select('blockedGroups')
+		.lean({ virtuals: true });
+
+	if (user !== null) {
+		if (user.blockedGroupsIDs.includes(groupID)) return true;
+
+		return false;
+	}
+
+	return true;
+};
+
 export const groupList = ({ admin, memberIDs, modIDs, blockedIDs }: IGroup) => {
 	return {
 		adminID: admin,

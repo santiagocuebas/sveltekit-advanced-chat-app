@@ -1,10 +1,9 @@
 import type { MemberSockets } from '../types/sockets.js';
 import { User, Group } from '../models/index.js';
-import { TypeContact } from '../types/enums.js';
 
 export const memberSockets: MemberSockets = (socket, [userID, contactID], user) => {
 	socket.on('emitLeaveGroup', async () => {
-		socket.to(contactID).emit('leaveGroup', contactID, true);
+		socket.to(contactID).emit('leaveGroup', userID, contactID);
 
 		await Group.updateOne(
 			{ _id: contactID },
@@ -25,7 +24,7 @@ export const memberSockets: MemberSockets = (socket, [userID, contactID], user) 
 	});
 
 	socket.on('emitBlockGroup', async (name: string) => {
-		socket.to(contactID).emit('leaveGroup', contactID, true);
+		socket.to(contactID).emit('leaveGroup', userID, contactID);
 
 		await Group.updateOne(
 			{ _id: contactID },
@@ -39,15 +38,12 @@ export const memberSockets: MemberSockets = (socket, [userID, contactID], user) 
 		);
 
 		user.groupRooms = user.groupRooms.filter(id => id !== contactID);
-		user.blacklist.push({
-			id: contactID,
-			name,
-			type: TypeContact.GROUP
-		});
+		user.blockedGroups.push({ id: contactID, name });
+		user.blockedGroupsIDs.push(contactID);
 
 		await User.updateOne(
 			{ _id: userID },
-			{ blacklist: user.blacklist, groupRooms: user.groupRooms }
+			{ blockedGroups: user.blockedGroups, groupRooms: user.groupRooms }
 		);
 
 		socket.leave(contactID);

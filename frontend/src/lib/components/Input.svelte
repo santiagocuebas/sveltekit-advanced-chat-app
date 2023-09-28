@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Check } from "$lib/types/global";
+  import { Inputs } from "$lib/types/enums";
   import { afterUpdate } from "svelte";
 
 	export let text: string;
@@ -26,12 +27,8 @@
 
 	function setInput(this: HTMLInputElement) {
 		input = this.value;
-
-		if (name === 'confirmPassword') error = check(input, undefined, pass);
-		else error = check(input);
-
-		if (error) selectClass = 'error';
-		else selectClass = 'focus';
+		error = name === Inputs.CONFIRM ? check(input, undefined, pass) : check(input);
+		selectClass = error ? 'error' : 'focus';
 	}
 
 	afterUpdate(() => {
@@ -42,7 +39,7 @@
 	});
 </script>
 
-{#if (name !== 'confirmPassword' || pass)}
+{#if (name !== Inputs.CONFIRM || pass)}
 	<div>
 		<label class={selectClass}>
 			<p>{text}</p>

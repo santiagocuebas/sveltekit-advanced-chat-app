@@ -1,21 +1,16 @@
 <script lang="ts">
-	export let visible: boolean;
-	export let option: string | null = null;
-	export let handle: any;
+  import { options } from "$lib/store";
 
-	function selectFunction() {
-		if (option) return handle(option);
-		return handle();
-	}
+	export let handle: any;
 </script>
 
 <div class='edit'>
 	<div>
 		<slot></slot>
-		<button on:click={selectFunction}>
+		<button on:click={handle}>
 			Accept
 		</button>
-		<button class="red" on:click={() => visible = false}>
+		<button class="red" on:click={() => options.resetOptions()}>
 			Cancel
 		</button>
 	</div>
@@ -31,7 +26,9 @@
 	}
 
 	.edit div {
-		width: 300px;
+		width: 50%;
+		min-width: 240px;
+		max-width: 400px;
 		margin-top: 180px;
 		background-color: #ffffff;
 		box-shadow: 0 0 0 1px #e7e7e7;
@@ -40,7 +37,7 @@
 	}
 	
 	button {
-		max-width: 100px;
+		max-width: 99px;
 		background-color: #343fd4;
 		color: #ffffff;
 		@apply flex justify-center py-2 px-6 rounded text-xl font-bold leading-none cursor-pointer;

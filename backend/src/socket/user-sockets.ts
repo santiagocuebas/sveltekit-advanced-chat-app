@@ -6,7 +6,7 @@ export const userSockets: UserSockets = (socket, [userID, contactID, roomID], us
 	socket.on('emitLeave', async () => {
 		socket.to(roomID).emit('leaveUser', userID, roomID, true);
 
-		await User.updateOne({ _id: contactID }, { $pull: { users: { id: userID } } });
+		await User.updateOne({ _id: contactID }, { $pull: { users: { userID } } });
 
 		user = actUser(contactID, roomID, user);
 
@@ -20,14 +20,14 @@ export const userSockets: UserSockets = (socket, [userID, contactID, roomID], us
 
 		const foreignUser = await User.findOneAndUpdate(
 			{ _id: contactID },
-			{ $pull: { users: { id: userID } } }
+			{ $pull: { users: { userID } } }
 		);
 
 		user = actUser(contactID, roomID, user, foreignUser?.username);
 
 		await User.updateOne(
 			{ _id: userID },
-			{ users: user.users, blacklist: user.blacklist }
+			{ users: user.users, blockedUsers: user.blockedUsers }
 		);
 		
 		socket.leave(roomID);
@@ -36,7 +36,7 @@ export const userSockets: UserSockets = (socket, [userID, contactID, roomID], us
 	socket.on('emitDestroy', async () => {
 		socket.to(roomID).emit('leaveUser', userID, roomID, true);
 
-		await User.updateOne({ _id: contactID }, { $pull: { users: { id: userID } } });
+		await User.updateOne({ _id: contactID }, { $pull: { users: { userID } } });
 
 		user = actUser(contactID, roomID, user);
 
@@ -52,20 +52,18 @@ export const userSockets: UserSockets = (socket, [userID, contactID, roomID], us
 
 		const foreignUser = await User.findOneAndUpdate(
 			{ _id: contactID },
-			{ $pull: { users: { id: userID } } }
+			{ $pull: { users: { userID } } }
 		);
 
 		user = actUser(contactID, roomID, user, foreignUser?.username);
 
 		await User.updateOne(
 			{ _id: userID },
-			{ users: user.users, blacklist: user.blacklist }
+			{ users: user.users, blockedUsers: user.blockedUsers }
 		);
 
 		await deleteChats(userID, contactID);
 		
 		socket.leave(roomID);
 	});
-
-	return user;
 };

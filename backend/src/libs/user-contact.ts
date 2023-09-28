@@ -11,7 +11,7 @@ export const getUserContacts = async (id: string, userContacts: Users[]): Promis
 	for (const { userID, roomID } of userContacts) {
 		const contact = await User
 			.findOne({ _id: userID })
-			.select('username avatar users logged')
+			.select('username avatar users blockedGroups logged')
 			.lean({ virtuals: true });
 
 		if (contact !== null) {

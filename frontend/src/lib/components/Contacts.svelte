@@ -1,26 +1,30 @@
 <script lang="ts">
-  import type { IContact, Contacts as IContacts, IList, ResponseData } from '$lib/types/global';
+  import type {
+		IForeign,
+		IGroup,
+		IList,
+		Contact,
+		Contacts,
+		ResponseData
+	} from '$lib/types/global';
   import { onDestroy, onMount } from 'svelte';
   import axios from 'axios';
   import { DIR } from '$lib/config';
   import { selectJoin } from '$lib/dictionary';
-	import { ButtonValue, TypeContact } from '$lib/types/enums';
 	import { socket } from '$lib/socket';
   import { contact, switchs, users, groups, list, options } from '$lib/store';
-  import Button from './Button.svelte';
-  import Contacts from './Contact.svelte';
-
-	export let id: string;
+	import { Option } from '$lib/types/enums';
+  import Box from './Contact.svelte';
 	
 	let input = '';
-	let usersValues: IContact[];
-	let groupsValues: IContact[];
+	let usersValues: IForeign[];
+	let groupsValues: IGroup[];
 	let listValues: IList[];
 	let selected: string;
 
-	const unsubUsers = users.subscribe(value => usersValues = value as IContact[]);
-	const unsubGroups = groups.subscribe(value => groupsValues = value as IContact[]);
-	const unsubList = list.subscribe(value => listValues = value as IList[]);
+	const unsubUsers = users.subscribe(value => usersValues = value as IForeign[]);
+	const unsubGroups = groups.subscribe(value => groupsValues = value as IGroup[]);
+	const unsubLists = groups.subscribe(value => listValues = value as IList[]);
 
 	async function searchUser() {
 		const data: ResponseData = await axios({
@@ -28,44 +32,39 @@
 			url: DIR + '/api/home/search/' + input,
 			withCredentials: true
 		}).then(res => res.data)
-			.catch(err => err);
+			.catch(err => err.response?.data);
 
 		if (data.contacts) {
-			list.setContacts(data.contacts);
-			switchs.setOption('search');
+			list.setLists(data.contacts);
+			switchs.setOption(Option.SEARCH);
 		}
 
-		switchs.resetOptions();
+		input = '';
 	}
 
-	const joinRoom = (foreign: IContact) => {
-		id = foreign.contactID;
+	const joinRoom = (foreign: IForeign | IGroup) => {
 		options.resetOptions();
-		contact.setContact(foreign);
-		switchs.setOption('chat');
+		contact.setContact(foreign as never);
+		switchs.setOption(Option.CHAT);
 		socket.emit(selectJoin[foreign.type], foreign.contactID, foreign.roomID);
 	};
 
-	export const loadContacts = ([contactsUsers, contactsGroups]: IContacts) => {
-		users.setContacts(contactsUsers);
-		groups.setContacts(contactsGroups);
+	export const loadContacts = ([contactsUsers, contactsGroups]: Contacts) => {
+		users.setUsers(contactsUsers);
+		groups.setGroups(contactsGroups);
 
-		if (contactsUsers.length > 0) selected = ButtonValue.CHATS;
-		else if (contactsGroups.length > 0) selected = ButtonValue.ROOMS
-		else selected = ButtonValue.CHATS;
+		if (contactsUsers.length > 0) selected = Option.CHATS;
+		else if (contactsGroups.length > 0) selected = Option.ROOMS
+		else selected = Option.CHATS;
 	};
 
-	const updateContacts = (contact: IContact, emit: boolean) => {
-		if (contact.type === TypeContact.GROUP) {
-			selected = ButtonValue.ROOMS;
-			groups.setContacts([...groupsValues, contact]);
-		} else {
-			selected = ButtonValue.CHATS;
-			users.setContacts([...usersValues, contact]); 
-		}
+	const updateContacts = (contact: Contact, emit: boolean) => {
+		if (contact.type === Option.GROUP) {
+			groups.setGroups([...groupsValues, contact]);
+		} else users.setUsers([...usersValues, contact]);
 
-		const actList = listValues.filter(user => user.id !== contact.contactID);
-		list.setContacts(actList);
+		const actList = listValues.filter(user => user.contactID !== contact.contactID);
+		list.setLists(actList);
 		
 		if (emit) socket.emit('joinUpdate', contact);
 	};
@@ -84,38 +83,44 @@
 		return {
 			unsubUsers,
 			unsubGroups,
-			unsubList
+			unsubLists
 		}
 	})
 </script>
 
 <div class="sidebar">
 	<form on:submit|preventDefault={searchUser}>
-		<button>
+		<button class="search">
 			<i class="fa-solid fa-search"></i>
 		</button>
-		<input type="text" placeholder="Search a chat" bind:value={input}>
+		<input type="text" placeholder="Search a contact" bind:value={input}>
 	</form>
-	<Button bind:selected={selected} text={ButtonValue.CHATS} />
-	<Button bind:selected={selected} text={ButtonValue.ROOMS} />
+	<button
+		class='button {selected === Option.CHATS ? 'selected' : ''}'
+		on:click={() => selected = Option.CHATS}
+	><i class='fa-solid fa-message'></i></button>
+	<button
+		class='button {selected === Option.ROOMS ? 'selected' : ''}'
+		on:click={() => selected = Option.ROOMS}
+	><i class='fa-solid fa-users'></i></button>
 	<ul>
-		{#if selected === ButtonValue.CHATS}
+		{#if selected === Option.CHATS}
 			{#if usersValues.length > 0}
 				{#each usersValues as user (user.contactID)}
-					<Contacts contact={user} id={id} join={joinRoom} /> 
+					<Box contact={user} join={joinRoom} /> 
 				{/each}
-				{:else}
+			{:else}
 				<div>No contacts yet</div>
 			{/if}
-			{:else if selected === ButtonValue.ROOMS}
+		{:else if selected === Option.ROOMS}
 			{#if groupsValues.length > 0}
 				{#each groupsValues as group (group.roomID)}
-					<Contacts contact={group} id={id} join={joinRoom}/>
+					<Box contact={group} join={joinRoom}/>
 				{/each}
-				{:else}
+			{:else}
 				<div>Hasn't joined any groups yet</div>
 			{/if}
-			{:else}
+		{:else}
 			<div class="loading">
 				<img src="/loading.png" alt="images">
 				Loading
@@ -135,18 +140,34 @@
 		@apply flex w-full h-min;
 	}
 
-	button {
+	form button {
 		padding: 15px 30px;
 		cursor: pointer;
 	}
 
-	input {
+	form input {
 		@apply w-full;
 	}
 
-	i {
+	form i {
 		color: #666666;
 		@apply text-xl leading-none;
+	}
+
+	.button {
+		height: 70px;
+		border: 3px solid #888888;
+		color: #777777;
+		@apply flex relative items-center justify-center w-1/2 font-bold cursor-pointer gap-2;
+  }
+
+	.button i {
+		@apply flex items-center justify-center text-2xl leading-none;
+	}
+
+	.selected {
+		border: 3px solid #3d7cf1;
+		color: #3d7cf1;
 	}
 
 	ul {

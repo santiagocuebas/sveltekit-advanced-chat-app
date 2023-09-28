@@ -4,7 +4,7 @@
 	export let visible: boolean;
 </script>
 
-<button on:click={setTimeout(() => visible = true)} disabled={visible}>
+<button on:click={() => visible = true}>
   <i class="fa-solid fa-ellipsis-vertical"></i>
 </button>
 {#if visible}

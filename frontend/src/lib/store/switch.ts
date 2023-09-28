@@ -36,7 +36,8 @@ export const options = createSwitch({
 	user: false,
 	group: false,
 	chat: false,
-	image: false
+	image: false,
+	settings: false
 });
 
 export const register = createSwitch({

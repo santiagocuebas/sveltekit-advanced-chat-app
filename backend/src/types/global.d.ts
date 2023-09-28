@@ -23,11 +23,7 @@ declare module 'socket.io' {
 
 export type Users = { userID: string, roomID: string };
 
-export type Blacklist = { id: string, name: string, type: TypeContact };
-
 export type Members = { id: string, name: string };
-
-export type BlacklistGroup = { id: string, name: string };
 
 export type PartialUser = (value: IUser) => IPartialUser;
 
@@ -57,11 +53,14 @@ export interface IUser {
 	userIDs: string[];
 	userRooms: string[];
 	groupRooms: string[];
-	blacklist: Blacklist[];
+	blockedUsers: Members[];
+	blockedUsersIDs: string[];
+	blockedGroups: Members[];
+	blockedGroupsIDs: string[];
 	createdAt: Date;
 }
 
-export type IPartialUser = Pick<IUser, 'id' | 'username' | 'avatar' | 'description' | 'blacklist'>;
+export type IPartialUser = Pick<IUser, 'id' | 'username' | 'avatar' | 'description' | 'blockedUsers' | 'blockedGroups'>;
 
 export interface IGroup {
 	_id: string;
@@ -77,7 +76,7 @@ export interface IGroup {
 	avatar: string;
 	connectedUsers: string[];
 	logged: number;
-	blacklist: BlacklistGroup[];
+	blacklist: Members[];
 	blockedIDs: string[];
 	createdAt: Date;
 }

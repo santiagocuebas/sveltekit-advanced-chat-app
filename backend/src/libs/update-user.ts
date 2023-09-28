@@ -2,19 +2,15 @@ import type { ActUser } from '../types/types.js';
 import fs from 'fs-extra';
 import { resolve } from 'path';
 import { Chat } from '../models/index.js';
-import { TypeContact } from '../types/enums.js';
 
 export const actUser: ActUser = (contactID, roomID, user, name) => {
 	user.users = user.users.filter(user => user.userID !== contactID);
 	user.userIDs = user.userIDs.filter(id => id !== contactID);
 	user.userRooms = user.userRooms.filter(id => id !== roomID);
 	
-	if (name) {
-		user.blacklist.push({
-			id: contactID,
-			name,
-			type: TypeContact.USER
-		});
+	if (name !== undefined) {
+		user.blockedUsers.push({ id: contactID, name });
+		user.blockedUsersIDs.push(contactID);
 	}
 
 	return user;

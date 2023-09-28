@@ -1,8 +1,9 @@
 <script lang="ts">
-	import type { IUser, ResponseData } from '$lib/types/global';
+	import type { RawUser, ResponseData } from '$lib/types/global';
 	import axios from 'axios';
 	import { DIR } from '$lib/config.js';
   import { socket } from '$lib/socket';
+  import { Option } from '$lib/types/enums';
   import {
 		user,
 		contact,
@@ -12,37 +13,34 @@
 		users,
 		groups
 	} from '$lib/store';
-  import Lists from "./List.svelte";
-
-  export let contactID: string;
+  import List from "./List.svelte";
 
 	let visible = false;
 
 	function loadChat(option: string) {
 		visible = false;
-		contactID = '';
 		switchs.setOption(option);
 		contact.resetContact();
 		list.resetContacts();
 	}
 
 	async function handleLogout() {
+		visible = false;
+
 		const data: ResponseData = await axios({
 			method: 'POST',
 			url: DIR + '/api/auth/logout',
 			withCredentials: true
 		}).then(res => res.data)
-			.catch(err => err);
-
-		visible = false;
+			.catch(err => err.response.data);
 
 		if (data.logout) {
 			socket.disconnect();
-			register.setOption('signin');
+			register.setOption(Option.SIGNIN);
 			switchs.resetOptions();
 			users.resetContacts();
 			groups.resetContacts();
-			user.setUser({ } as IUser);
+			user.setUser({ } as RawUser);
 		};
 	}
 </script>
@@ -50,20 +48,24 @@
 <div>
 	<img src={`${DIR}/uploads/avatar/${$user.avatar}`} alt={$user.id}>
 	<p title={$user.username}>{$user.username}</p>
-	<Lists bind:visible={visible}>
-		<li on:mousedown={() => loadChat('group')} role='none'>
-			<i class="fa-solid fa-circle-stop"></i>
-			Create Group
-		</li>
-		<li on:mousedown={() => loadChat('settings')} role='none'>
-			<i class="fa-solid fa-gear"></i>
-			Settings
-		</li>
-		<li on:mousedown={handleLogout} role='none'>
+	<List bind:visible={visible}>
+		{#if !$switchs.group}
+			<li on:click={() => loadChat(Option.GROUP)} role='none'>
+				<i class="fa-solid fa-circle-stop"></i>
+				Create Group
+			</li>
+		{/if}
+		{#if !$switchs.settings}
+			<li on:click={() => loadChat(Option.SETTINGS)} role='none'>
+				<i class="fa-solid fa-gear"></i>
+				Settings
+			</li>
+		{/if}
+		<li on:click={handleLogout} role='none'>
 			<i class="fa-solid fa-right-from-bracket"></i>
 			Logout
 		</li>
-	</Lists>
+	</List>
 </div>
 
 <style lang="postcss">

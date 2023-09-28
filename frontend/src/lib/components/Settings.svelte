@@ -3,23 +3,26 @@
   import axios from "axios";
 	import validator from 'validator';
 	import { DIR } from "$lib/config";
-	import { Formats, Settings } from "$lib/types/enums";
+  import { listItems, SettingsText } from "$lib/dictionary";
   import { socket } from "$lib/socket";
-  import { user, switchs, groups, users, register } from '$lib/store';
-  import EditChat from "./EditChat.svelte";
-  import Box from "./Box.svelte";
+  import {
+		addId,
+		changeName,
+		getData,
+		isDisabled,
+		initSettingsProps
+	} from "$lib/services/libs";
+  import { user, options, switchs, users, groups, register } from '$lib/store';
+	import { Formats, Option, Settings } from "$lib/types/enums";
+  import Edit from "$lib/components/EditChat.svelte";
+  import ErrorBox from "./Box.svelte";
+  import Box from "./OptionBox.svelte";
 	
+	const data = getData([isValidOldPassword, isValidPassword, isCorrectPassword]);
+	let settingsProps = initSettingsProps($user);
 	let visible = false;
-	let visibleBox = false;
-	let disabled = true;
 	let src = DIR + '/uploads/avatar/' + $user.avatar;
-	let username = '';
-	let description = $user.description;
-	let matchPassword = false;
-	let actPassword = '';
-	let newPassword = '';
-	let confirmPassword = '';
-	let listUser: string[] = [];
+	let password: string;
 	let className: string;
 	let message: string | IKeys<string>;
 
@@ -30,7 +33,7 @@
 
 		fileReader.addEventListener('load', ({ target }) => {
 			src = target?.result as string;
-			disabled = false;
+			settingsProps.avatar = target?.result as string;
 		});
 
 		if (files && files[0].size <= 512000 && validFormats.includes(files[0].type)) {
@@ -38,31 +41,37 @@
 		}
 	}
 
-	async function isValidOldPassword() {
-		if (validator.isStrongPassword(actPassword)) {
+	async function isValidOldPassword(this: HTMLInputElement) {
+		if (validator.isStrongPassword(this.value)) {
 			const data = await axios({
 				method: 'POST',
-				data: { password: actPassword },
 				url: DIR + '/api/home/password',
+				data: { password: this.value },
 				withCredentials: true
 			}).then(res => res.data)
 				.catch(() => {
 					return { match: false };
 				});
 
-			matchPassword = data.match;
-		} else matchPassword = false;
+			settingsProps.password.match = data.match;
+		} else settingsProps.password.match = false;
 	}
 
-	function isValidPassword() {
-		return validator.isStrongPassword(newPassword) && validator.isLength(newPassword, { max: 40 });
+	function isValidPassword(this: HTMLInputElement) {
+		password = this.value;
+
+		if (
+			validator.isStrongPassword(password) &&
+			validator.isLength(password, { max: 40 })
+		) settingsProps.password.new = true;
+		else settingsProps.password.new = false;
 	}
 
-	function addId(this: HTMLInputElement) {
-		if (this.checked) return listUser = [this.value, ...listUser];
-		return listUser.filter(id => id !== this.value);
+	function isCorrectPassword(this: HTMLInputElement) {
+		if (this.value === password) settingsProps.password.confirm = true;
+		else settingsProps.password.confirm = false;
 	}
-
+	
 	async function handleDelete() {
 		socket.emit('emitDestroyUser');
 		
@@ -72,16 +81,15 @@
 			withCredentials: true
 		}).then(res => res.data);
 
-		visibleBox = false;
+		$options.settings = false;
 
 		if (data.delete) {
 			socket.disconnect();
-
 			user.resetUser();
 			users.resetContacts();
 			groups.resetContacts();
 			switchs.resetOptions();
-			register.setOption('signin');
+			register.setOption(Option.SIGNIN);
 		}
 	}
 
@@ -92,7 +100,7 @@
 			data: this,
 			withCredentials: true
 		}).then(res => res.data)
-			.catch(err => err);
+			.catch(err => err.response?.data);
 
 		if (data.errors) {
 			className = data.errors;
@@ -102,221 +110,108 @@
 		if (data.success) {
 			className = data.success;
 			message = data.message;
+			if (data.filename) settingsProps.avatar = data.filename;
 
-			if (this.id === Settings.AVATAR) {
-				user.updateProp(data.filename, Settings.AVATAR);
-				disabled = true;
-			}
-
-			if (this.id === Settings.USERNAME) {
-				user.updateProp(username, Settings.USERNAME);
-				username = '';
-			}
-
-			if (this.id === Settings.DESCRIPTION) {
-				user.updateProp(description, Settings.DESCRIPTION);
-			}
-
-			if (this.id === Settings.PASSWORD) {
-				matchPassword = false;
-				actPassword = '';
-				newPassword = '';
-				confirmPassword = '';
+			if (this.id !== Settings.PASSWORD && this.id !== Settings.DELETE) {
+				user.updateProp(this.id, settingsProps[this.id] as never);
 			}
 
 			if (this.id === Settings.UNBLOCK) {
-				user.unblockUser(listUser);
-				socket.emit('emitUnblock', listUser);
-				listUser = [];
+				socket.emit('emitUnblock', settingsProps.unblock);
 			}
-		}
 
-		visible = true;
+			if (this.id !== Settings.DESCRIPTION && this.id !== Settings.DELETE) {
+				settingsProps = settingsProps.resetProps(this.id);
+			}
+
+		 	visible = true;
+		}
 	}
 </script>
 
-{#if visibleBox}
-	<EditChat bind:visible={visibleBox} handle={handleDelete}>
-		<h2>Are you sure you want to delete this user?</h2>
-	</EditChat>
+{#if $options.settings}
+	<Edit handle={handleDelete}>
+		<h2 class="title">Are you sure you want to delete this user?</h2>
+	</Edit>
 {/if}
 
-<div class="settings">
-	{#if visible}
-		<Box bind:visible={visible} className={className} message={message} />
-	{/if}
-	<button class="close" on:click|preventDefault={() => switchs.resetOptions()}>
+{#if visible}
+	<ErrorBox bind:visible={visible} {className} {message} />
+{/if}
+
+<div class="container-box">
+	<button class="close" on:click={() => switchs.resetOptions()}>
 		<i class="fa-solid fa-xmark"></i>
 	</button>
 	<h1>Settings</h1>
-	<form
-		id={Settings.AVATAR}
-		action={DIR + '/api/settings/avatar'}
-		method='POST'
-		on:submit|preventDefault={handleSubmit}
-	>
-		<div class="box">
-			Change avatar:
-		</div>
-		<label class="center">
-			<img src={src} alt={$user.username}>
-			<input type="file" name="avatar" on:change={handleAvatar}>
-		</label>
-		<button class={disabled ? 'disabled' : 'accept'} disabled={disabled}>
-			Accept
-		</button>
-	</form>
-	<form
-		id={Settings.USERNAME}
-		action={DIR + '/api/settings/username'}
-		method='POST'
-		on:submit|preventDefault={handleSubmit}
-	>
-		<label for="username">
-			Change username:
-		</label>
-		<input
-			type="text"
-			name="username"
-			placeholder={$user.username}
-			bind:value={username}
+	{#each Object.values(Settings) as key}
+		<form
+			id={key}
+			action={DIR + '/api/settings/' + key}
+			method={key !== Settings.DELETE ? 'POST' : 'DELETE'}
+			on:submit|preventDefault={key !== Settings.DELETE ? handleSubmit : () => options.setOption(Option.SETTINGS)}
 		>
-		<button
-			class={username.length < 3 || username.length > 40 ? 'disabled' : 'accept'}
-			disabled={username.length < 3 || username.length > 40}
-		>Accept</button>
-	</form>
-	<form
-		id={Settings.DESCRIPTION}
-		action={DIR + '/api/settings/description'}
-		method='POST'
-		on:submit|preventDefault={handleSubmit}
-	>
-		<label for="description">
-			Change description:
-		</label>
-		<textarea
-			name="description"
-			bind:value={description}
-			spellcheck="false"
-			rows="5"
-		></textarea>
-		<button
-			class={description === $user.description ? 'disabled' : 'accept'}
-			disabled={description === $user.description}
-		>Accept</button>
-	</form>
-	<form
-		id={Settings.PASSWORD}
-		action={DIR + '/api/settings/password'}
-		method='POST'
-		on:submit|preventDefault={handleSubmit}
-	>
-		<label for="newPassword">
-			Change password:
-		</label>
-		<input
-			type="password"
-			name="actPassword"
-			bind:value={actPassword}
-			on:keyup={isValidOldPassword}
-			placeholder="Enter the actual password"
-		>
-		<input
-			type="password"
-			name="newPassword"
-			bind:value={newPassword}
-			placeholder="Enter the new password"
-		>
-		{#if newPassword.length >= 8}
-			<input
-				type="password"
-				name="confirmPassword"
-				bind:value={confirmPassword}
-				placeholder="Confirm the password"
-			>
-		{/if}
-		<button
-			class={matchPassword && isValidPassword() && newPassword === confirmPassword ? 'accept' : 'disabled'}
-			disabled={!(matchPassword && isValidPassword() && newPassword === confirmPassword)}
-		>Accept</button>
-	</form>
-	<form
-		id={Settings.UNBLOCK}
-		action={DIR + '/api/settings/unblockUsers'}
-		method='POST'
-		on:submit|preventDefault={handleSubmit}
-	>
-		<label for="unblock">
-			Unblock user:
-		</label>
-		<ul>
-			{#if $user.blacklist.length}
-				{#each $user.blacklist as { id, name } ({ id })}
-					<li>
-						{name}
-						<input
-							type="checkbox"
-							name="unblock"
-							value={id}
-							on:click={addId}
-						>
-					</li>
+			<label for={key}>
+				{SettingsText[key]}:
+			</label>
+			{#if key === Settings.AVATAR}
+				<label class="center">
+					<img src={src} alt={$user.username}>
+					<input type="file" name="avatar" on:change={handleAvatar}>
+				</label>
+			{:else if key === Settings.USERNAME}
+				<input
+					type="text"
+					name="username"
+					placeholder={$user.username}
+					bind:value={settingsProps.username}
+				>
+			{:else if key === Settings.DESCRIPTION}
+				<textarea
+					name="description"
+					bind:value={settingsProps.description}
+					spellcheck="false"
+					rows="5"
+				></textarea>
+			{:else if key === Settings.PASSWORD}
+				{#each data as { name, text, key }}
+					{#if name !== 'confirmPassword' || settingsProps.password.new}
+						<input type="password" name={name} on:keyup={key} placeholder={text}>
+					{/if}
 				{/each}
-				{:else}
-				<li class="message">
-					You haven't blocked anyone yet! :D
-				</li>
+			{:else if key === Settings.UNBLOCK}
+				{#each listItems as { key, name, text }}
+					<ul>
+						{#if $user.blocked[key].length}
+							<p>{changeName(key)}:</p>
+							{#each $user.blocked[key] as member (member.id)}
+								<Box
+									bind:prop={settingsProps.unblock[key]}
+									{name}
+									{member}
+									change={addId}
+								/>
+							{/each}
+						{:else}
+							<li class="message">You haven't blocked any {text} yet! :D</li>
+						{/if}
+					</ul>
+				{/each}
+			{:else}
+				<button class="delete">
+					Delete
+				</button>
 			{/if}
-		</ul>
-		{#if $user.blacklist.length}
-			<button
-			class={listUser.length ? 'disabled' : 'accept'}
-			disabled={listUser.length}
-			>Accept</button>
-		{/if}
-	</form>
-	<form
-		action={DIR + '/api/settings/deleteUser'}
-		method='DELETE'
-	>
-		<label for="delete">
-			Delete user:
-		</label>
-		<button class="delete" on:click|preventDefault={() => visibleBox = true}>
-			Delete
-		</button>
-	</form>
+			{#if key !== Settings.DELETE && (key !== Settings.UNBLOCK || ($user.blocked.users.length || $user.blocked.groups.length))}
+				<button class='accept' disabled={!isDisabled($user)[key](settingsProps)}>
+					Accept
+				</button>
+			{/if}
+		</form>
+	{/each}
 </div>
 
 <style lang="postcss">
-	h2 {
-		@apply text-xl font-semibold text-center leading-none;
-	}
-
-	.settings {
-		grid-column: 2 / span 1;
-		grid-row: 1 / span 3;
-		background-color: #ffffff;
-		scrollbar-width: none;
-		z-index: 200;
-		@apply grid relative content-start justify-items-center py-10 px-2.5 overflow-y-scroll gap-5;
-	}
-
-	.close {
-		margin-top: -30px;
-		@apply justify-self-end flex fixed items-center justify-center w-9 h-9 font-bold leading-none;
-	}
-
-	.close i {
-		color: #b2b2b2;
-		@apply text-4xl font-bold leading-none cursor-pointer;
-	}
-
-	.close i:hover {
-		color: #a3a3a3;
-	}
-
 	h1 {
 		font-size: 56px;
 	}
@@ -326,23 +221,20 @@
 		@apply grid w-3/5 gap-3;
 	}
 
-	label, .box {
+	label {
 		@apply font-semibold;
 	}
 
 	.center {
-		@apply justify-self-center;
-	}
-
-	input[type='file'] {
-		@apply hidden;
+		@apply justify-self-center w-min h-min;
 	}
 
 	img {
-		width: 280px;
 		height: 280px;
+		min-width: 280px;
+		min-height: 280px;
 		box-shadow: 0 0 0 1px #999999;
-		@apply justify-self-center rounded-full object-cover object-center;
+		@apply w-full rounded-full object-cover object-center;
 	}
 
 	input, textarea, ul {
@@ -352,7 +244,11 @@
 	}
 
 	ul {
-		@apply flex flex-wrap gap-1.5;
+		@apply flex flex-wrap justify-between;
+	}
+
+	p {
+		@apply w-full font-medium leading-tight;
 	}
 
 	li {
@@ -363,17 +259,13 @@
 		@apply p-1.5 text-center text-xl font-medium leading-none;
 	}
 
-	input[type='checkbox'] {
-		@apply ml-auto;
-	}
-
-	.accept, .disabled {
+	.accept {
 		background-color: #25915b;
 		color: #ffffff;
 		@apply justify-self-end py-2 px-6 rounded-2xl text-xl font-bold leading-none cursor-pointer;
 	}
 
-	.disabled {
+	.accept[disabled] {
 		background-color: #dadada;
 		color: #2a2a2a;
 		@apply cursor-default;

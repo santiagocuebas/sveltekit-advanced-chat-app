@@ -1,20 +1,17 @@
 <script lang="ts">
-  import type { IChat, ResponseData } from "$lib/types/global";
+  import type { IChat } from "$lib/types/global";
   import { afterUpdate, beforeUpdate, onMount } from "svelte";
-  import axios from "axios";
 	import validator from 'validator';
 	import { DIR } from "$lib/config";
-  import { Formats, TypeContact } from "$lib/types/enums";
+  import { Option } from "$lib/types/enums";
 	import { socket } from "$lib/socket";
-  import { getDate } from "$lib/services/libs";
+  import { getDate, getImages } from "$lib/services/libs";
   import { getChat } from "$lib/services/chat-libs";
   import { editGroups } from '$lib/sockets.js';
   import { contact, user, options } from "$lib/store";
   import EditChat from "./EditChat.svelte";
 
   export let option: string;
-  export let chat: boolean;
-  export let handle: () => void;
 
 	const	observer = new IntersectionObserver(showMoreChats, {
 		root: null,
@@ -28,77 +25,55 @@
 	let counter = 0;
 	let chats: IChat[] = [];
 	let visibleChats: IChat[] = [];
-	let message = '';
+	let img: string;
+	let alt: string;
 
 	function sendMessage(this: HTMLFormElement) {
 		const message = new FormData(this).get('message') as string;
 
-		if (message.length) {
+		if (message?.length) {
 			const chat = getChat($user, $contact, message);
 
 			loadChat(chat);
 
 			socket.emit('emitChat', message, chat._id);
 
-			if ($contact.type === TypeContact.GROUP) editGroups($contact.roomID, chat);
+			if ($contact.type === Option.GROUP) editGroups($contact.roomID, chat);
 		}
 
 		input.value = '';
 	}
 
 	async function sendImage(this: HTMLInputElement) {
-		if (this.files && this.files.length < 4) {
-			const formData = new FormData();
-			const validFormat: string[] = Object.values(Formats);
-			let match = true;
+		const filenames = await getImages(this.files);
 
-			for (const file of this.files) {
-				if (file.size > 1e7 * 2 && !validFormat.includes(file.type)) {
-					match = false;
-					break;
-				}
+		if (filenames !== null) {
+			const chat = getChat($user, $contact, filenames);
 
-				formData.append('images', file);
-			}
+			loadChat(chat);
 
-			if (match) {
-				const data: ResponseData = await axios({
-					method: 'POST',
-					url: DIR + '/api/home/images',
-					data: formData,
-					withCredentials: true
-				}).then(res => res.data)
-					.catch(err => err);
+			socket.emit('emitChat', filenames, chat._id);
 
-				if (data && data.filenames) {
-					const chat = getChat($user, $contact, data.filenames);
-
-					loadChat(chat);
-
-					socket.emit('emitChat', data.filenames, chat._id);
-
-					if ($contact.type === TypeContact.GROUP) {
-						editGroups($contact.roomID, chat);
-					}
-
-					message = '';
-				}
-			}
-
-			formData.delete('images');
+			if ($contact.type === Option.GROUP) editGroups($contact.roomID, chat);
 		}
 	}
 
 	function handleDelete(id: string, from: string) {
 		if ($user.id === from) {
 			option = id;
-			options.setOption('chat');
+			options.setOption(Option.CHAT);
 		}
 	}
+	
+	function handleImage(this: HTMLImageElement) {
+		img = this.src;
+		alt = this.alt;
+		$options.image = true;
+	}
 
-	function emitDelete(id: string) {
-		socket.emit('emitDelete', id);
-		deleteChat(id);
+	function emitDelete() {
+		socket.emit('emitDelete', option);
+		deleteChat(option);
 		options.resetOptions();
 	}
 
@@ -170,10 +145,19 @@
 	});
 </script>
 
-{#if chat}
-	<EditChat bind:visible={chat} option={option} handle={emitDelete}>
+{#if $options.chat}
+	<EditChat handle={emitDelete}>
 		<h2 class="title">Are you sure you want delete this message?</h2>
 	</EditChat>
+{/if}
+
+{#if $options.image}
+	<div class="image">
+		<button on:click={() => options.resetOptions()}>
+			<i class="fa-solid fa-xmark"></i>
+		</button>
+		<img src={img} alt={alt}>
+	</div>
 {/if}
 
 <div class="chats" bind:this={div}>
@@ -192,16 +176,16 @@
 					<img
 						src={DIR + '/uploads/' + image}
 						alt={chat._id}
-						on:mousedown={handle}
+						on:click={handleImage}
 						role='none'
 					>
 				{/each}
-				{:else if validator.isURL(chat.content)}
+			{:else if validator.isURL(chat.content)}
 				<a href='{chat.content}' target="_blank">{chat.content}</a>
-				{:else}
+			{:else}
 				<p>{@html chat.content}</p>
 			{/if}
-			<p class="left">{getDate(new Date(chat.createdAt))}</p>
+			<p class="left">{getDate(chat.createdAt)}</p>
 		</div>
 	{/each}
 </div>
@@ -216,6 +200,30 @@
 </div>
 
 <style lang="postcss">
+  .image {
+    grid-column: 2 / span 1;
+    grid-row: 2 / span 1;
+    background-color: #000000;
+    z-index: 500;
+    @apply grid content-center justify-center w-full h-full;
+  }
+
+	.image button {
+		margin-top: 10px;
+    background-color: transparent;
+		@apply justify-self-end flex fixed items-center justify-center w-9 h-9 mt-2.5 mr-2.5 font-bold leading-none;
+	}
+
+	.image button i {
+		color: #ffffff;
+		@apply text-4xl font-bold leading-none cursor-pointer;
+	}
+
+  .image img {
+    max-height: 770px;
+    @apply w-full;
+  }
+
   .message, .chats {
 		grid-column: 2 / span 1;
 		@apply w-full;
@@ -241,7 +249,8 @@
 	}
 
 	.chat img {
-		@apply w-full self-start object-cover object-top cursor-pointer;
+		max-height: 350px;
+		@apply w-full object-cover object-top cursor-pointer;
 	}
 
 	.chat p {

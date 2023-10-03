@@ -2,7 +2,7 @@ import type {
 	Contact,
 	IForeign,
 	IGroup,
-	Members,
+	Member,
 	IChat
 } from '$lib/types/global';
 import { socket } from './socket';
@@ -74,7 +74,7 @@ export const leaveGroup = (id: string, contactID?: string) => {
 	groups.setGroups(reloadGroups);
 };
 
-export const addMembers = (id: string, members: Members[]) => {
+export const addMembers = (id: string, members: Member[]) => {
 	const reloadGroups = groupsValues.map(group => {
 		if (group.contactID === id) {
 			group.members = [...members, ...group.members];
@@ -100,7 +100,7 @@ export const banMembers = (id: string, banIDs: string[]) => {
 	options.resetOptions();
 };
 
-export const blockMembers = (id: string, blockedUsers: Members[]) => {
+export const blockMembers = (id: string, blockedUsers: Member[]) => {
 	const reloadGroups = groupsValues.map(group => {
 		if (group.contactID === id) {
 			const blockedIDs = blockedUsers.map(member => member.id);
@@ -129,7 +129,7 @@ export const unblockMembers = (id: string, unblockIDs: string[]) => {
 	options.resetOptions();
 };
 
-export const addMods = (id: string, mods: Members[]) => {
+export const addMods = (id: string, mods: Member[]) => {
 	const reloadGroups = groupsValues.map(group => {
 		if (group.contactID === id) {
 			const modIDs = mods.map(mod => mod.id);
@@ -145,7 +145,7 @@ export const addMods = (id: string, mods: Members[]) => {
 	options.resetOptions();
 };
 
-export const removeMods = (id: string, members: Members[]) => {
+export const removeMods = (id: string, members: Member[]) => {
 	const reloadGroups = groupsValues.map(group => {
 		if (group.contactID === id) {
 			const modIDs = members.map(members => members.id);

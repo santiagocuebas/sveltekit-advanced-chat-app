@@ -1,18 +1,15 @@
 <script lang="ts">
   import type { IKeys } from "$lib/types/global";
-  import { onMount } from "svelte";
 
-	export let visible: boolean;
-	export let className: string;
+	export let success: boolean = false;
+	export let errors: boolean = false;
 	export let message: string | IKeys<string>;
-
-	onMount(() => setTimeout(() => visible = false, 5000));
 </script>
 
-<div class={className}>
+<div class:success={success} class:errors={errors}>
 	{#if typeof message === 'string'}
-		<p>{message}</p>
-		{:else}
+		{message}
+	{:else}
 		{#each Object.entries(message) as [key, value]}
 			<p><strong>{key}</strong>: {value}</p>
 		{/each}
@@ -25,22 +22,20 @@
 		height: 200px;
 		scrollbar-width: none;
 		z-index: 500;
-		@apply absolute justify-self-end self-end mr-2.5 mb-2.5 p-2.5 overflow-y-auto rounded-2xl;
+		@apply self-end justify-self-end flex absolute flex-wrap items-center justify-center mr-2.5 mb-2.5 p-2.5 overflow-y-auto rounded-2xl;
 	}
 
-	.success-settings {
+	.success {
 		border: 2px solid #0b7c24;
 		background-color: #b0ecb3;
-	}
-
-	.success-settings p {
+		font-size: 20px;
 		@apply text-center font-semibold;
 	}
 
-	.errors-settings {
+	.errors {
 		grid-auto-rows: min-content;
 		border: 2px solid #7c0b0b;
 		background-color: #ecb0b0;
-		@apply grid gap-1;
+		@apply items-start gap-1.5;
 	}
 </style>

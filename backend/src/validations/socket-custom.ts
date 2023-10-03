@@ -1,4 +1,4 @@
-import type { IGroup, Members } from '../types/global.js';
+import type { IGroup, Member } from '../types/global.js';
 import fs from 'fs-extra';
 import { resolve } from 'path';
 import { User } from '../models/index.js';
@@ -9,7 +9,7 @@ export const isObject = (value: unknown): boolean => typeof value === 'object';
 
 export const isArray = (value: unknown): boolean => value instanceof Array;
 
-export const isLength = (value: string | string[] | Members[], min: number, max: number): boolean => {
+export const isLength = (value: string | string[] | Member[], min: number, max: number): boolean => {
 	return value.length > min && value.length <= max;
 };
 
@@ -37,7 +37,7 @@ export const existsImage = async (values: string[]): Promise<boolean> => {
 
 export const isValidUser = async (
 	groupID: string,
-	{ id, name }: Members
+	{ id, name }: Member
 ): Promise<boolean> => {
 	const user = await User
 		.findOne({ _id: id, username: name })
@@ -78,7 +78,7 @@ export const isValidKey = (values: string[]) => {
 	return match;
 };
 
-export const isValidUsers = async (members: Members[], userIDs: string[]) => {
+export const isValidUsers = async (members: Member[], userIDs: string[]) => {
 	let match = true;
 
 	for (const member of members) {

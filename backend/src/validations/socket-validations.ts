@@ -1,4 +1,4 @@
-import type { IGroup, IUser, Members } from '../types/global.js';
+import type { IGroup, IUser, Member } from '../types/global.js';
 import type { GroupInit, IContact, IKeys } from '../types/types.js';
 import {
 	existsImage,
@@ -76,7 +76,7 @@ export const blockGroup = ([name]: [string]) => {
 };
 
 export const addMembers = async (
-	[members, groupID]: [Members[], string],
+	[members, groupID]: [Member[], string],
 	{ id, groupRooms }: IUser
 ) => {
 	if (
@@ -162,7 +162,7 @@ export const banMembers = async (
 };
 
 export const blockMembers = async (
-	[members, groupID]: [Members[], string],
+	[members, groupID]: [Member[], string],
 	{ id, groupRooms }: IUser
 ) => {
 	if (
@@ -247,7 +247,7 @@ export const unblockMembers = async (
 };
 
 export const addMods = async (
-	[members, groupID]: [Members[], string],
+	[members, groupID]: [Member[], string],
 	{ id, groupRooms }: IUser
 ) => {
 	if (
@@ -290,7 +290,7 @@ export const addMods = async (
 };
 
 export const removeMods = async (
-	[members, groupID]: [Members[], string],
+	[members, groupID]: [Member[], string],
 	{ id, groupRooms }: IUser
 ) => {
 	if (

@@ -1,4 +1,4 @@
-import type { ChoiceSocket, Members } from "$lib/types/global";
+import type { ChoiceSocket, Member } from "$lib/types/global";
 import {
 	addMembers,
 	addMods,
@@ -18,7 +18,7 @@ export const socketResult: ChoiceSocket = ({ contactID, name }) => {
 
 			return [name];
 		},
-		add: (members: Members[]) => {
+		add: (members: Member[]) => {
 			addMembers(contactID, members);
 			
 			return [members, contactID];
@@ -28,7 +28,7 @@ export const socketResult: ChoiceSocket = ({ contactID, name }) => {
 			
 			return [banIDs, contactID];
 		},
-		block: (blockUsers: Members[]) => {
+		block: (blockUsers: Member[]) => {
 			blockMembers(contactID, blockUsers);
 			
 			return [blockUsers, contactID];
@@ -38,12 +38,12 @@ export const socketResult: ChoiceSocket = ({ contactID, name }) => {
 			
 			return [unblockIDs, contactID]
 		},
-		addMod: (newMods: Members[]) => {
+		addMod: (newMods: Member[]) => {
 			addMods(contactID, newMods);
 
 			return [newMods, contactID];
 		},
-		removeMod: (removeMod: Members[]) => {
+		removeMod: (removeMod: Member[]) => {
 			removeMods(contactID, removeMod);
 
 			return [removeMod, contactID];

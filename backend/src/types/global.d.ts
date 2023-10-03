@@ -1,4 +1,3 @@
-import type { TypeContact } from './enums.js';
 import type { IKeys } from './types.js';
 
 declare global {
@@ -23,11 +22,13 @@ declare module 'socket.io' {
 
 export type Users = { userID: string, roomID: string };
 
-export type Members = { id: string, name: string };
+export type Member = { id: string, name: string };
 
-export type PartialUser = (value: IUser) => IPartialUser;
-
-export type Chats = (ids: string[], type?: TypeContact) => Promise<IChat[]>
+export type Chats = (
+	id: string,
+	room: string,
+	type?: string
+) => Promise<IChat[]>
 
 export interface IChat {
 	_id: string;
@@ -53,9 +54,9 @@ export interface IUser {
 	userIDs: string[];
 	userRooms: string[];
 	groupRooms: string[];
-	blockedUsers: Members[];
+	blockedUsers: Member[];
 	blockedUsersIDs: string[];
-	blockedGroups: Members[];
+	blockedGroups: Member[];
 	blockedGroupsIDs: string[];
 	createdAt: Date;
 }
@@ -66,9 +67,9 @@ export interface IGroup {
 	_id: string;
 	id: string;
 	admin: string;
-	mods: Members[];
+	mods: Member[];
 	modIDs: string[];
-	members: Members[];
+	members: Member[];
 	memberIDs: string[];
 	name: string;
 	state: string;
@@ -76,7 +77,7 @@ export interface IGroup {
 	avatar: string;
 	connectedUsers: string[];
 	logged: number;
-	blacklist: Members[];
+	blacklist: Member[];
 	blockedIDs: string[];
 	createdAt: Date;
 }

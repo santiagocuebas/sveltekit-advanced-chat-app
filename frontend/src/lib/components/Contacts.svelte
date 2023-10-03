@@ -49,12 +49,12 @@
 		socket.emit(selectJoin[foreign.type], foreign.contactID, foreign.roomID);
 	};
 
-	export const loadContacts = ([contactsUsers, contactsGroups]: Contacts) => {
-		users.setUsers(contactsUsers);
-		groups.setGroups(contactsGroups);
+	export const loadContacts = (contacts: Contacts) => {
+		users.setUsers(contacts.users);
+		groups.setGroups(contacts.groups);
 
-		if (contactsUsers.length > 0) selected = Option.CHATS;
-		else if (contactsGroups.length > 0) selected = Option.ROOMS
+		if (contacts.users.length > 0) selected = Option.CHATS;
+		else if (contacts.groups.length > 0) selected = Option.ROOMS
 		else selected = Option.CHATS;
 	};
 
@@ -96,11 +96,13 @@
 		<input type="text" placeholder="Search a contact" bind:value={input}>
 	</form>
 	<button
-		class='button {selected === Option.CHATS ? 'selected' : ''}'
+		class='button'
+		class:selected={selected === Option.CHATS}
 		on:click={() => selected = Option.CHATS}
 	><i class='fa-solid fa-message'></i></button>
 	<button
-		class='button {selected === Option.ROOMS ? 'selected' : ''}'
+		class='button'
+		class:selected={selected === Option.ROOMS}
 		on:click={() => selected = Option.ROOMS}
 	><i class='fa-solid fa-users'></i></button>
 	<ul>

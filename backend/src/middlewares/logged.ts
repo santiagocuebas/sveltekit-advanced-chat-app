@@ -5,6 +5,7 @@ import { User } from '../models/index.js';
 
 export const isValidToken: Direction = async (req, res, next) => {
 	try {
+		// Getting and decoding the token and find the user
 		const token = req.cookies['authenticate'];
 		const decoded = jwt.verify(token, SECRET) as jwt.JwtPayload;
 		const user = await User.findOne({ _id: decoded.id });
@@ -21,6 +22,7 @@ export const isValidToken: Direction = async (req, res, next) => {
 
 export const isNotValidToken: Direction = async (req, res, next) => {
 	try {
+		// Getting and decoding the token and find the user
 		const token = req.cookies['authenticate'];
 		const decoded = jwt.verify(token, SECRET) as jwt.JwtPayload;
 		const user = await User.findOne({ _id: decoded.id });

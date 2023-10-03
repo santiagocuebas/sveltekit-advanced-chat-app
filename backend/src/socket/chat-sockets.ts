@@ -2,9 +2,21 @@ import type { ChatSockets } from '../types/sockets.js';
 import fs from 'fs-extra';
 import { resolve } from 'path';
 import { Chat } from '../models/index.js';
+import { getChats } from '../libs/get-data.js';
 
-export const chatSockets: ChatSockets = (socket, [userID, contactID, roomID], username) => {
+export const chatSockets: ChatSockets = (
+	socket,
+	[userID, contactID, roomID],
+	username,
+	type
+) => {
 	socket.on('emitChat', async (message: string | string[], tempID: string) => {
+		// Get chats from the contacts
+		const messages = await getChats(userID, contactID, type);
+
+		socket.emit('loadChats', messages);
+
+		// Create a new chat
 		const chat = await Chat.create({
 			from: userID,
 			to: contactID,
@@ -22,10 +34,12 @@ export const chatSockets: ChatSockets = (socket, [userID, contactID, roomID], us
 	});
 
 	socket.on('emitDelete', async (id: string) => {
+		// Find and delete a chat
 		const chat = await Chat.findOneAndDelete({ _id: id, from: userID });
 
 		if (chat !== null && chat.content instanceof Array) {
 			for (const url of chat.content) {
+				// Unlink images if exists
 				const path = resolve(`uploads/${url}`);
 				const err = await fs
 					.unlink(path)

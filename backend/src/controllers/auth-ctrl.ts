@@ -6,6 +6,7 @@ import { encryptPassword, getSerializedCookie, getUser } from '../libs/index.js'
 import { User } from '../models/User.js';
 
 export const postRegister: Direction = async (req, res) => {
+	// Create user
 	const user = await User
 		.create({
 			username: req.body.username,
@@ -13,8 +14,10 @@ export const postRegister: Direction = async (req, res) => {
 			password: await encryptPassword(req.body.password)
 		});
 
+	// Seriialized cookie
 	const token = getSerializedCookie(user.toJSON());
 
+	// Set cookie authenticate
 	res.set('Set-Cookie', token);
 	
 	const partialUser = getUser(user);
@@ -23,10 +26,13 @@ export const postRegister: Direction = async (req, res) => {
 };
 
 export const postSignin: Direction = async (req, res) => {
+	// Search user
 	const user = await User.findOne({ email: req.body.email });
 
+	// Seriialized cookie
 	const token = getSerializedCookie(user?.toJSON() as IUser);
 
+	// Set cookie authenticate
 	res.set('Set-Cookie', token);
 	
 	const partialUser = getUser(user as IUser);

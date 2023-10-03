@@ -1,14 +1,16 @@
-import type { Users } from '../types/global.js';
-import type { IContact } from '../types/types.js';
+import type { IUser } from '../types/global.js';
+import type { IContact, IKeys } from '../types/types.js';
 import { User, Chat, Group } from '../models/index.js';
 import { TypeContact } from '../types/enums.js';
 import { getContact } from './get-data.js';
 
-export const getUserContacts = async (id: string, userContacts: Users[]): Promise<[IContact[], string[]]> => {
-	const contacts: IContact[] = [];
-	const contactsToDelete: string[] = [];
+export const getContacts = async (
+	id: string,
+	{ users, groupRooms }: IUser
+): Promise<IKeys<IContact[]>> => {
+	const contacts: IKeys<IContact[]> = { users: [], groups: [] };
 
-	for (const { userID, roomID } of userContacts) {
+	for (const { userID, roomID } of users) {
 		const contact = await User
 			.findOne({ _id: userID })
 			.select('username avatar users blockedGroups logged')
@@ -21,25 +23,11 @@ export const getUserContacts = async (id: string, userContacts: Users[]): Promis
 
 			const data = getContact(userID, roomID, contact, TypeContact.USER, chat);
 
-			contacts.push(data);
-		} else contactsToDelete.push(roomID);
+			contacts.users.push(data);
+		}
 	}
 
-	if (contactsToDelete.length > 0) {
-		await User.updateOne(
-			{ _id: id },
-			{ $pull: { users: { roomID: { $in: contactsToDelete } } } }
-		);
-	}
-
-	return [contacts, contactsToDelete];
-};
-
-export const getGroupContacts = async (id: string, groupContacts: string[]): Promise<[IContact[], string[]]> => {
-	const contacts: IContact[] = [];
-	const contactsToDelete: string[] = [];
-
-	for (const key of groupContacts) {
+	for (const key of groupRooms) {
 		const contact = await Group
 			.findOneAndUpdate({ _id: key }, { $addToSet: { connectedUsers: id } })
 			.lean({ virtuals: true });
@@ -51,16 +39,9 @@ export const getGroupContacts = async (id: string, groupContacts: string[]): Pro
 
 			const data = getContact(key, key, contact, TypeContact.GROUP, chat);
 
-			contacts.push(data);
-		} else contactsToDelete.push(key);
+			contacts.groups.push(data);
+		}
 	}
 
-	if (contactsToDelete.length > 0) {
-		await User.updateOne(
-			{ _id: id },
-			{ $pull: { groupContacts: { $in: contactsToDelete } } }
-		);
-	}
-
-	return [contacts, contactsToDelete];
+	return contacts;
 };

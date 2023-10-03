@@ -23,10 +23,6 @@ router.post(
 	authCtrl.postSignin
 );
 
-router.post(
-	'/logout',
-	isValidToken,
-	authCtrl.postLogout
-);
+router.post('/logout', isValidToken, authCtrl.postLogout);
 
 export default router;

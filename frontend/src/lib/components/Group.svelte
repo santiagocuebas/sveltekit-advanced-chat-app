@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Members } from '$lib/types/global';
+	import type { Member } from '$lib/types/global';
   import { Messages } from '$lib/dictionary';
   import { socket } from "$lib/socket";
   import { isMember, isMod } from '$lib/services/chat-libs';
@@ -8,24 +8,18 @@
 	import { StateOption } from '$lib/types/enums';
 
 	let name = '';
-	let mods: Members[] = [];
-	let members: Members[] = [];
+	let mods: Member[] = [];
+	let members: Member[] = [];
 	let state = StateOption.PUBLIC;
 
-	function addMods(id: string, name: string, mods: Members[], members: Members[]) {
-		if (!isMod(mods, id)) {
-			if (isMember(members, id)) {
-				members = members.filter(member => member.id !== id);
-			}
-
-			mods = [{ id, name }, ...mods];
-		} else mods = mods.filter(member => member.id !== id);
-
-		return [mods, members];
+	function addMods(id: string, name: string) {
+		mods = (!isMod(mods, id) && !isMember(members, id))
+			? [{ id, name }, ...mods]
+			: mods.filter(mods => mods.id !== id);
 	}
 
-	function addMembers(id: string, name: string, members: Members[]) {
-		return (!isMember(members, id) && !isMod(mods, id))
+	function addMembers(id: string, name: string) {
+		members = (!isMember(members, id) && !isMod(mods, id))
 			? [{ id, name }, ...members]
 			: members.filter(member => member.id !== id);
 	}
@@ -45,7 +39,7 @@
 	</button>
 	<h1>Create Group</h1>
 	<form on:submit|preventDefault={handleSubmit}>
-		<div class='select {(name.length > 0 && name.length < 3) || name.length > 40 ? 'error' : ''}'>
+		<div class:error={(name.length > 0 && name.length < 3) || name.length > 40}>
 			Choice name:
 			<input type="text" bind:value={name}>
 			{#if (name.length > 0 && name.length < 3) || name.length > 40}
@@ -55,33 +49,35 @@
 				</p>
 			{/if}
 		</div>
-		<div class="select">
+		<div>
 			Select moderators:
 			<ul>
 				{#each $users as { contactID, name } (contactID)}
 					<li
 						class:selected={isMod(mods, contactID)}
-						on:click={() => [mods, members] = addMods(contactID, name, mods, members)}
+						class:disabled={isMember(members, contactID)}
+						on:click={() => addMods(contactID, name)}
 						role='none'
 					>{name}</li>
 				{/each}
 			</ul>
 		</div>
-		<div class="select">
+		<div>
 			Select members:
 			<ul>
 				{#each $users as { contactID, name } (contactID)}
 					<li
 						class:selected={isMember(members, contactID)}
-						on:click={() => members = addMembers(contactID, name, members)}
+						class:disabled={isMod(mods, contactID)}
+						on:click={() => addMembers(contactID, name)}
 						role='none'
 					>{name}</li>
 				{/each}
 			</ul>
 		</div>
-		<div class="select">
+		<div>
 			Choose visibility:
-			<div class="choise-visibility">
+			<span class="choise-visibility">
 				{#each Object.values(StateOption) as option}
 					<label>
 						<input
@@ -94,9 +90,9 @@
 					</label>
 				{/each}
 				<span>{Messages[state]}</span>
-			</div>
+			</span>
 		</div>
-		<div class="select">
+		<div>
 			<button class='create' disabled={name.length < 3 || name.length > 40}>
 				Create
 			</button>
@@ -113,28 +109,14 @@
 		@apply flex flex-wrap h-full content-between justify-center gap-y-10;
 	}
 
-	.select {
+	form div {
 		min-width: 280px;
 		@apply grid w-3/5 gap-2;
 	}
 
-	input[type='text'], .select ul {
+	input[type='text'], form ul {
 		box-shadow: 0 0 0 2px #999999;
 		@apply p-1.5 overflow-y-auto overflow-x-hidden;
-	}
-
-	.select ul {
-		height: 120px;
-		padding: 10px;
-	}
-
-	.select li {
-		@apply block w-full font-medium leading-tight cursor-context-menu;
-	}
-
-	.select li:hover {
-		background-color: #3d7cf1;
-		color: #ffffff;
 	}
 
 	.error input {
@@ -146,15 +128,29 @@
 		@apply px-2.5 font-bold leading-none;
 	}
 
+	form ul {
+		height: 120px;
+		@apply p-2.5;
+	}
+
+	form li {
+		@apply block w-full font-medium leading-tight cursor-pointer select-none;
+	}
+
 	.selected {
 		background-color: #3d7cf1;
 		color: #ffffff;
 	}
 
+	.disabled {
+		background-color: #d7d7d7;
+		color: #666666;
+	}
+
 	.choise-visibility {
 		grid-template-columns: repeat(3, 1fr);
-		grid-auto-rows: 1fr;
-		@apply grid justify-items-center items-center font-medium leading-tight gap-y-2;
+		grid-auto-rows: min-content;
+		@apply grid justify-items-center font-medium leading-tight gap-y-2;
 	}
 
 	.choise-visibility span {
@@ -165,7 +161,7 @@
 	.create {
 		background-color: #3b8fc7;
 		color: #ffffff;
-		@apply justify-self-center w-min h-min py-2.5 px-10 rounded text-xl font-bold leading-none cursor-pointer;
+		@apply self-end justify-self-center w-min h-min py-2.5 px-10 rounded text-xl font-bold leading-none cursor-pointer;
 	}
 
 	.create:hover {

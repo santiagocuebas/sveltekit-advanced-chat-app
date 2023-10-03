@@ -1,10 +1,9 @@
 import type { Direction, IKeys } from '../types/types.js';
 import fs from 'fs-extra';
 import { extname, resolve } from 'path';
-import { getId, getUser, matchPassword } from '../libs/index.js';
+import { getId, matchId, getUser, matchPassword } from '../libs/index.js';
 import { Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
-import { matchId } from '../libs/get-data.js';
 
 export const getData: Direction = async (req, res) => {
 	const user = getUser(req.user);
@@ -22,6 +21,7 @@ export const getSearch: Direction = async (req, res) => {
 		blockedGroupsIDs
 	} = req.user;
 
+	// Find contacts
 	const users = await User
 		.find({
 			$or: [
@@ -48,7 +48,7 @@ export const getSearch: Direction = async (req, res) => {
 			!user.blockedUsersIDs.includes(id)
 		) {
 			contacts.push({
-				id: user.id,
+				contactID: user.id,
 				name: user.name,
 				avatar: user.avatar,
 				description: user.description,
@@ -65,7 +65,7 @@ export const getSearch: Direction = async (req, res) => {
 			(group.state === StateOption.PUBLIC || matchId(group, userIDs))
 		) {
 			contacts.push({
-				id: group.id,
+				contactID: group.id,
 				name: group.name,
 				avatar: group.avatar,
 				description: group.description,
@@ -82,6 +82,7 @@ export const postPassword: Direction = async (req, res) => {
 	let match = false;
 
 	if (typeof password === 'string') {
+		// Check if is correct password
 		match = await matchPassword(password, req.user.password);
 	}
 
@@ -97,7 +98,8 @@ export const postImages: Direction = async (req, res) => {
 		const ext = extname(file.originalname).toLowerCase();
 		const avatarURL = await getId() + ext;
 		const targetPath = resolve(`uploads/${avatarURL}`);
-
+ 
+		// Set avatar location
 		await fs.rename(tempPath, targetPath);
 
 		filenames.push(avatarURL);
@@ -112,7 +114,7 @@ export const postAvatar: Direction = async (req, res) => {
 	if (group !== null) {
 		const tempPath = req.file?.path as string;
 		const ext = extname(req.file?.originalname as string).toLowerCase();
-		const avatarURL = await getId() + ext;
+		const avatarURL = await getId(TypeContact.GROUP) + ext;
 		const oldPath = resolve(`uploads/group-avatar/${group.avatar}`);
 		const targetPath = resolve(`uploads/group-avatar/${avatarURL}`);
 

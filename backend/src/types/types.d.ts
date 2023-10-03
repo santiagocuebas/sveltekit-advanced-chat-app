@@ -1,15 +1,12 @@
 import type { Request, Response, NextFunction } from 'express';
-import type {
-	IUser,
-	IGroup,
-	IChat,
-	Blacklist,
-	Members,
-	Users
-} from './global.js';
+import type { IUser, IGroup, IChat, Member, Users } from './global.js';
 import type { StateOption, TypeContact } from './enums.js';
 
-export type Direction = (req: Request, res: Response, next: NextFunction) => void;
+export type Direction = (
+	req: Request,
+	res: Response,
+	next: NextFunction
+) => void;
 
 export type ActUser = (
 	contactID: string,
@@ -28,8 +25,8 @@ export type Contact = (
 
 export interface GroupInit {
 	name: string;
-	mods: Members[];
-	members: Members[];
+	mods: Member[];
+	members: Member[];
 	state: StateOption;
 }
 
@@ -42,9 +39,9 @@ export interface IContact {
 	logged: boolean | number;
 	type: TypeContact;
 	admin?: string;
-	members?: Members[];
-	mods?: Members[];
-	blacklist?: Members[];
+	members?: Member[];
+	mods?: Member[];
+	blacklist?: Member[];
 	blockedIDs?: string[];
 	state?: string;
 	content?: string | string[];
@@ -53,7 +50,7 @@ export interface IContact {
 
 export interface IOption {
 	users: Users[];
-	blacklist?: Blacklist[];
+	blacklist?: Member[];
 }
 
 export interface IKeys<T> {

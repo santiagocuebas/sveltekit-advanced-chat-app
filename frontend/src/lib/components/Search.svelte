@@ -19,10 +19,10 @@
 
 <ul>
 	{#if listValues.length}
-		{#each listValues as item (item.contactID)}
+		{#each listValues as item (item.contactID+item.type)}
 			<li class="item">
-				<img 	src={DIR + avatarURL[item.type] + item.avatar} alt={item.contactID}>
-				<p class="title" title={item.name}>{item.name}</p>
+				<img src={DIR + avatarURL[item.type] + item.avatar} alt={item.contactID}>
+				<h2 title={item.name}>{item.name}</h2>
 				{#if item.description}
 					<p class="content">{item.description}</p>
 				{/if}
@@ -59,14 +59,15 @@
 
 	.item img {
 		grid-row: 1 / span 2;
-		@apply w-16 h-16 rounded-full;
+		box-shadow: 0 0 2px #777777;
+		@apply w-16 h-16 rounded-full object-cover object-center;
 	}
 
-	.item p {
+	.item p, .item h2 {
 		@apply overflow-hidden break-words;
 	}
 
-	.item .title {
+	.item h2 {
 		@apply h-5 text-lg font-semibold leading-none;
 	}
 
@@ -80,10 +81,9 @@
 	}
 
 	.item button {
-		border-radius: 16px;
 		background-color: #3d7cf1;
 		color: #ffffff;
-		@apply px-4 py-2 text-xl font-bold leading-none cursor-pointer;
+		@apply px-6 py-2 rounded-2xl text-xl font-bold leading-none cursor-pointer;
 	}
 
 	.no-item {

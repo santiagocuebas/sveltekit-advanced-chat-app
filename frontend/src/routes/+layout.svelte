@@ -150,7 +150,7 @@
 		grid-auto-rows: min-content 1fr min-content;
 		min-width: 600px;
 		max-height: 900px;
-		border: 1px solid transparent;
+		outline: 1px solid #999999;
 		background-color: #999999;
 		z-index: 25;
 		@apply grid relative w-full h-full gap-x-px gap-y-px;
@@ -162,7 +162,7 @@
 		background-color: #ffffff;
 		scrollbar-width: none;
 		z-index: 200;
-		@apply grid relative content-start justify-items-center py-10 px-2.5 overflow-y-scroll gap-5;
+		@apply grid relative content-start justify-items-center h-full py-10 px-2.5 overflow-y-scroll gap-5;
 	}
 
 	:global(.close) {

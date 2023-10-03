@@ -28,6 +28,7 @@
 	}
 
 	ul {
+		min-width: 150px;
 		background-color: #ffffff;
 		box-shadow: 0 0 10px #aaaaaa;
 		@apply absolute self-start right-0 mt-11 py-2 rounded;

@@ -1,10 +1,4 @@
-import type {
-	IKeys,
-	ISettingsProps,
-	IUser,
-	Members,
-	ResponseData
-} from "$lib/types/global";
+import type { ISettingsProps, Member, ResponseData } from "$lib/types/global";
 import axios from "axios";
 import { DIR } from "$lib/config";
 import { Formats, Inputs } from "$lib/types/enums";
@@ -97,7 +91,7 @@ export const sendAvatar = async (file: File, id: string) => {
 	return data.filename;
 };
 
-export const initSettingsProps = ({ description }: IUser): ISettingsProps => {
+export const setSettingsProps = (description: string): ISettingsProps => {
 	return {
 		avatar: '',
 		username: '',
@@ -107,24 +101,11 @@ export const initSettingsProps = ({ description }: IUser): ISettingsProps => {
 			new: false,
 			confirm: false
 		},
-		unblock: { users: [], groups: [] },
-		resetProps: function(this, prop: string) {
-			if (typeof this[prop] !== 'string') {
-				const props = this[prop] as IKeys<string[]> | IKeys<boolean>;
-				
-				Object.entries(props).forEach(([key, value]) => {
-					props[key] = (value instanceof Array) ? [] : false;
-				});
-
-				this[prop] = props;
-			} else this[prop] = '';
-
-			return this;
-		}
+		unblock: { users: [], groups: [] }
 	}
 };
 
-export const addId = ({ id }: Members, list: string[]) => {
+export const addId = ({ id }: Member, list: string[]) => {
 	return !list.includes(id) ? [id, ...list] : list.filter(item => item !== id);
 };
 
@@ -136,7 +117,7 @@ export const getData = ([actPass, newPass, confirmPass]: (() => void)[]) => {
 	];
 };
 
-export const isDisabled = ({ description }: IUser) => {
+export const isDisabled = (description: string) => {
 	return {
 		avatar: (props: ISettingsProps) => props.avatar,
 		username: (props: ISettingsProps) => {

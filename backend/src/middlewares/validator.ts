@@ -7,9 +7,10 @@ export const validate = (validations: ValidationChain[]) => {
 	return async (req: Request, res: Response, next: NextFunction) => {
 		await Promise.all(validations.map(validation => validation.run(req)));
 
-		const errs = validationResult(req);
+		// Checking if fields are valids
+		const result = validationResult(req);
 
-		if (!errs.isEmpty()) {
+		if (!result.isEmpty()) {
 			if (req.file !== undefined) fs.unlink(req.file.path);
 			
 			if (req.files !== undefined && req.files instanceof Array) {
@@ -18,30 +19,17 @@ export const validate = (validations: ValidationChain[]) => {
 				}
 			}
 			
-			const errors = getErrorMessages(errs.array());
+			// Serializing field errors
+			const errors = getErrorMessages(result.array());
+
+			if (req.baseUrl.includes('settings')) {
+				return res.status(401).json({
+					errors: true,
+					message: errors
+				});
+			}
 
 			return res.status(401).json({ errors });
-		}
-
-		return next();
-	};
-};
-
-export const validateSettings = (validations: ValidationChain[]) => {
-	return async (req: Request, res: Response, next: NextFunction) => {
-		await Promise.all(validations.map(validation => validation.run(req)));
-
-		const errs = validationResult(req);
-
-		if (!errs.isEmpty()) {
-			if (req.file !== undefined) fs.unlink(req.file.path);
-
-			const errors = getErrorMessages(errs.array());
-
-			return res.status(401).json({
-				errors: 'errors-settings',
-				message: errors
-			});
 		}
 
 		return next();

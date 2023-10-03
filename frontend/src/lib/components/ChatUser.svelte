@@ -24,7 +24,7 @@
 	import { socket } from "$lib/socket";
   import { leaveUser, leaveGroup } from '$lib/sockets.js';
   import {
-		initGroupProps,
+		setGroupProps,
 		isNotMember,
 		addMember,
 		banMember,
@@ -50,7 +50,7 @@
 	const unsubUsers = users.subscribe(value => usersValues = value as IForeign[]);
 
 	function selectContact(value: string, key: string) {
-		if (key === Option.GROUP) groupProps = initGroupProps($contact);
+		if (key === Option.GROUP) groupProps = setGroupProps($contact);
 		visible = false;
 		option = value;
 		options.setOption(key);
@@ -284,7 +284,7 @@
 	}
 
 	.list-item .label-image {
-		@apply w-60 h-60 mx-auto;
+		@apply w-60 h-60 mt-1.5 mx-auto;
 	}
 
 	.list-item img {

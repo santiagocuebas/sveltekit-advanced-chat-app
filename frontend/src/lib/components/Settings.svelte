@@ -10,7 +10,7 @@
 		changeName,
 		getData,
 		isDisabled,
-		initSettingsProps
+		setSettingsProps
 	} from "$lib/services/libs";
   import { user, options, switchs, users, groups, register } from '$lib/store';
 	import { Formats, Option, Settings } from "$lib/types/enums";
@@ -19,11 +19,12 @@
   import Box from "./OptionBox.svelte";
 	
 	const data = getData([isValidOldPassword, isValidPassword, isCorrectPassword]);
-	let settingsProps = initSettingsProps($user);
+	let settingsProps = setSettingsProps($user.description);
 	let visible = false;
 	let src = DIR + '/uploads/avatar/' + $user.avatar;
 	let password: string;
-	let className: string;
+	let success: boolean;
+	let errors: boolean;
 	let message: string | IKeys<string>;
 
 	async function handleAvatar(this: HTMLInputElement) {
@@ -103,12 +104,12 @@
 			.catch(err => err.response?.data);
 
 		if (data.errors) {
-			className = data.errors;
+			errors = data.errors;
 			message = data.message;
 		}
 
 		if (data.success) {
-			className = data.success;
+			success = data.success;
 			message = data.message;
 			if (data.filename) settingsProps.avatar = data.filename;
 
@@ -121,11 +122,12 @@
 			}
 
 			if (this.id !== Settings.DESCRIPTION && this.id !== Settings.DELETE) {
-				settingsProps = settingsProps.resetProps(this.id);
+				settingsProps = setSettingsProps(settingsProps.description);
 			}
-
-		 	visible = true;
 		}
+
+		visible = true;
+		setTimeout(() => visible = false, 5000);
 	}
 </script>
 
@@ -136,7 +138,7 @@
 {/if}
 
 {#if visible}
-	<ErrorBox bind:visible={visible} {className} {message} />
+	<ErrorBox {success} {errors} {message} />
 {/if}
 
 <div class="container-box">
@@ -180,8 +182,8 @@
 					{/if}
 				{/each}
 			{:else if key === Settings.UNBLOCK}
-				{#each listItems as { key, name, text }}
-					<ul>
+				<ul>
+					{#each listItems as { key, name, text }}
 						{#if $user.blocked[key].length}
 							<p>{changeName(key)}:</p>
 							{#each $user.blocked[key] as member (member.id)}
@@ -189,23 +191,28 @@
 									bind:prop={settingsProps.unblock[key]}
 									{name}
 									{member}
+									value={member.id}
 									change={addId}
 								/>
 							{/each}
 						{:else}
-							<li class="message">You haven't blocked any {text} yet! :D</li>
+							<li>You haven't blocked any {text} yet! :D</li>
 						{/if}
-					</ul>
-				{/each}
+						{#if key === 'users'}
+							<span></span>
+						{/if}
+					{/each}
+				</ul>
 			{:else}
 				<button class="delete">
 					Delete
 				</button>
 			{/if}
 			{#if key !== Settings.DELETE && (key !== Settings.UNBLOCK || ($user.blocked.users.length || $user.blocked.groups.length))}
-				<button class='accept' disabled={!isDisabled($user)[key](settingsProps)}>
-					Accept
-				</button>
+				<button
+					class='accept'
+					disabled={!isDisabled($user.description)[key](settingsProps)}
+				>Accept</button>
 			{/if}
 		</form>
 	{/each}
@@ -252,11 +259,12 @@
 	}
 
 	li {
-		@apply flex items-center w-full;
+		@apply flex items-center w-full text-center text-xl font-medium leading-snug;
 	}
 
-	.message {
-		@apply p-1.5 text-center text-xl font-medium leading-none;
+	span {
+		background-color: #000000;
+		@apply w-full h-0.5;
 	}
 
 	.accept {

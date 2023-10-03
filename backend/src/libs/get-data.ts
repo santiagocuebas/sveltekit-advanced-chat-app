@@ -1,40 +1,52 @@
-import type { PartialUser, Chats, IGroup } from '../types/global.js';
-import type { Contact } from '../types/types.js';
+import type {
+	Chats,
+	IGroup,
+	IChat,
+	IUser,
+	Member,
+	IPartialUser
+} from '../types/global.js';
+import type { Contact, IKeys } from '../types/types.js';
 import { Chat, Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
 
-export const getUser: PartialUser = ({ id, username, avatar, description, blockedUsers, blockedGroups }) => {
-	return { id, username, avatar, description, blockedUsers, blockedGroups };
+export const getUser = (user: IUser): IPartialUser => {
+	return {
+		id: user.id,
+		username: user.username,
+		avatar: user.avatar,
+		description: user.description,
+		blockedUsers: user.blockedUsers,
+		blockedGroups: user.blockedGroups
+	};
 };
 
 export const getContact: Contact = (contactID, roomID, contact, type, chat) => {
-	const {
-		name,
-		description,
-		avatar,
-		blockedGroupsIDs,
-		logged,
-		admin,
-		mods,
-		members,
-		blacklist,
-		state
-	} = contact as never;
+	const data: IKeys<string | string[] | Member[]> = {};
+
+	if ((contact as IGroup).admin) {
+		const group = contact as IGroup;
+
+		data.admin = group.admin;
+		data.members = group.members;
+		data.mods = group.mods;
+		data.blacklist = group.blacklist;
+		data.state = group.state;
+	} else {
+		const user = contact as IUser;
+
+		data.blockedIDs = user.blockedUsersIDs;
+	}
 
 	return {
 		contactID,
 		roomID,
-		name,
-		avatar,
-		logged: typeof logged === 'number' ? logged + 1 : logged,
+		name: contact.name,
+		avatar: contact.avatar,
+		description: contact.description,
+		logged: typeof contact.logged === 'number' ? contact.logged++ : contact.logged,
 		type,
-		admin,
-		mods,
-		members,
-		blacklist,
-		blockedIDs: blockedGroupsIDs,
-		description,
-		state,
+		...data,
 		content: chat?.content,
 		createdAt: chat?.createdAt
 	};
@@ -55,7 +67,7 @@ export const matchId = (group: IGroup, userIDs: string[]) => {
 	return match;
 };
 
-export const getId = async (): Promise<string> => {
+export const getId = async (type?: string): Promise<string> => {
 	const validChar = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 	let id = '';
 
@@ -63,32 +75,25 @@ export const getId = async (): Promise<string> => {
 		id += validChar.at(Math.floor(Math.random() * validChar.length));
 	}
 
-	const user = await User.findOne({ avatar: { $regex: id + '.*' } });
+	let data: IUser | IGroup | IChat | null = null;
 
-	if (user !== null) getId();
-
-	return id;
-};
-
-export const getGroupId = async (): Promise<string> => {
-	const validChar = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-	let id = '';
-
-	for (let i = 0; i < 12; i++) {
-		id += validChar.at(Math.floor(Math.random() * validChar.length));
+	if (type === TypeContact.USER) {
+		data = await User.findOne({ avatar: { $regex: id + '.*' } });
+	} else if (type === TypeContact.GROUP) {
+		data = await Group.findOne({ avatar: { $regex: id + '.*' } });
+	} else {
+		data = await Chat.findOne({ content: { $elemMatch: { $regex: id + '.*' } } });
 	}
 
-	const group = await Group.findOne({ avatar: { $regex: id + '.*' } });
-
-	if (group !== null) getGroupId();
+	if (data !== null) getId(type);
 
 	return id;
 };
 
-export const getChats: Chats = async ([userID, contactID], type) => {
+export const getChats: Chats = async (userID, contactID, type) => {
 	let findQuery = { };
 
-	if (type !== TypeContact.GROUP) {
+	if (type === TypeContact.USER) {
 		findQuery = {
 			$or: [
 				{ from: userID, to: contactID },

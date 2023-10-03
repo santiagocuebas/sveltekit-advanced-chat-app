@@ -1,15 +1,21 @@
 <script lang="ts">
-	import type { Members } from "$lib/types/global";
+	import type { Member } from "$lib/types/global";
 
-	export let prop: string[] | Members[];
+	export let prop: string[] | Member[];
 	export let name: string = '';
-	export let member: Members;
+	export let value: string = '';
+	export let member: Member;
 	export let change: any;
 </script>
 
 <li>
 	{member.name}
-	<input type="checkbox" name={name} on:click={() => prop = change(member, prop)}>
+	<input
+		type="checkbox"
+		name={name}
+		value={value}
+		on:click={() => prop = change(member, prop)}
+	>
 </li>
 
 <style lang="postcss">

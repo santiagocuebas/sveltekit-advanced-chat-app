@@ -1,4 +1,4 @@
-import type { Members, IUser, RawUser, IKeys } from "$lib/types/global";
+import type { Member, IUser, RawUser, IKeys } from "$lib/types/global";
 import { writable } from "svelte/store";
 
 function createUser() {
@@ -14,7 +14,7 @@ function createUser() {
 	
 			return user;
 		}),
-		blockContact: (value: Members, prop: string) => update(user => {
+		blockContact: (value: Member, prop: string) => update(user => {
 			user.blocked[prop].push(value);
 
 			return user;

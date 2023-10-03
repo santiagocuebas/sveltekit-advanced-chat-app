@@ -92,9 +92,7 @@ export const arrayPassword: ValidationChain[] = [
 
 export const arrayUnblock: ValidationChain[] = [
 	body('unblockUsers', 'Unblock error')
-		.exists({ values: 'falsy' }).bail()
 		.custom(existsUsers),
 	body('unblockGroups', 'Unblock error')
-		.exists({ values: 'falsy' }).bail()
 		.custom(existsGroups)
 ];

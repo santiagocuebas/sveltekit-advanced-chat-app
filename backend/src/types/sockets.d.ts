@@ -1,7 +1,12 @@
 import type { Socket } from 'socket.io';
 import type { IUser } from './global.js';
 
-export type ChatSockets = (socket: Socket, IDs: string[], value?: string) => void;
+export type ChatSockets = (
+  socket: Socket,
+  IDs: string[],
+  value?: string,
+  type?: string
+) => void;
 
 export type UserSockets = (socket: Socket, IDs: string[], user: IUser) => void;
 

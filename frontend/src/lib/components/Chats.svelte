@@ -28,18 +28,18 @@
 	let img: string;
 	let alt: string;
 
+	function handleChat(data: string | string[]) {
+		const chat = getChat($user, $contact, data);
+		loadChat(chat);
+		socket.emit('emitChat', data, chat._id);
+
+		if ($contact.type === Option.GROUP) editGroups($contact.roomID, chat);
+	}
+
 	function sendMessage(this: HTMLFormElement) {
 		const message = new FormData(this).get('message') as string;
 
-		if (message?.length) {
-			const chat = getChat($user, $contact, message);
-
-			loadChat(chat);
-
-			socket.emit('emitChat', message, chat._id);
-
-			if ($contact.type === Option.GROUP) editGroups($contact.roomID, chat);
-		}
+		if (message?.length) handleChat(message);
 
 		input.value = '';
 	}
@@ -47,15 +47,7 @@
 	async function sendImage(this: HTMLInputElement) {
 		const filenames = await getImages(this.files);
 
-		if (filenames !== null) {
-			const chat = getChat($user, $contact, filenames);
-
-			loadChat(chat);
-
-			socket.emit('emitChat', filenames, chat._id);
-
-			if ($contact.type === Option.GROUP) editGroups($contact.roomID, chat);
-		}
+		if (filenames !== null) handleChat(filenames);
 	}
 
 	function handleDelete(id: string, from: string) {
@@ -82,18 +74,16 @@
 	}
 
 	function showChats(num: number) {
-		for (let i = 0; i < num; i++) {
-			if (chats[counter+i]) {
-				visibleChats = [chats[counter+i], ...visibleChats];
-				chatID = chats[counter+i]._id;
+		for (counter; counter < (counter + num); counter++) {
+			if (chats[counter]) {
+				visibleChats = [chats[counter], ...visibleChats];
+				chatID = chats[counter]._id;
 			} else {
 				if (boxElement) observer.unobserve(boxElement);
 				chatID = '';
 				break;
 			}
 		}
-
-		counter += num;
 	}
 
 	const loadChats = (messages: IChat[]) => {
@@ -164,7 +154,8 @@
 	{#each visibleChats as chat (chat._id)}
 		<div
 			id={chat._id}
-			class='chat {$user.id === chat.from ? 'me' : ''}'
+			class='chat'
+			class:me={$user.id === chat.from}
 			on:dblclick={() => handleDelete(chat._id, chat.from)}
 			role='none'
 		>

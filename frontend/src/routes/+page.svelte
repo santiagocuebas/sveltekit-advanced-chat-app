@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { IKeys } from '$lib/types/global';
-	import { afterUpdate, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { socket } from '$lib/socket.js';
   import { switchs } from '$lib/store';
   import UserHeader from '$lib/components/UserHeader.svelte';
@@ -12,16 +12,15 @@
 	
 	let errorMessage: IKeys<string> | null = null;
 
-	const socketError = (err: IKeys<string>) => errorMessage = err;
+	const socketError = (err: IKeys<string>) => {
+		errorMessage = err;
+		setTimeout(() => errorMessage = null, 5000);
+	};
 
 	onMount(() => {
 		socket.on('socketError', socketError);
 
 		return () => socket.off('socketError', socketError);
-	});
-
-	afterUpdate(() => {
-		if (errorMessage) setTimeout(() => errorMessage = null, 5000);
 	});
 </script>
 
@@ -84,6 +83,6 @@
 	}
 
 	.error p {
-		@apply w-full overflow-hidden break-words text-center text-xl leading-none;
+		@apply w-full overflow-hidden break-words text-center text-xl leading-tight;
 	}
 </style>

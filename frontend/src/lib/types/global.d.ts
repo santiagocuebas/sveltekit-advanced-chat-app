@@ -1,8 +1,6 @@
 export type Contact = IForeign & IGroup;
 
-export type Contacts = [IForeign[], IGroup[]];
-
-export type Members = { id: string, name: string };
+export type Member = { id: string, name: string };
 
 export type Check = (
 	value: string,
@@ -23,17 +21,17 @@ export interface RawUser {
 	username: string;
 	avatar: string;
 	description: string;
-	blockedUsers: Members[];
-	blockedGroups: Members[];
+	blockedUsers: Member[];
+	blockedGroups: Member[];
 }
 
 export interface IUser {
-	[index: string]: string | IKeys<Members[]>;
+	[index: string]: string | IKeys<Member[]>;
 	id: string;
 	username: string;
 	avatar: string;
 	description: string;
-	blocked: IKeys<Members[]>;
+	blocked: IKeys<Member[]>;
 }
 
 interface IContact {
@@ -53,9 +51,9 @@ export interface IForeign extends IContact {
 
 export interface IGroup extends IContact {
 	admin: string;
-	mods: Members[];
-	members: Members[];
-	blacklist: Members[];
+	mods: Member[];
+	members: Member[];
+	blacklist: Member[];
 	description: string;
 	state: string;
 }
@@ -68,6 +66,11 @@ export interface IList {
 	type: string;
 }
 
+export interface Contacts {
+	users: IForeign[];
+	groups: IGroup[];
+};
+
 export interface IChat {
 	_id: string;
 	from: string;
@@ -78,13 +81,13 @@ export interface IChat {
 }
 
 export interface IGroupProps {
-	[index: string]: Members[] | string[] | string | ((key: string) => void) | undefined;
-	add: Members[];
+	[index: string]: Member[] | string[] | string | ((key: string) => void) | undefined;
+	add: Member[];
 	ban: string[];
-	block: Members[];
+	block: Member[];
 	unblock: string[];
-	addMod: Members[];
-	removeMod: Members[];
+	addMod: Member[];
+	removeMod: Member[];
 	description: string;
 	state: string;
 	destroy?;
@@ -97,7 +100,6 @@ export interface ISettingsProps {
 	description: string;
 	password: IKeys<boolean>;
   unblock: IKeys<string[]>;
-	resetProps: (key: string) => ISettingsProps;
 }
 
 export interface ResponseData {
@@ -113,8 +115,8 @@ export interface ResponseData {
 
 export interface SettingsData {
 	[index: string]: string | IKeys<string>;
-	errors: string;
-	success: string;
+	errors: boolean;
+	success: boolean;
 	filename: string;
 	message: string | IKeys<string>;
 	error: IKeys<string>;

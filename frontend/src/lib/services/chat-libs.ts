@@ -4,12 +4,12 @@ import type {
 	IGroup,
 	IGroupProps,
 	IUser,
-	Members
+	Member
 } from "$lib/types/global";
 import { Option } from "$lib/types/enums";
 import { getId } from "./libs";
 
-export const initGroupProps = ({ description, state }: IGroup): IGroupProps => {
+export const setGroupProps = ({ description, state }: IGroup): IGroupProps => {
 	return {
 		add: [],
 		ban: [],
@@ -38,7 +38,7 @@ export const isNotMember = (
 	users: IForeign[],
 	{ contactID, admin, mods, members, blacklist }: IGroup
 ) => {
-	const newMembers: Members[] = [];
+	const newMembers: Member[] = [];
 	const id = contactID;
 	const allIDs = [...mods, ...members, ...blacklist].map(({ id }) => id);
 	if (admin) allIDs.push(admin);
@@ -52,25 +52,25 @@ export const isNotMember = (
 	return newMembers;
 };
 
-export const addMember = (member: Members, members: Members[]): Members[] => {
+export const addMember = (member: Member, members: Member[]): Member[] => {
 	return !isMember(members, member.id)
 		? [member, ...members]
 		: members.filter(user => user.id !== member.id);
 };
 
-export const banMember = ({ id }: Members, banIDs: string[]): string[] => {
+export const banMember = ({ id }: Member, banIDs: string[]): string[] => {
 	return !banIDs.includes(id)
 		? [id, ...banIDs]
 		: banIDs.filter(banID => banID !== id);
 };
 
-export const isMod = (mods: Members[], id: string) => {
+export const isMod = (mods: Member[], id: string) => {
 	return mods
 		?.map(({ id }) => id)
 		.includes(id);
 };
 
-export const isMember = (member: Members[], id: string) => {
+export const isMember = (member: Member[], id: string) => {
 	return member
 		?.map(({ id }) => id)
 		.includes(id);

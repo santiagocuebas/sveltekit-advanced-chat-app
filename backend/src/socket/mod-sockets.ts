@@ -1,14 +1,16 @@
-import type { Members } from '../types/global.js';
+import type { Member } from '../types/global.js';
 import type { ModSockets } from '../types/sockets.js';
 import { User, Group } from '../models/index.js';
 
 export const modSockets: ModSockets = (socket, contactID) => {
-	socket.on('emitAddMember', async (members: Members[]) => {
+	socket.on('emitAddMember', async (members: Member[]) => {
+		// Add contacts to the group
 		await Group.updateOne(
 			{ _id: contactID },
 			{ $push: { members: { $each: members } } }
 		);
 
+		// Add group id to the users
 		for (const { id } of members) {
 			await User.updateOne({ _id: id }, { $push: { groupRooms: [contactID] } });
 		}
@@ -17,6 +19,7 @@ export const modSockets: ModSockets = (socket, contactID) => {
 	});
 
 	socket.on('emitBanMember', async (userIDs: string[]) => {
+		// Remove contacts to the group
 		await Group.updateOne(
 			{ _id: contactID },
 			{
@@ -28,6 +31,7 @@ export const modSockets: ModSockets = (socket, contactID) => {
 			}
 		);
 
+		// Remove group id from the users
 		for (const id of userIDs) {
 			await User.updateOne({ _id: id }, { $pull: { groupRooms: contactID } });
 		}
@@ -35,9 +39,10 @@ export const modSockets: ModSockets = (socket, contactID) => {
 		socket.to(contactID).emit('banMembers', contactID, userIDs);
 	});
 
-	socket.on('emitBlockMember', async (members: Members[]) => {
+	socket.on('emitBlockMember', async (members: Member[]) => {
 		const userIDs = members.map(member => member.id);
 
+		// Remove and block contacts to the group
 		await Group.updateOne(
 			{ _id: contactID },
 			{
@@ -50,6 +55,7 @@ export const modSockets: ModSockets = (socket, contactID) => {
 			}
 		);
 
+		// Remove group id from the users
 		for (const { id } of members) {
 			await User.updateOne({ _id: id }, { $pull: { groupRooms: contactID } });
 		}
@@ -58,6 +64,7 @@ export const modSockets: ModSockets = (socket, contactID) => {
 	});
 
 	socket.on('emitUnblockMember', async (userIDs: string[]) => {
+		// Unblock contacts to the group
 		await Group.updateOne(
 			{ _id: contactID },
 			{ $pull: { blacklist: { id: { $in: userIDs } } } }

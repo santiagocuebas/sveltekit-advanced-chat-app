@@ -19,32 +19,32 @@ export const socketResult: ChoiceSocket = ({ contactID, name }) => {
 			return [name];
 		},
 		add: (members: Member[]) => {
-			addMembers(contactID, members);
+			addMembers(contactID, ...members);
 			
 			return [members, contactID];
 		},
 		ban: (banIDs: string[]) => {
-			banMembers(contactID, banIDs);
+			banMembers(contactID, ...banIDs);
 			
 			return [banIDs, contactID];
 		},
 		block: (blockUsers: Member[]) => {
-			blockMembers(contactID, blockUsers);
+			blockMembers(contactID, ...blockUsers);
 			
 			return [blockUsers, contactID];
 		},
 		unblock: (unblockIDs: string[]) => {
-			unblockMembers(contactID, unblockIDs);
+			unblockMembers(contactID, ...unblockIDs);
 			
 			return [unblockIDs, contactID]
 		},
 		addMod: (newMods: Member[]) => {
-			addMods(contactID, newMods);
+			addMods(contactID, ...newMods);
 
 			return [newMods, contactID];
 		},
 		removeMod: (removeMod: Member[]) => {
-			removeMods(contactID, removeMod);
+			removeMods(contactID, ...removeMod);
 
 			return [removeMod, contactID];
 		},

@@ -4,23 +4,18 @@ import { resolve } from 'path';
 import { Chat } from '../models/index.js';
 import { getChats } from '../libs/get-data.js';
 
-export const chatSockets: ChatSockets = (
-	socket,
-	[userID, contactID, roomID],
-	username,
-	type
-) => {
+export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomID], username, type) => {
+	// Get chats from the contacts
+	const messages = await getChats(userID, contactID, type);
+
+	socket.emit('loadChats', messages);
+
 	socket.on('emitChat', async (message: string | string[], tempID: string) => {
-		// Get chats from the contacts
-		const messages = await getChats(userID, contactID, type);
-
-		socket.emit('loadChats', messages);
-
 		// Create a new chat
 		const chat = await Chat.create({
 			from: userID,
 			to: contactID,
-			username: username ? username : undefined,
+			username,
 			content: message,
 			createdAt: new Date
 		});
@@ -28,9 +23,8 @@ export const chatSockets: ChatSockets = (
 		socket.emit('loadChatID', chat.id, tempID);
 		socket.to(roomID).emit('loadChat', chat);
 
-		username
-			? socket.to(roomID).emit('editGroup', roomID, chat)
-			: socket.to(roomID).emit('editUser', roomID, chat);
+		const emitString = username ? 'editGroup' : 'editUser';
+		socket.to(roomID).emit(emitString, roomID, chat);
 	});
 
 	socket.on('emitDelete', async (id: string) => {

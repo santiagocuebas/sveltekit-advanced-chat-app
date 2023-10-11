@@ -13,7 +13,7 @@ import {
 	COLLECTION
 } from './config.js';
 import initSocket from './socket-io.js';
-import { socketValid, wrap } from './libs/index.js';
+import { verifyToken, wrap } from './libs/index.js';
 
 // Create Server
 const { MongoClient } = mongoose.mongo;
@@ -58,18 +58,17 @@ const io = new Server(server, {
 
 setupWorker(io);
 
+// Connect worker
 io.use(wrap(cookieParser()));
 		
 io.use(async (socket, next) => {
 	const sessionID = socket.handshake.auth.sessionID;
-	const user = await socketValid(socket.request.cookies['authenticate']);
+	const user = await verifyToken(socket.request.cookies['authenticate']);
 
-	if (user && sessionID) {
-		socket.user = user;
-		return next();
-	} 
-	
-	return(new Error('Unauthorized'));
+	if (!user || user.id !== sessionID) return(new Error('Unauthorized'));
+
+	socket.user = user;
+	return next();
 });
 
 io.on('connection', initSocket);

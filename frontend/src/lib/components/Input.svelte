@@ -70,14 +70,16 @@
 	}
 
 	label {
+		box-shadow: 0 0 0 1px #aaaaaa;
 		transition: all 0.1s;
 		gap: 5px;
-		@apply flex flex-wrap w-full h-14 p-2 rounded shadow-ligthgrey;
+		@apply flex flex-wrap w-full h-14 p-2 rounded;
 	}
 
 	p {
+		color: #222222;
 		transition: all 0.1s;
-		@apply w-full text-darkgrey text-xl font-normal leading-loose select-none;
+		@apply w-full text-xl font-normal leading-loose select-none;
 	}
 
 	input {

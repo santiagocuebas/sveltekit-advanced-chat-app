@@ -24,7 +24,7 @@
 
 	const unsubUsers = users.subscribe(value => usersValues = value as IForeign[]);
 	const unsubGroups = groups.subscribe(value => groupsValues = value as IGroup[]);
-	const unsubLists = groups.subscribe(value => listValues = value as IList[]);
+	const unsubLists = list.subscribe(value => listValues = value as IList[]);
 
 	async function searchUser() {
 		const data: ResponseData = await axios({
@@ -42,11 +42,11 @@
 		input = '';
 	}
 
-	const joinRoom = (foreign: IForeign | IGroup) => {
+	const joinRoom = (user: IForeign | IGroup) => {
 		options.resetOptions();
-		contact.setContact(foreign as never);
+		contact.setContact(user as never);
 		switchs.setOption(Option.CHAT);
-		socket.emit(selectJoin[foreign.type], foreign.contactID, foreign.roomID);
+		socket.emit(selectJoin[user.type], user.contactID, user.roomID);
 	};
 
 	export const loadContacts = (contacts: Contacts) => {
@@ -58,15 +58,14 @@
 		else selected = Option.CHATS;
 	};
 
-	const updateContacts = (contact: Contact, emit: boolean) => {
-		if (contact.type === Option.GROUP) {
-			groups.setGroups([...groupsValues, contact]);
-		} else users.setUsers([...usersValues, contact]);
+	const updateContacts = (user: Contact, emit: boolean) => {
+		if (user.type === Option.USER) users.setUsers([...usersValues, user]);
+		else groups.setGroups([...groupsValues, user]);
 
-		const actList = listValues.filter(user => user.contactID !== contact.contactID);
+		const actList = listValues.filter(item => item.contactID !== user.contactID);
 		list.setLists(actList);
 		
-		if (emit) socket.emit('joinUpdate', contact);
+		if (emit) socket.emit('joinUpdate', user);
 	};
 
 	onMount(() => {

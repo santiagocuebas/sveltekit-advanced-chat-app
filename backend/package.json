@@ -4,6 +4,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
+    "start": "node src/cluster.ts",
     "dev": "nodemon src/cluster.ts",
     "build": "tsc"
   },
@@ -11,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@socket.io/mongo-adapter": "0.3.0",
+    "@socket.io/mongo-adapter": "0.2.1",
     "@socket.io/sticky": "1.0.4",
     "bcrypt": "5.1.1",
     "body-parser": "1.20.2",
@@ -27,7 +28,7 @@
     "mongoose-lean-virtuals": "0.9.1",
     "morgan": "1.10.0",
     "multer": "1.4.5-lts.1",
-    "socket.io": "4.7.2"
+    "socket.io": "4.5.4"
   },
   "devDependencies": {
     "@types/bcrypt": "5.0.0",

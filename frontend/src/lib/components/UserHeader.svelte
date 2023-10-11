@@ -2,6 +2,7 @@
 	import type { RawUser, ResponseData } from '$lib/types/global';
 	import axios from 'axios';
 	import { DIR } from '$lib/config.js';
+  import { avatarURL } from '$lib/dictionary';
   import { socket } from '$lib/socket';
   import { Option } from '$lib/types/enums';
   import {
@@ -46,7 +47,7 @@
 </script>
 
 <div>
-	<img src={`${DIR}/uploads/avatar/${$user.avatar}`} alt={$user.id}>
+	<img src={DIR + avatarURL.user + $user.avatar} alt={$user.id}>
 	<p title={$user.username}>{$user.username}</p>
 	<List bind:visible={visible}>
 		{#if !$switchs.group}
@@ -77,7 +78,7 @@
 
 	img {
 		min-width: 40px;
-		min-heigth: 40px;
+		min-height: 40px;
 		box-shadow: 0 0 5px #999999;
 		@apply w-10 h-10 object-cover rounded-full;
 	}

@@ -16,7 +16,7 @@
 <style lang="postcss">
   button {
 		background-color: #e7e7e7;
-		@apply p-2.5 ml-auto rounded-full cursor-pointer leading-none;
+		@apply ml-auto p-2.5 rounded-full cursor-pointer leading-none;
 	}
 
 	button:hover {
@@ -31,6 +31,7 @@
 		min-width: 150px;
 		background-color: #ffffff;
 		box-shadow: 0 0 10px #aaaaaa;
+		z-index: 1000;
 		@apply absolute self-start right-0 mt-11 py-2 rounded;
 	}
 </style>

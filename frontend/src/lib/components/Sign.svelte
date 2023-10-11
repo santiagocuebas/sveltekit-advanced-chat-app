@@ -117,7 +117,9 @@
 		grid-auto-rows: min-content;
 		grid-column: 1 / span 2;
 		grid-row: 1 / span 3;
-		@apply grid relative justify-items-center content-center w-full bg-white shadow-grey gap-5;
+		background-color: #ffffff;
+		box-shadow: 0 0 10px #888888;
+		@apply grid relative justify-items-center content-center w-full gap-5;
 	}
 
 	img {
@@ -145,11 +147,16 @@
 
 	.accept, .change {
 		width: 200px;
-		@apply py-3.5 rounded-sm bg-black shadow-black text-center font-bold text-white cursor-pointer;
+		background-color: #000000;
+		box-shadow: 0 0 0 2px #000000;
+		color: #ffffff;
+		@apply py-3.5 rounded-sm text-center font-bold cursor-pointer;
 	}
 
 	.change {
-		@apply bg-white text-blue shadow-blue;
+		background-color: #ffffff;
+		box-shadow: 0 0 0 2px #4b94e7;
+		color: #4b94e7;
 	}
 
 	@keyframes spin { 

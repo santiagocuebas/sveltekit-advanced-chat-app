@@ -46,8 +46,8 @@ export enum StateOption {
 
 export enum UserOptions {
   LEAVE = 'leave',
-  DESTROY = 'destroy',
   BLOCK = 'block',
+  DESTROY = 'destroy',
   BAD = 'bad'
 }
 

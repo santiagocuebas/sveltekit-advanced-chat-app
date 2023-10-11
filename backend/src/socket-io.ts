@@ -23,6 +23,12 @@ export default async (socket: Socket) => {
 	// Connecting user
 	await User.updateOne({ _id: userID }, { logged: true, tempId: socket.id });
 
+	// Connecting user to the group
+	await Group.updateMany(
+		{ _id: socket.user.groupRooms },
+		{ $addToSet: { loggedUsers: userID } }
+	);
+
 	// Get data of the contacts
 	const contacts = await getContacts(userID, socket.user);
 
@@ -62,7 +68,7 @@ export default async (socket: Socket) => {
 
 		chatSockets(socket, IDs, socket.user.username);
 		memberSockets(socket, IDs, socket.user);
-		modSockets(socket, contactID);
+		modSockets(socket, contactID, socket.user);
 		adminSockets(socket, IDs);
 	});
 
@@ -73,10 +79,11 @@ export default async (socket: Socket) => {
 		// Disconnecting user
 		await User.updateOne({ _id: userID }, { logged: false });
 
-		for (const _id of socket.user.groupRooms) {
-			// Disconnecting user from the group
-			await Group.updateOne({ _id }, { $pull: { connectedUsers: userID } });
-		}
+		// Disconnecting user from the group
+		await Group.updateMany(
+			{ _id: socket.user.groupRooms },
+			{ $pull: { loggedUsers: userID } }
+		);
 
 		socket.to(socket.user.userRooms).emit('loggedUser', userID, false);
 		socket.to(socket.user.groupRooms).emit('countMembers', userID, -1);

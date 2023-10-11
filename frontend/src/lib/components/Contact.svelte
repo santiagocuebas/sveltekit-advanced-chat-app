@@ -4,6 +4,7 @@
   import { avatarURL } from "$lib/dictionary";
 	import { contact as user } from '$lib/store';
   import { getDate } from "$lib/services/libs";
+  import { Option } from "$lib/types/enums";
 
   export let contact: IForeign | IGroup;
   export let join: (value: IForeign | IGroup) => void;
@@ -11,33 +12,31 @@
 
 <li
 	class:selected={$user.contactID === contact.contactID}
-	on:mousedown={() => join(contact)}
+	on:click={() => join(contact)}
 	role='none'
 >
-	{#if contact.logged === true}
-		<span>&#149;</span>
-	{/if}
+	<span
+		class:green={contact.logged}
+		class:blue={contact.type === Option.GROUP}
+	>&#149;</span>
   <img
 		src={DIR + avatarURL[contact.type] + contact.avatar}
 		alt={contact.contactID}
 	>
-  <div>
-		<p class="contact-title" title={contact.name}>{contact.name}</p>
+	<div>
+		<h3 title={contact.name}>{contact.name}</h3>
 		{#if contact.content}
-			<p class="content">
-				{contact.content instanceof Array ? contact.content[0] : contact.content}
-			</p>
+			{contact.content instanceof Array ? contact.content[0] : contact.content}
 		{/if}
 	</div>
-  {#if contact.createdAt}
-		<p class="createdAt">{getDate(contact.createdAt)}</p>
-  {/if}
+	{#if contact.createdAt}
+		<p>{getDate(contact.createdAt)}</p>
+	{/if}
 </li>
 
 <style lang="postcss">
   li {
-		column-gap: 5px;
-		@apply flex items-center w-full p-2.5 overflow-hidden font-medium;
+		@apply flex w-full h-20 p-2 overflow-hidden font-medium gap-x-1;
 	}
 
 	li:hover {
@@ -49,38 +48,37 @@
 	}
 
 	span {
+		min-width: 12px;
+		color: #444444;
 		font-size: 32px;
+		@apply self-center;
+	}
+
+	.green {
 		color: #1e9224;
 	}
 
+	.blue {
+		color: #62bdf1;
+	}
+
 	img {
-		grid-row: 1 / span 2;
 		min-width: 64px;
-		min-height: 64px;
 		box-shadow: 0 0 5px #999999;
 		@apply w-16 h-16 object-cover rounded-full;
 	}
 
 	div {
-		@apply w-full h-full flex flex-wrap;
+		@apply overflow-hidden break-words;
+	}
+
+	h3 {
+		@apply h-5 overflow-hidden text-ellipsis text-lg font-semibold leading-none;
 	}
 
 	p {
-		@apply overflow-hidden text-ellipsis break-words;
-	}
-
-	.contact-title {
-		@apply w-full h-5 max-h-5 text-lg font-semibold leading-none;
-	}
-
-	.content {
-		width: 100%;
-		height: 35px;
-	}
-
-	.createdAt {
-		min-width: 44px;
-		max-width: 44px;
-		@apply w-11 ml-auto self-start text-center;
+		width: 42px;
+		min-width: 42px;
+		@apply ml-auto text-center;
 	}
 </style>

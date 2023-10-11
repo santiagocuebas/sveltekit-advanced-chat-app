@@ -19,9 +19,8 @@
   import Box from "./OptionBox.svelte";
 	
 	const data = getData([isValidOldPassword, isValidPassword, isCorrectPassword]);
-	let settingsProps = setSettingsProps($user.description);
+	let settingsProps = setSettingsProps($user.avatar, $user.description);
 	let visible = false;
-	let src = DIR + '/uploads/avatar/' + $user.avatar;
 	let password: string;
 	let success: boolean;
 	let errors: boolean;
@@ -33,7 +32,6 @@
 		const files = this.files;
 
 		fileReader.addEventListener('load', ({ target }) => {
-			src = target?.result as string;
 			settingsProps.avatar = target?.result as string;
 		});
 
@@ -82,7 +80,7 @@
 			withCredentials: true
 		}).then(res => res.data);
 
-		$options.settings = false;
+		options.setOption(Option.SETTINGS);
 
 		if (data.delete) {
 			socket.disconnect();
@@ -111,6 +109,7 @@
 		if (data.success) {
 			success = data.success;
 			message = data.message;
+
 			if (data.filename) settingsProps.avatar = data.filename;
 
 			if (this.id !== Settings.PASSWORD && this.id !== Settings.DELETE) {
@@ -122,7 +121,7 @@
 			}
 
 			if (this.id !== Settings.DESCRIPTION && this.id !== Settings.DELETE) {
-				settingsProps = setSettingsProps(settingsProps.description);
+				settingsProps = setSettingsProps(settingsProps.avatar, settingsProps.description);
 			}
 		}
 
@@ -158,7 +157,7 @@
 			</label>
 			{#if key === Settings.AVATAR}
 				<label class="center">
-					<img src={src} alt={$user.username}>
+					<img src={settingsProps.avatar} alt={$user.username}>
 					<input type="file" name="avatar" on:change={handleAvatar}>
 				</label>
 			{:else if key === Settings.USERNAME}
@@ -211,7 +210,7 @@
 			{#if key !== Settings.DELETE && (key !== Settings.UNBLOCK || ($user.blocked.users.length || $user.blocked.groups.length))}
 				<button
 					class='accept'
-					disabled={!isDisabled($user.description)[key](settingsProps)}
+					disabled={!isDisabled($user.avatar, $user.description)[key](settingsProps)}
 				>Accept</button>
 			{/if}
 		</form>

@@ -6,6 +6,7 @@
   import UserHeader from '$lib/components/UserHeader.svelte';
   import Contacts from '$lib/components/Contacts.svelte';
   import ChatUser from '$lib/components/ChatUser.svelte';
+  import Chat from "$lib/components/Chats.svelte";
   import Search from '$lib/components/Search.svelte';
   import Group from '$lib/components/Group.svelte';
   import Settings from '$lib/components/Settings.svelte';
@@ -28,6 +29,7 @@
 <Contacts />
 {#if $switchs.chat}
 	<ChatUser />
+	<Chat />
 {:else if $switchs.search}
 	<Search />
 {:else if $switchs.group}

@@ -28,7 +28,7 @@ export const SettingsText: IKeys<string> = {
 	description: 'Change description',
 	password: 'Change password',
 	unblock: 'Unblock contact',
-	delete: 'Delete user',
+	delete: 'Delete user'
 };
 
 export const UserText: IKeys<string> = {

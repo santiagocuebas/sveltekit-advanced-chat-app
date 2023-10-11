@@ -1,36 +1,23 @@
 import type { Direction } from '../types/types.js';
-import jwt from 'jsonwebtoken';
-import { SECRET } from '../config.js';
-import { User } from '../models/index.js';
+import { verifyToken } from '../libs/index.js';
 
 export const isValidToken: Direction = async (req, res, next) => {
-	try {
-		// Getting and decoding the token and find the user
-		const token = req.cookies['authenticate'];
-		const decoded = jwt.verify(token, SECRET) as jwt.JwtPayload;
-		const user = await User.findOne({ _id: decoded.id });
+	// Getting and decoding the token and find the user
+	const user = await verifyToken(req.cookies['authenticate']);
 
-		if (user === null) throw 'Error';
-
+	if (user !== null) {
 		req.user = user;
-
 		return next();
-	} catch {
-		return res.status(401).json({ error: 'loggedError' });
 	}
+
+	return res.status(401).json({ error: 'loggedError' });
 };
 
 export const isNotValidToken: Direction = async (req, res, next) => {
-	try {
-		// Getting and decoding the token and find the user
-		const token = req.cookies['authenticate'];
-		const decoded = jwt.verify(token, SECRET) as jwt.JwtPayload;
-		const user = await User.findOne({ _id: decoded.id });
+	// Getting and decoding the token and find the user
+	const user = await verifyToken(req.cookies['authenticate']);
 	
-		if (user === null) throw 'Error';
+	if (user === null) return next();
 	
-		return res.status(401).json({ error: 'notLoggedError' });
-	} catch {
-		return next();
-	}
+	return res.status(401).json({ error: 'notLoggedError' });
 };

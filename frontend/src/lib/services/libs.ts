@@ -1,6 +1,7 @@
 import type { ISettingsProps, Member, ResponseData } from "$lib/types/global";
 import axios from "axios";
 import { DIR } from "$lib/config";
+import { avatarURL } from "$lib/dictionary";
 import { Formats, Inputs } from "$lib/types/enums";
 
 export const changeName = (value: string) => {
@@ -66,7 +67,7 @@ export const getImages = async (files: FileList | null) => {
 				data: formData,
 				withCredentials: true
 			}).then(res => res.data)
-				.catch(err => err.response.data);
+				.catch(err => err.response?.data);
 
 			if (data && data.filenames) filenames = data.filenames;
 		}
@@ -91,9 +92,9 @@ export const sendAvatar = async (file: File, id: string) => {
 	return data.filename;
 };
 
-export const setSettingsProps = (description: string): ISettingsProps => {
+export const setSettingsProps = (avatar: string, description: string): ISettingsProps => {
 	return {
-		avatar: '',
+		avatar: DIR + avatarURL.user + avatar,
 		username: '',
 		description,
 		password: {
@@ -117,9 +118,11 @@ export const getData = ([actPass, newPass, confirmPass]: (() => void)[]) => {
 	];
 };
 
-export const isDisabled = (description: string) => {
+export const isDisabled = (avatar: string, description: string) => {
 	return {
-		avatar: (props: ISettingsProps) => props.avatar,
+		avatar: (props: ISettingsProps) => {
+			return props.avatar !== DIR + avatarURL.user + avatar;
+		},
 		username: (props: ISettingsProps) => {
 			return props.username.length > 3  && props.username.length <= 40;
 		},

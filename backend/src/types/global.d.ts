@@ -1,16 +1,9 @@
 import type { IKeys } from './types.js';
 
-declare global {
-	namespace Express {
-		interface Request {
-			user: IUser;
-		}
-	}
-}
-
 declare module 'http' {
 	interface IncomingMessage {
 		cookies: IKeys<string>;
+		user: IUser;
 	}
 }
 
@@ -75,7 +68,7 @@ export interface IGroup {
 	state: string;
 	description: string;
 	avatar: string;
-	connectedUsers: string[];
+	loggedUsers: string[];
 	logged: number;
 	blacklist: Member[];
 	blockedIDs: string[];

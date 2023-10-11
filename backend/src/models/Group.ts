@@ -10,8 +10,8 @@ const groupSchema = new Schema<IGroup>({
 	members: [Object],
 	name: { type: String, allowNull: false, required: true },
 	description: { type: String, default: "It's just another description of a group" },
-	avatar: { type: String, default: 'avatar.png' },
-	connectedUsers: [String],
+	avatar: { type: String, default: 'avatar.jpeg' },
+	loggedUsers: [String],
 	state: { type: String, default: StateOption.PUBLIC },
 	blacklist: [Object]
 }, {
@@ -25,25 +25,25 @@ const groupSchema = new Schema<IGroup>({
 groupSchema
 	.virtual('modIDs')
 	.get(function(this): string[] {
-		return this.mods.map(mod => mod.id);
+		return this.mods?.map(mod => mod.id);
 	});
 
 groupSchema
 	.virtual('memberIDs')
 	.get(function(this): string[] {
-		return this.members.map(member => member.id);
+		return this.members?.map(member => member.id);
 	});
 
 groupSchema
 	.virtual('blockedIDs')
 	.get(function(this): string[] {
-		return this.blacklist.map(user => user.id);
+		return this.blacklist?.map(user => user.id);
 	});
 
 groupSchema
 	.virtual('logged')
 	.get(function(this): number {
-		return this.connectedUsers.length;
+		return this.loggedUsers?.length;
 	});
 
 groupSchema.plugin(MLV);

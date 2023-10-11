@@ -1,13 +1,11 @@
 import cluster from 'cluster';
 import { createServer } from 'http';
 import os from 'os';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { setupMaster } from '@socket.io/sticky';
+import { __dirname } from './config.js';
 
 // Setup cluster
 const server = createServer();
-const __dirname = dirname(fileURLToPath(import.meta.url));
 const numCPUs = os.cpus().length;
 
 console.log(`The total number of CPUs is ${numCPUs}`);

@@ -44,7 +44,7 @@ export const isNotMember = (
 	if (admin) allIDs.push(admin);
 
 	for (const { contactID, name, blockedIDs } of users) {
-		if (!allIDs.includes(contactID) && !blockedIDs.includes(id)) {
+		if (!allIDs.includes(contactID) && !blockedIDs?.includes(id)) {
 			newMembers.push({ id: contactID, name });
 		}
 	}
@@ -70,8 +70,8 @@ export const isMod = (mods: Member[], id: string) => {
 		.includes(id);
 };
 
-export const isMember = (member: Member[], id: string) => {
-	return member
+export const isMember = (members: Member[], id: string) => {
+	return members
 		?.map(({ id }) => id)
 		.includes(id);
 };

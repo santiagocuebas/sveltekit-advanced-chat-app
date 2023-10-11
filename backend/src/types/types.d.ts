@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { IUser, IGroup, IChat, Member, Users } from './global.js';
+import type { IUser, IGroup, Member, Users } from './global.js';
 import type { StateOption, TypeContact } from './enums.js';
 
 export type Direction = (
@@ -16,12 +16,11 @@ export type ActUser = (
 ) => IUser;
 
 export type Contact = (
-	contactID: string,
 	roomID: string,
 	contact: IUser | IGroup,
 	type: TypeContact,
-	chat?: IChat | null
-) => IContact;
+	id?: string
+) => Promise<IContact>;
 
 export interface GroupInit {
 	name: string;

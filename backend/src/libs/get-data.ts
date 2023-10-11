@@ -3,10 +3,9 @@ import type {
 	IGroup,
 	IChat,
 	IUser,
-	Member,
 	IPartialUser
 } from '../types/global.js';
-import type { Contact, IKeys } from '../types/types.js';
+import type { Contact } from '../types/types.js';
 import { Chat, Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
 
@@ -21,31 +20,32 @@ export const getUser = (user: IUser): IPartialUser => {
 	};
 };
 
-export const getContact: Contact = (contactID, roomID, contact, type, chat) => {
-	const data: IKeys<string | string[] | Member[]> = {};
+export const getContact: Contact = async (roomID, contact, type, id) => {
+	const search = (type === TypeContact.GROUP)
+		? { to: contact.id }
+		: { from: contact.id, to: id };
+	
+	const chat = await Chat
+		.findOne(search)
+		.sort({ createdAt: -1 });
 
-	if ((contact as IGroup).admin) {
-		const group = contact as IGroup;
-
-		data.admin = group.admin;
-		data.members = group.members;
-		data.mods = group.mods;
-		data.blacklist = group.blacklist;
-		data.state = group.state;
-	} else {
-		const user = contact as IUser;
-
-		data.blockedIDs = user.blockedUsersIDs;
-	}
+	const data = (typeof contact.logged === 'number')
+		? {
+			admin: contact.admin,
+			members: contact.members,
+			mods: contact.mods,
+			blacklist: contact.blacklist,
+			state: contact.state
+		} : { blockedIDs: contact.blockedUsersIDs };
 
 	return {
-		contactID,
+		contactID: contact.id,
 		roomID,
+		type,
 		name: contact.name,
 		avatar: contact.avatar,
 		description: contact.description,
-		logged: typeof contact.logged === 'number' ? contact.logged++ : contact.logged,
-		type,
+		logged: contact.logged,
 		...data,
 		content: chat?.content,
 		createdAt: chat?.createdAt
@@ -91,16 +91,13 @@ export const getId = async (type?: string): Promise<string> => {
 };
 
 export const getChats: Chats = async (userID, contactID, type) => {
-	let findQuery = { };
-
-	if (type === TypeContact.USER) {
-		findQuery = {
+	const findQuery = (type === TypeContact.USER)
+		? {
 			$or: [
 				{ from: userID, to: contactID },
 				{ from: contactID, to: userID }
 			]
-		};
-	} else findQuery = { to: contactID };
+		} : { to: contactID };
 
 	return await Chat
 		.find(findQuery)

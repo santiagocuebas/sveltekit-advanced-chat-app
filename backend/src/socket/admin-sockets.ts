@@ -6,33 +6,29 @@ import { User, Group, Chat } from '../models/index.js';
 
 export const adminSockets: AdminSockets = (socket, [userID, contactID]) => {
 	socket.on('emitAddMod', async (mods: Member[]) => {
-		const userIDs = mods.map(mods => mods.id);
-
 		// Add mods to the group
 		await Group.updateOne(
 			{ _id: contactID, admin: userID },
 			{
 				$push: { mods: { $each: mods } },
-				$pull: { members: { id: { $in: userIDs } } }
+				$pull: { members: { id: { $in: mods.map(mods => mods.id) } } }
 			}
 		);
 		
-		socket.to(contactID).emit('addMods', contactID, mods);
+		socket.to(contactID).emit('addMods', contactID, ...mods);
 	});
 
 	socket.on('emitRemoveMod', async (members: Member[]) => {
-		const userIDs = members.map(member => member.id);
-
 		// Remove mods from the group
 		await Group.updateOne(
 			{ _id: contactID, admin: userID },
 			{
 				$push: { members: { $each: members } },
-				$pull: { mods: { id: { $in: userIDs } } }
+				$pull: { mods: { id: { $in: members.map(member => member.id) } } }
 			}
 		);
 		
-		socket.to(contactID).emit('removeMods', contactID, members);
+		socket.to(contactID).emit('removeMods', contactID, ...members);
 	});
 
 	socket.on('emitChangeAvatar', async (filename: string) => {

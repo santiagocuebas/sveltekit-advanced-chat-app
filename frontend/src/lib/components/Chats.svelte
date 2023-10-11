@@ -11,12 +11,11 @@
   import { contact, user, options } from "$lib/store";
   import EditChat from "./EditChat.svelte";
 
-  export let option: string;
-
 	const	observer = new IntersectionObserver(showMoreChats, {
 		root: null,
 		rootMargin: '0px',
 	});
+  let id: string;
 	let div: HTMLElement;
 	let autoscroll: boolean;
 	let boxElement: HTMLElement | null;
@@ -50,9 +49,9 @@
 		if (filenames !== null) handleChat(filenames);
 	}
 
-	function handleDelete(id: string, from: string) {
+	function handleDelete(chatID: string, from: string) {
 		if ($user.id === from) {
-			option = id;
+			id = chatID;
 			options.setOption(Option.CHAT);
 		}
 	}
@@ -60,12 +59,12 @@
 	function handleImage(this: HTMLImageElement) {
 		img = this.src;
 		alt = this.alt;
-		$options.image = true;
+		options.setOption(Option.IMAGE);
 	}
 
 	function emitDelete() {
-		socket.emit('emitDelete', option);
-		deleteChat(option);
+		socket.emit('emitDelete', id);
+		deleteChat(id);
 		options.resetOptions();
 	}
 
@@ -160,7 +159,7 @@
 			role='none'
 		>
 			{#if chat.username}
-				<p class="username">{chat.username}</p>
+				<h3>{chat.username}</h3>
 			{/if}
 			{#if (chat.content instanceof Array)}
 				{#each chat.content as image (image)}
@@ -195,7 +194,7 @@
     grid-column: 2 / span 1;
     grid-row: 2 / span 1;
     background-color: #000000;
-    z-index: 500;
+    z-index: 100;
     @apply grid content-center justify-center w-full h-full;
   }
 
@@ -222,40 +221,33 @@
 
   .chats {
 		grid-row: 2 / span 1;
-		grid-auto-rows: min-content;
 		background-image: url('/smiley.jpg');
 		scrollbar-width: none;
-		scrollbar-color: #6198d6 transparent;
-		@apply grid p-5 bg-no-repeat bg-cover overflow-y-auto gap-y-3;
+		@apply flex flex-wrap p-4 bg-no-repeat bg-cover overflow-y-auto gap-y-3;
 	}
 
 	.chat {
-		grid-template-columns: repeat(2, 1fr);
-		grid-auto-rows: min-content;
 		max-width: 60%;
-		min-width: 200px;
+		min-width: 260px;
 		background-color: #ffffff;
-		box-shadow: 0 0 0 1px #aaaaaa;
-		@apply grid w-fit p-2.5 rounded-lg gap-x-1 gap-y-1 select-none;
+		box-shadow: 0 0 0 1px #999999;
+		@apply flex flex-wrap justify-around w-fit p-2 rounded gap-y-1 select-none;
 	}
 
 	.chat img {
-		max-height: 350px;
-		@apply w-full object-cover object-top cursor-pointer;
+		@apply w-60 h-60 object-cover object-top cursor-pointer;
 	}
 
-	.chat p {
-		grid-column: 1 / span 2;
-		@apply overflow-hidden leading-tight break-words;
+	.chat h3, .chat p, .chat a {
+		@apply w-full overflow-hidden leading-tight break-words;
 	}
 
 	.chat a {
-		grid-column: 1 / span 2;
 		color: #346eb1;
-		@apply overflow-hidden leading-tight break-words;
+		@apply w-min mr-auto;
 	}
 
-	.chat:hover a {
+	.chat a:hover {
 		color: #7b24a3;
 	}
 
@@ -264,11 +256,7 @@
 	}
 
 	.left {
-		@apply ml-auto;
-	}
-
-	.username {
-		@apply font-semibold;
+		@apply text-right;
 	}
 
 	.message {

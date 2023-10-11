@@ -33,13 +33,13 @@ userSchema
 userSchema
 	.virtual('userIDs')
 	.get(function(this): string[] {
-		return this.users.map(users => users.userID);
+		return this.users?.map(users => users.userID);
 	});
 
 userSchema
 	.virtual('userRooms')
 	.get(function(this): string[] {
-		return this.users.map(users => users.roomID);
+		return this.users?.map(users => users.roomID);
 	});
 
 userSchema

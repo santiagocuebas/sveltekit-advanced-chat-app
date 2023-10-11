@@ -36,7 +36,6 @@
   import { user, contact, users, options } from "$lib/store";
   import Edit from "./EditChat.svelte";
   import List from "./List.svelte";
-  import Chat from "./Chats.svelte";
   import Box from "./OptionBox.svelte";
 
 	let groupProps: IGroupProps;
@@ -71,7 +70,7 @@
 		}
 	}
 
-	function userOptions(option: string) {
+	function userOptions() {
 		if (OptionUser[option]) {
 			socket.emit(OptionUser[option], $contact.contactID, $contact.roomID);
 
@@ -181,7 +180,7 @@
 						<Box bind:prop={groupProps.addMod} {member} change={addMember} />
 					{/each}
 				{:else}
-					All your contacts are members of this group
+					All your contacts are mods of this group
 				{/if}
 			{:else if option === AdminOptions.REMOVEMOD}
 				{#if $contact.mods.length}
@@ -190,7 +189,7 @@
 						<Box bind:prop={groupProps.removeMod} {member} change={addMember} />
 					{/each}
 				{:else}
-					All your contacts are members of this group
+					None of your contacts are moderators of this group
 				{/if}
 			{:else if option === AdminOptions.AVATAR}
 				Load the new image (max. 500KB):
@@ -228,11 +227,13 @@
 	<div>
 		<h2>{$contact.name}</h2>
 		<p>
+			<span
+				class:green={$contact.logged}
+				class:blue={$contact.type === Option.GROUP}
+			>&#11044;</span>
 			{#if typeof $contact.logged === 'boolean'}
-				<span class:green={$contact.logged === true}>&#11044;</span>
 				{$contact.logged ? 'Connected' : 'Disconnected'}
 			{:else}
-				<span class='blue'>&#11044;</span>
 				{$contact.logged} Connected Users
 			{/if}
 		</p>
@@ -268,7 +269,6 @@
 		{/if}
 	</List>
 </div>
-<Chat bind:option={option} />
 
 <style lang="postcss">
 	.list-item {
@@ -307,44 +307,32 @@
 
 	.contact {
 		grid-column: 2 / span 1;
-		@apply w-full;
-	}
-
-	.contact {
-		background-color: #e7e7e7;
-		@apply p-2.5;
-	}
-
-	.contact {
 		grid-row: 1 / span 1;
-		@apply flex items-center gap-2.5;
+		background-color: #e7e7e7;
+		@apply flex w-full p-2.5 overflow-hidden gap-x-2.5;
+	}
+
+	.contact img {
+		box-shadow: 0 0 5px #999999;
+		@apply w-10 h-10 object-cover rounded-full;
 	}
 
 	.contact div {
-		@apply flex flex-wrap items-center w-full;
+		@apply overflow-hidden;
 	}
 
 	.contact h2 {
-		@apply max-h-5 overflow-hidden text-ellipsis text-xl font-semibold leading-none;
+		@apply h-5 overflow-hidden text-ellipsis text-xl font-semibold leading-none;
 	}
 
 	.contact p {
 		color: #444444;
-		@apply flex items-center w-full font-medium gap-1;
-	}
-
-	.contact li {
-		padding: 5px 20px;
-		@apply font-bold leading-tight;
-	}
-
-	.contact li:hover {
-		background-color: #999999;
-		color: #ffffff;
+		@apply h-5 flex overflow-hidden text-ellipsis font-medium leading-tight gap-1;
 	}
 
 	.contact span {
 		font-size: 8px;
+		@apply self-center;
 	}
 
 	.contact .green {
@@ -355,10 +343,13 @@
 		color: #62bdf1;
 	}
 
-	.contact img {
-		min-width: 40px;
-		min-heigth: 40px;
-		box-shadow: 0 0 5px #999999;
-		@apply w-10 h-10 object-cover rounded-full;
+	.contact li {
+		padding: 5px 20px;
+		@apply font-bold leading-tight;
+	}
+
+	.contact li:hover {
+		background-color: #999999;
+		color: #ffffff;
 	}
 </style>

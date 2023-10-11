@@ -27,7 +27,7 @@
 					<p class="content">{item.description}</p>
 				{/if}
 				<div>
-					<button on:click={() => createRoom(item.type, item.contactID)}>
+					<button on:click={() => createRoom(item.contactID, item.type)}>
 						Join
 					</button>
 				</div>

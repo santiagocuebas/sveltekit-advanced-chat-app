@@ -6,7 +6,6 @@ import type {
 	IChat
 } from '$lib/types/global';
 import { socket } from './socket';
-import { isMember, isMod } from './services/chat-libs';
 import {
 	contact,
 	switchs,
@@ -29,7 +28,7 @@ export const unsubUsers = users.subscribe(value => usersValues = value as IForei
 export const unsubGroups = groups.subscribe(value => groupsValues = value as IGroup[]);
 
 export const editGroups = (room: string, { content, createdAt }: IChat) => {
-	const reloadGroups = groupsValues.map(group => {
+	groupsValues = groupsValues.map(group => {
 		if (group.roomID === room) {
 			group.content = content instanceof Array ? content[0] : content;
 			group.createdAt = createdAt;
@@ -38,57 +37,46 @@ export const editGroups = (room: string, { content, createdAt }: IChat) => {
 		return group;
 	})
 
-	groups.setGroups(reloadGroups);
+	groups.setGroups(groupsValues);
 };
 
 export const leaveUser = (id: string, room: string, remove?: boolean) => {
-	const reloadUsers = usersValues.filter(user => user.contactID !== id);
-	users.setUsers(reloadUsers);
+	usersValues = usersValues.filter(user => user.contactID !== id);
+	users.setUsers(usersValues);
 	switchs.resetOptions();
 
 	if (remove) socket.emit('removeRoom', room, Option.USER);
 	if (contactValue.contactID === id) contact.resetContact();
 };
 
-export const leaveGroup = (id: string, contactID?: string) => {
-	let reloadGroups: IGroup[] = [];
+export const leaveGroup = (id: string) => {
+	groupsValues = groupsValues.filter(group => group.contactID !== id);
+
+	groups.setGroups(groupsValues);
+	options.resetOptions();
 
 	if (contactValue.contactID === id) {
-		reloadGroups = groupsValues.filter(group => group.contactID !== id);
 		contact.resetContact();
 		switchs.resetOptions();
 		socket.emit('removeRoom', id, Option.GROUP);
-	} else if (contactID) {
-		reloadGroups = groupsValues.map(group => {
-			if (group.contactID === id) {
-				group.mods = group.mods.filter(({ id }) => id !== contactID);
-				group.members = group.members.filter(({ id }) => id !== contactID);
-			}
-
-			return group;
-		});
-		
-		options.resetOptions();
 	}
-
-	groups.setGroups(reloadGroups);
 };
 
-export const addMembers = (id: string, members: Member[]) => {
-	const reloadGroups = groupsValues.map(group => {
+export const addMembers = (id: string, ...members: Member[]) => {
+	groupsValues = groupsValues.map(group => {
 		if (group.contactID === id) {
 			group.members = [...members, ...group.members];
 		}
-
+	
 		return group;
 	});
 
-	groups.setGroups(reloadGroups);
+	groups.setGroups(groupsValues);
 	options.resetOptions();
 };
 
-export const banMembers = (id: string, banIDs: string[]) => {
-	const reloadGroups = groupsValues.map(group => {
+export const banMembers = (id: string, ...banIDs: string[]) => {
+	groupsValues = groupsValues.map(group => {
 		if (group.contactID === id) {
 			group.members = group.members.filter(({ id }) => !banIDs.includes(id));
 		}
@@ -96,12 +84,12 @@ export const banMembers = (id: string, banIDs: string[]) => {
 		return group;
 	});
 
-	groups.setGroups(reloadGroups);
+	groups.setGroups(groupsValues);
 	options.resetOptions();
 };
 
-export const blockMembers = (id: string, blockedUsers: Member[]) => {
-	const reloadGroups = groupsValues.map(group => {
+export const blockMembers = (id: string, ...blockedUsers: Member[]) => {
+	groupsValues = groupsValues.map(group => {
 		if (group.contactID === id) {
 			const blockedIDs = blockedUsers.map(member => member.id);
 
@@ -112,12 +100,12 @@ export const blockMembers = (id: string, blockedUsers: Member[]) => {
 		return group;
 	});
 
-	groups.setGroups(reloadGroups);
+	groups.setGroups(groupsValues);
 	options.resetOptions();
 };
 
-export const unblockMembers = (id: string, unblockIDs: string[]) => {
-	const reloadGroups = groupsValues.map(group => {
+export const unblockMembers = (id: string, ...unblockIDs: string[]) => {
+	groupsValues = groupsValues.map(group => {
 		if (group.contactID === id) {
 			group.blacklist = group.blacklist.filter(({ id }) => !unblockIDs.includes(id));
 		}
@@ -125,12 +113,13 @@ export const unblockMembers = (id: string, unblockIDs: string[]) => {
 		return group;
 	});
 
-	groups.setGroups(reloadGroups);
+	groups.setGroups(groupsValues);
 	options.resetOptions();
 };
 
-export const addMods = (id: string, mods: Member[]) => {
-	const reloadGroups = groupsValues.map(group => {
+export const addMods = (id: string, ...mods: Member[]) => {
+	console.log(mods)
+	groupsValues = groupsValues.map(group => {
 		if (group.contactID === id) {
 			const modIDs = mods.map(mod => mod.id);
 
@@ -141,12 +130,12 @@ export const addMods = (id: string, mods: Member[]) => {
 		return group;
 	});
 
-	groups.setGroups(reloadGroups);
+	groups.setGroups(groupsValues);
 	options.resetOptions();
 };
 
-export const removeMods = (id: string, members: Member[]) => {
-	const reloadGroups = groupsValues.map(group => {
+export const removeMods = (id: string, ...members: Member[]) => {
+	groupsValues = groupsValues.map(group => {
 		if (group.contactID === id) {
 			const modIDs = members.map(members => members.id);
 
@@ -157,24 +146,24 @@ export const removeMods = (id: string, members: Member[]) => {
 		return group;
 	});
 
-	groups.setGroups(reloadGroups);
+	groups.setGroups(groupsValues);
 	options.resetOptions();
 };
 
 export const changeAvatar = (id: string, avatar: string) => {
-	const reloadGroups = groupsValues.map(group => {
+	groupsValues = groupsValues.map(group => {
 		if (group.contactID === id) group.avatar = avatar;
 		return group;
 	});
 
-	groups.setGroups(reloadGroups);
+	groups.setGroups(groupsValues);
 
 	if (contactValue.contactID === id) contact.changeAvatar(avatar);
 };
 
 export default {
 	loggedUser: (id: string, logged: boolean) => {
-		const reloadUsers = usersValues.map(user => {
+		usersValues = usersValues.map(user => {
 			if (user.contactID === id) {
 				user.logged = logged;
 			}
@@ -186,29 +175,27 @@ export default {
 			contact.changeLogged(logged);
 		}
 	
-		users.setUsers(reloadUsers);
+		users.setUsers(usersValues);
 	},
-	countMembers: (id: string, num: number) => {
-		const reloadGroups = groupsValues.map(group => {
+	countMembers: (id: string, num: number, member?: Member) => {
+		groupsValues = groupsValues.map(group => {
 			const allIDs = [...group.mods, ...group.members].map(({ id }) => id);
 			allIDs.push(group.admin);
 
-			if (typeof group.logged === 'number' && allIDs.includes(id))
-			group.logged = group.logged + num;
+			if (typeof group.logged === 'number' && allIDs.includes(id)) {
+				group.logged = group.logged + num;
+				if (member) group.members.push(member);
+			}
 	
 			return group;
 		});
 	
-		if (
-			contactValue.admin === id ||
-			isMod(contactValue.mods, id) ||
-			isMember(contactValue.members, id)
-		) contact.countLogged(num);
+		if (contactValue.contactID === id) contact.countLogged(num);
 	
-		groups.setGroups(reloadGroups);
+		groups.setGroups(groupsValues);
 	},
 	editUsers: (room: string, { content, createdAt }: IChat) => {
-		const reloadUsers = usersValues.map(user => {
+		usersValues = usersValues.map(user => {
 			if (user.roomID === room) {
 				user.content = content instanceof Array ? content[0] : content;
 				user.createdAt = createdAt;
@@ -217,7 +204,7 @@ export default {
 			return user;
 		});
 	
-		users.setUsers(reloadUsers);
+		users.setUsers(usersValues);
 	},
 	editGroups,
 	leaveUser,
@@ -230,7 +217,7 @@ export default {
 	removeMods,
 	changeAvatar,
 	destroyUser: (id: string) => {
-		const reloadGroups = groupsValues.filter(group => {
+		groupsValues = groupsValues.filter(group => {
 			if (group.admin !== id) {
 				group.mods = group.mods.filter(mod => mod.id !== id);
 				group.members = group.members.filter(member => member.id !== id);
@@ -239,7 +226,7 @@ export default {
 			}
 		});
 	
-		groups.setGroups(reloadGroups);
+		groups.setGroups(groupsValues);
 	
 		if (contactValue.admin === id) {
 			switchs.resetOptions();

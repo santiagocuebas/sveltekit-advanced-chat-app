@@ -57,7 +57,7 @@ export default async (socket: Socket) => {
 		emitArray.forEach(emitString => socket.removeAllListeners(emitString));
 		const IDs = [userID, contactID, roomID];
 
-		chatSockets(socket, IDs, undefined, TypeContact.USER);
+		chatSockets(socket, IDs, TypeContact.USER);
 		userSockets(socket, IDs, socket.user);
 	});
 
@@ -66,7 +66,7 @@ export default async (socket: Socket) => {
 		emitArray.forEach(emitString => socket.removeAllListeners(emitString));
 		const IDs = [userID, contactID, contactID];
 
-		chatSockets(socket, IDs, socket.user.username);
+		chatSockets(socket, IDs, TypeContact.GROUP, socket.user.username);
 		memberSockets(socket, IDs, socket.user);
 		modSockets(socket, contactID, socket.user);
 		adminSockets(socket, IDs);

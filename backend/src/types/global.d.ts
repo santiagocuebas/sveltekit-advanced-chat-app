@@ -28,6 +28,7 @@ export interface IChat {
 	from: string;
 	to: string;
 	username?: string;
+	type: string;
 	content: string | string[];
 	createdAt: Date;
 }

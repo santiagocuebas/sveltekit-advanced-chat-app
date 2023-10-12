@@ -16,7 +16,7 @@ Svelte Chat is a web application to chatting.
 * `PUBLIC_DIR`, the http server port.
 
 # Installation
-git clone https://github.com/santiagocuebas/sveltekit-advanced-chat-app\
+git clone https://github.com/santiagocuebas/sveltekit-advanced-chat-app \
 cd backend\
 npm install\
 npm run build\

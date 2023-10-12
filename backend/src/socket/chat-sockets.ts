@@ -4,7 +4,7 @@ import { resolve } from 'path';
 import { Chat } from '../models/index.js';
 import { getChats } from '../libs/get-data.js';
 
-export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomID], username, type) => {
+export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomID], type, username) => {
 	// Get chats from the contacts
 	const messages = await getChats(userID, contactID, type);
 
@@ -15,13 +15,14 @@ export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomI
 		const chat = await Chat.create({
 			from: userID,
 			to: contactID,
+			type,
 			username,
 			content: message,
 			createdAt: new Date
 		});
 
 		socket.emit('loadChatID', chat.id, tempID);
-		socket.to(roomID).emit('loadChat', chat);
+		socket.to(roomID).emit('loadChat', chat, contactID);
 
 		const emitString = username ? 'editGroup' : 'editUser';
 		socket.to(roomID).emit(emitString, roomID, chat);

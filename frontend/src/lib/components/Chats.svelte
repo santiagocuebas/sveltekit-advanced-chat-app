@@ -19,7 +19,7 @@
 	let div: HTMLElement;
 	let autoscroll: boolean;
 	let boxElement: HTMLElement | null;
-	let chatID = '';
+	let chatID: string | undefined;
 	let input: HTMLInputElement;
 	let counter = 0;
 	let chats: IChat[] = [];
@@ -29,7 +29,7 @@
 
 	function handleChat(data: string | string[]) {
 		const chat = getChat($user, $contact, data);
-		loadChat(chat);
+		loadChat(chat, $contact.contactID);
 		socket.emit('emitChat', data, chat._id);
 
 		if ($contact.type === Option.GROUP) editGroups($contact.roomID, chat);
@@ -69,20 +69,16 @@
 	}
 
 	function showMoreChats([entry]: IntersectionObserverEntry[]) {
-		if (entry?.isIntersecting && chats.length > counter) return showChats(50);
+		if (entry?.isIntersecting) showChats(counter+10);
 	}
 
 	function showChats(num: number) {
-		for (counter; counter < (counter + num); counter++) {
-			if (chats[counter]) {
-				visibleChats = [chats[counter], ...visibleChats];
-				chatID = chats[counter]._id;
-			} else {
-				if (boxElement) observer.unobserve(boxElement);
-				chatID = '';
-				break;
-			}
+		for (counter; (counter < num && counter < chats.length); counter++) {
+			visibleChats = [chats[counter], ...visibleChats];
 		}
+
+		if (boxElement) observer.unobserve(boxElement);
+		chatID = visibleChats.at(-1)?._id;
 	}
 
 	const loadChats = (messages: IChat[]) => {
@@ -90,12 +86,16 @@
 		counter = 0;
 		chats = messages.reverse();
 		visibleChats = [];
-		showChats(50);
+		showChats(10);
 	};
 
-	const loadChat = (message: IChat) => visibleChats = [...visibleChats, message];
+	const loadChat = (message: IChat, id: string) => {
+		if (id === $contact.contactID) visibleChats = [...visibleChats, message];
+	};
 
-	const deleteChat = (id: string) => visibleChats = visibleChats.filter(({ _id }) => _id !== id);
+	const deleteChat = (id: string) => {
+		visibleChats = visibleChats.filter(({ _id }) => _id !== id);
+	};
 
 	const loadChatID = (id: string, tempID: string) => {
 		visibleChats = visibleChats.map(chat => {
@@ -119,18 +119,16 @@
 	});
 
 	beforeUpdate(() => {
-		autoscroll = div && div.offsetHeight + div.scrollTop > div.scrollHeight - 20;
+		autoscroll = div && div.offsetHeight + div.scrollTop > div.scrollHeight - 50;
 	});
 
 	afterUpdate(() => {
 		if (autoscroll) div.scrollTo(0, div.scrollHeight);
 
 		if (chatID) {
-			if (boxElement) observer.unobserve(boxElement);
 			boxElement = document.getElementById(chatID);
+			if (boxElement) observer.observe(boxElement);
 		}
-
-		if (boxElement) observer.observe(boxElement);
 	});
 </script>
 
@@ -221,17 +219,18 @@
 
   .chats {
 		grid-row: 2 / span 1;
+		grid-auto-rows: min-content;
 		background-image: url('/smiley.jpg');
 		scrollbar-width: none;
-		@apply flex flex-wrap p-4 bg-no-repeat bg-cover overflow-y-auto gap-y-3;
+		@apply grid p-4 bg-no-repeat bg-cover overflow-y-auto gap-y-3;
 	}
 
 	.chat {
 		max-width: 60%;
-		min-width: 260px;
+		min-width: 250px;
 		background-color: #ffffff;
-		box-shadow: 0 0 0 1px #999999;
-		@apply flex flex-wrap justify-around w-fit p-2 rounded gap-y-1 select-none;
+		box-shadow: 0 0 3px #777777;
+		@apply flex flex-wrap justify-around w-fit p-1 rounded-lg gap-0.5 select-none;
 	}
 
 	.chat img {

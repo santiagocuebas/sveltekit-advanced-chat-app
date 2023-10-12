@@ -22,8 +22,8 @@ export const getUser = (user: IUser): IPartialUser => {
 
 export const getContact: Contact = async (roomID, contact, type, id) => {
 	const search = (type === TypeContact.GROUP)
-		? { to: contact.id }
-		: { from: contact.id, to: id };
+		? { to: contact.id, type: TypeContact.GROUP }
+		: { from: contact.id, to: id, type: TypeContact.USER };
 	
 	const chat = await Chat
 		.findOne(search)
@@ -94,10 +94,10 @@ export const getChats: Chats = async (userID, contactID, type) => {
 	const findQuery = (type === TypeContact.USER)
 		? {
 			$or: [
-				{ from: userID, to: contactID },
-				{ from: contactID, to: userID }
+				{ from: userID, to: contactID, type: TypeContact.USER },
+				{ from: contactID, to: userID, type: TypeContact.USER }
 			]
-		} : { to: contactID };
+		} : { to: contactID, type: TypeContact.GROUP };
 
 	return await Chat
 		.find(findQuery)

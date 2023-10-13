@@ -1,7 +1,7 @@
 import type { ActUser } from '../types/types.js';
 import fs from 'fs-extra';
 import { resolve } from 'path';
-import { Chat } from '../models/index.js';
+import { getChats } from './get-data.js';
 
 export const actUser: ActUser = (contactID, roomID, user, name) => {
 	user.users = user.users.filter(user => user.userID !== contactID);
@@ -17,12 +17,7 @@ export const actUser: ActUser = (contactID, roomID, user, name) => {
 };
 
 export const deleteChats = async (userID: string, contactID: string) => {
-	const chats = await Chat.find({
-		$or: [
-			{ from: userID, to: contactID },
-			{ from: contactID, to: userID }
-		]
-	});
+	const chats = await getChats(contactID, userID);
 
 	for (const chat of chats) {
 		if (chat.content instanceof Array) {

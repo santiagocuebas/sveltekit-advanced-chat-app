@@ -24,7 +24,7 @@ npm start\
 cd frontend\
 npm install\
 npm run build\
-npm start
+npm run preview
 
 # Resources
 * Express

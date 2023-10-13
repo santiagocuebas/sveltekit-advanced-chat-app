@@ -90,8 +90,8 @@ export const getId = async (type?: string): Promise<string> => {
 	return id;
 };
 
-export const getChats: Chats = async (userID, contactID, type) => {
-	const findQuery = (type === TypeContact.USER)
+export const getChats: Chats = async (contactID, userID) => {
+	const findQuery = (userID !== undefined)
 		? {
 			$or: [
 				{ from: userID, to: contactID, type: TypeContact.USER },

@@ -7,7 +7,7 @@ import { Ext } from '../types/enums.js';
 export const isValidEmail: CustomValidator = async email => {
 	const user = await User.findOne({ email });
 
-	if (user === null) throw new Error('Incorret email');
+	if (user === null) throw new Error('Incorrect email');
 
 	return true;
 };

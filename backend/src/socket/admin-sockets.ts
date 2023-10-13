@@ -2,7 +2,8 @@ import type { Member } from '../types/global.js';
 import type { AdminSockets } from '../types/sockets.js';
 import fs from 'fs-extra';
 import { resolve } from 'path';
-import { User, Group, Chat } from '../models/index.js';
+import { getChats } from '../libs/get-data.js';
+import { User, Group } from '../models/index.js';
 
 export const adminSockets: AdminSockets = (socket, [userID, contactID]) => {
 	socket.on('emitAddMod', async (mods: Member[]) => {
@@ -60,7 +61,7 @@ export const adminSockets: AdminSockets = (socket, [userID, contactID]) => {
 			});
 
 			// Find and delete chats
-			const chats = await Chat.find({ to: contactID });
+			const chats = await getChats(contactID);
 
 			for (const chat of chats) {
 				if (chat.content instanceof Array) {

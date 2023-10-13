@@ -6,7 +6,9 @@ import { getChats } from '../libs/get-data.js';
 
 export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomID], type, username) => {
 	// Get chats from the contacts
-	const messages = await getChats(userID, contactID, type);
+	const param = !username ? username : userID;
+
+	const messages = await getChats(contactID, param);
 
 	socket.emit('loadChats', messages);
 

@@ -1,3 +1,4 @@
+import type { Document } from 'mongoose';
 import type { IKeys } from './types.js';
 
 declare module 'http' {
@@ -18,10 +19,9 @@ export type Users = { userID: string, roomID: string };
 export type Member = { id: string, name: string };
 
 export type Chats = (
-	id: string,
 	room: string,
-	type?: string
-) => Promise<IChat[]>
+	id?: string
+) => Promise<(Document<unknown, object, IChat> & IChat)[]>
 
 export interface IChat {
 	_id: string;

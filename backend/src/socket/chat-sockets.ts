@@ -6,7 +6,7 @@ import { getChats } from '../libs/get-data.js';
 
 export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomID], type, username) => {
 	// Get chats from the contacts
-	const param = !username ? username : userID;
+	const param = username === undefined ? userID : undefined;
 
 	const messages = await getChats(contactID, param);
 
@@ -24,7 +24,7 @@ export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomI
 		});
 
 		socket.emit('loadChatID', chat.id, tempID);
-		socket.to(roomID).emit('loadChat', chat, contactID);
+		socket.to(roomID).emit('loadChat', chat, roomID);
 
 		const emitString = username ? 'editGroup' : 'editUser';
 		socket.to(roomID).emit(emitString, roomID, chat);

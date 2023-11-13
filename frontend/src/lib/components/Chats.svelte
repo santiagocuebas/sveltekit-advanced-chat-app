@@ -29,7 +29,7 @@
 
 	function handleChat(data: string | string[]) {
 		const chat = getChat($user, $contact, data);
-		loadChat(chat, $contact.contactID);
+		loadChat(chat, $contact.roomID);
 		socket.emit('emitChat', data, chat._id);
 
 		if ($contact.type === Option.GROUP) editGroups($contact.roomID, chat);
@@ -89,8 +89,9 @@
 		showChats(10);
 	};
 
-	const loadChat = (message: IChat, id: string) => {
-		if (id === $contact.contactID) visibleChats = [...visibleChats, message];
+	const loadChat = (message: IChat, roomID: string) => {
+		console.log(roomID, $contact.roomID)
+		if (roomID === $contact.roomID) visibleChats = [...visibleChats, message];
 	};
 
 	const deleteChat = (id: string) => {

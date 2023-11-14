@@ -228,10 +228,10 @@
 
 	.chat {
 		max-width: 60%;
-		min-width: 250px;
+		min-width: 260px;
 		background-color: #ffffff;
 		box-shadow: 0 0 3px #777777;
-		@apply flex flex-wrap justify-around w-fit p-1 rounded-lg gap-0.5 select-none;
+		@apply flex flex-wrap justify-around w-fit p-2.5 rounded-lg gap-0.5 select-none;
 	}
 
 	.chat img {

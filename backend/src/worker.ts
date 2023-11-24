@@ -17,13 +17,12 @@ import { verifyToken, wrap } from './libs/index.js';
 
 // Create Server
 const { MongoClient } = mongoose.mongo;
-const mongoClient = new MongoClient(MONGO_REPLIC, {
-	directConnection: true
-});
+const mongoClient = new MongoClient(MONGO_REPLIC);
 
 // Connect Databases
+await mongoClient.connect();
+
 try {
-	await mongoClient.connect();
 	await mongoClient.db(SOCKETS_DB).createCollection(COLLECTION, {
 		capped: true,
 		size: 1e6

@@ -2,7 +2,7 @@ import cluster from 'cluster';
 import { createServer } from 'http';
 import os from 'os';
 import { setupMaster } from '@socket.io/sticky';
-import { __dirname } from './config.js';
+import { __dirname } from './src/config.js';
 
 // Setup cluster
 const server = createServer();
@@ -16,11 +16,11 @@ setupMaster(server, { loadBalancingMethod: 'least-connection' });
 
 // Open worker
 cluster.setupPrimary({
-	exec: __dirname + '/index.js',
+	exec: __dirname + '/worker.js',
 	serialization: 'advanced'
 });
 
-for (let i = 0; i < numCPUs; i++) {
+for (let i = 0; i < 2; i++) {
 	cluster.fork();
 }
 

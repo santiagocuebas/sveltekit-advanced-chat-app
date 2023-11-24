@@ -4,8 +4,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node build/cluster.js",
-    "dev": "nodemon src/cluster.ts",
+    "start": "node build/server.js",
+    "dev": "nodemon server.ts",
     "build": "tsc"
   },
   "keywords": [],

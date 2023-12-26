@@ -90,7 +90,6 @@
 	};
 
 	const loadChat = (message: IChat, roomID: string) => {
-		console.log(roomID, $contact.roomID)
 		if (roomID === $contact.roomID) visibleChats = [...visibleChats, message];
 	};
 

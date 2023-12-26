@@ -47,7 +47,7 @@ export const postLogout: Direction = async (_req, res) => {
 		httpOnly: true,
 		maxAge: 0,
 		path: '/',
-		sameSite: 'lax',
+		sameSite: 'none',
 		secure: NODE_ENV === 'production'
 	}));
 

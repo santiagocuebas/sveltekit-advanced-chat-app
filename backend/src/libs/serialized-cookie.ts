@@ -14,7 +14,7 @@ export const getSerializedCookie = ({ id }: IUser): string => {
 		httpOnly: true,
 		maxAge: 60 * 60 * 24 * 15,
 		path: '/',
-		sameSite: 'lax',
+		sameSite: 'none',
 		secure: NODE_ENV === 'production'
 	});
 };

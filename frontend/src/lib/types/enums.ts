@@ -10,6 +10,12 @@ export enum InputsSignin {
   PASSWORD = 'password'
 }
 
+export enum Method {
+  GET = 'GET',
+  POST = 'POST',
+  DELETE = 'DELETE'
+}
+
 export enum Option {
   USER = 'user',
   GROUP = 'group',

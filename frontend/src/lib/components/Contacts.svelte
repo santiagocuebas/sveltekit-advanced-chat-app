@@ -8,13 +8,12 @@
 		ResponseData
 	} from '$lib/types/global';
   import { onDestroy, onMount } from 'svelte';
-  import axios from 'axios';
-  import { DIR } from '$lib/config';
+  import { Contact as Box } from './index';
+  import axios from '$lib/axios';
   import { selectJoin } from '$lib/dictionary';
 	import { socket } from '$lib/socket';
   import { contact, switchs, users, groups, list, options } from '$lib/store';
 	import { Option } from '$lib/types/enums';
-  import Box from './Contact.svelte';
 	
 	let input = '';
 	let usersValues: IForeign[];
@@ -27,11 +26,8 @@
 	const unsubLists = list.subscribe(value => listValues = value as IList[]);
 
 	async function searchUser() {
-		const data: ResponseData = await axios({
-			method: 'GET',
-			url: DIR + '/api/home/search/' + input,
-			withCredentials: true
-		}).then(res => res.data)
+		const data: ResponseData = await axios({ url: '/home/search/' + input })
+			.then(res => res.data)
 			.catch(err => err.response?.data);
 
 		if (data.contacts) {
@@ -133,63 +129,44 @@
 <style lang="postcss">
 	.sidebar {
 		grid-row: 2 / span 2;
-		background-color: #ffffff;
-		@apply flex flex-wrap content-start h-full overflow-hidden;
+		@apply flex flex-wrap content-start h-full bg-white overflow-hidden;
 	}
 
   form {
-		@apply flex w-full h-min;
-	}
+		@apply flex w-full h-min [&_button]:py-[15px] [&_button]:px-[30px] [&_input]:w-full;
 
-	form button {
-		padding: 15px 30px;
-		cursor: pointer;
-	}
-
-	form input {
-		@apply w-full;
-	}
-
-	form i {
-		color: #666666;
-		@apply text-xl leading-none;
+		& i {
+			@apply text-xl leading-none text-[#666666];
+		}
 	}
 
 	.button {
-		height: 70px;
 		border: 3px solid #888888;
-		color: #777777;
-		@apply flex relative items-center justify-center w-1/2 font-bold cursor-pointer gap-2;
+		@apply flex relative items-center justify-center w-1/2 h-[70px] font-bold text-[#777777] gap-2;
+
+		& i {
+			@apply flex items-center justify-center text-2xl leading-none;
+		}
+
+		&.selected {
+			border: 3px solid #3d7cf1;
+			@apply text-[#3d7cf1];
+		}
   }
 
-	.button i {
-		@apply flex items-center justify-center text-2xl leading-none;
-	}
-
-	.selected {
-		border: 3px solid #3d7cf1;
-		color: #3d7cf1;
-	}
-
 	ul {
-		max-height: 720px;
 		scrollbar-color: #bbbbbb transparent;
 		scrollbar-width: thin;
-		@apply flex flex-wrap w-full overflow-auto;
-	}
+		@apply flex flex-wrap w-full max-h-[720px] overflow-auto;
 
-	img {
-    animation: spin 4s linear infinite;
-		@apply w-8 h-8 rounded-full;
-	}
+		& div {
+			@apply flex items-center justify-center w-full p-2.5 text-center text-[24px] font-semibold text-[#666666] leading-tight break-words [&.loading]:gap-x-1;
+		}
 
-	.sidebar div {
-		color: #666666;
-		@apply flex items-center justify-center w-full p-2.5 text-center text-2xl font-semibold leading-tight break-words;
-	}
-
-	.sidebar .loading {
-		@apply flex gap-x-1;
+		& img {
+			animation: spin 4s linear infinite;
+			@apply w-8 h-8 rounded-full;
+		}
 	}
 
 	@keyframes spin { 

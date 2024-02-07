@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ValidationChain, validationResult } from 'express-validator';
-import fs from 'fs-extra';
+import fs from 'fs/promises';
 import { getErrorMessages } from '../libs/index.js';
 
 export const validate = (validations: ValidationChain[]) => {

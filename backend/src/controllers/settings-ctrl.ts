@@ -1,6 +1,6 @@
 import type { Direction } from '../types/types.js';
 import { serialize } from 'cookie';
-import fs from 'fs-extra';
+import fs from 'fs/promises';
 import { extname, resolve } from 'path';
 import { DOMAIN, NODE_ENV } from '../config.js';
 import { encryptPassword, getId } from '../libs/index.js';

@@ -15,23 +15,15 @@
 
 <style lang="postcss">
   button {
-		background-color: #e7e7e7;
-		@apply ml-auto p-2.5 rounded-full cursor-pointer leading-none;
-	}
+		@apply ml-auto p-2.5 bg-[#e7e7e7] rounded-full leading-none hover:bg-[#cccccc];
 
-	button:hover {
-		background-color: #cccccc;
-	}
-
-	button i {
-		@apply w-5 h-5 text-xl leading-none;
+		& i {
+			@apply w-5 h-5 text-xl leading-none;
+		}
 	}
 
 	ul {
-		min-width: 150px;
-		background-color: #ffffff;
 		box-shadow: 0 0 10px #aaaaaa;
-		z-index: 1000;
-		@apply absolute self-start right-0 mt-11 py-2 rounded;
+		@apply absolute self-start min-w-[150px] right-0 mt-11 py-2 bg-white rounded z-[1000];
 	}
 </style>

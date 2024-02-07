@@ -1,5 +1,5 @@
 import type { Direction, IKeys } from '../types/types.js';
-import fs from 'fs-extra';
+import fs from 'fs/promises';
 import { extname, resolve } from 'path';
 import { getId, matchId, getUser, matchPassword } from '../libs/index.js';
 import { Group, User } from '../models/index.js';

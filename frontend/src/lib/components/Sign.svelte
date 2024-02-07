@@ -1,13 +1,10 @@
 <script lang="ts">
 	import type { IKeys, ResponseData } from '$lib/types/global';
 	import { onDestroy, onMount } from 'svelte';
-	import axios from 'axios';
-	import { DIR } from '$lib/config.js';
+	import { Input } from './index';
+	import axios from '$lib/axios';
   import { avatarURL } from '$lib/dictionary';
   import { socket } from '$lib/socket';
-	import { changeName, setType } from '$lib/services/libs';
-	import { isValidInput, isValidLength } from '$lib/services/validation-submit';
-	import { checks } from '$lib/services/validations.js';
   import {
 		user,
 		register,
@@ -15,8 +12,10 @@
 		errorMessage,
 		activeError
 	} from '$lib/store';
-  import { Inputs, Option } from '$lib/types/enums';
-	import Input from '$lib/components/Input.svelte';
+	import { changeName, setType } from '$lib/services/libs';
+	import { checks } from '$lib/services/validations';
+	import { isValidInput, isValidLength } from '$lib/services/validation-submit';
+  import { Inputs, Method, Option } from '$lib/types/enums';
 
   export let title: string;
   export let option: string = '';
@@ -37,8 +36,7 @@
 		if (isValidLength(input) && isValidInput(input)) {
 			const data: ResponseData = await axios({
 				method: this.method,
-				url: this.action,
-				withCredentials: true,
+				url: this.action.replace(location.origin, ''),
 				data: this
 			}).then(res => res.data)
 				.catch(err => err.response ? err.response.data : visible = true);
@@ -78,13 +76,15 @@
 
 <div class="sign">
 	{#if inputs === undefined}
-		<img src="/images.svg" alt="title">
+		<picture>
+			<img src="/images.svg" alt="title">
+		</picture>
 	{/if}
   <h1>{changeName(title)}</h1>
   {#if inputs !== undefined}
 		<form
-			action={DIR + avatarURL[title]}
-			method='POST'
+			action={avatarURL[title]}
+			method={Method.POST}
 			on:submit|preventDefault={handleSubmit}
 		>
 			{#if visible}
@@ -102,11 +102,11 @@
 					bind:pass={input[Inputs.PASSWORD]}
 				/>
 			{/each}
-			<button class="accept">
+			<button>
 				{changeName(title)}
 			</button>
 		</form>
-		<button class="change" on:click={() => register.setOption(option)}>
+		<button on:click={() => register.setOption(option)}>
 			{option === Option.REGISTER ? 'Create Account' : 'Sign In'}
 		</button>
 	{/if}
@@ -117,16 +117,22 @@
 		grid-auto-rows: min-content;
 		grid-column: 1 / span 2;
 		grid-row: 1 / span 3;
-		background-color: #ffffff;
 		box-shadow: 0 0 10px #888888;
-		@apply grid relative justify-items-center content-center w-full gap-5;
+		@apply grid relative justify-items-center content-center w-full bg-white gap-5;
+
+		& div {
+			box-shadow: 0 0 0 2px #928a1a;
+			@apply w-max p-[18px] bg-[#f2f8a1] rounded text-center font-bold text-[#727010];
+		}
+	}
+
+	picture {
+		@apply w-[300px] h-[300px];
 	}
 
 	img {
-		width: 300px;
-		height: 300px;
     animation: spin 4s linear infinite;
-		@apply rounded-full;
+		@apply w-full h-full rounded-full;
 	}
 
 	h1 {
@@ -135,28 +141,16 @@
 
 	form {
 		@apply grid justify-items-center items-center w-full gap-5;
+
+		& button {
+			box-shadow: 0 0 0 2px #000000;
+			@apply bg-black text-white;
+		}
 	}
 
-	.sign div {
-    padding: 18px;
-    box-shadow: 0 0 0 2px #928a1a;
-    background-color: #f2f8a1;
-    color: #727010;
-    @apply w-max rounded text-center font-bold;
-  }
-
-	.accept, .change {
-		width: 200px;
-		background-color: #000000;
-		box-shadow: 0 0 0 2px #000000;
-		color: #ffffff;
-		@apply py-3.5 rounded-sm text-center font-bold cursor-pointer;
-	}
-
-	.change {
-		background-color: #ffffff;
+	button {
 		box-shadow: 0 0 0 2px #4b94e7;
-		color: #4b94e7;
+		@apply w-[200px] py-3.5 bg-white rounded-sm text-center font-bold text-[#4b94e7];
 	}
 
 	@keyframes spin { 

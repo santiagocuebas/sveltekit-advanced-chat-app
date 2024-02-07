@@ -6,8 +6,8 @@ import type {
 	IUser,
 	Member
 } from "$lib/types/global";
-import { Option } from "$lib/types/enums";
 import { getId } from "./libs";
+import { Option } from "$lib/types/enums";
 
 export const setGroupProps = ({ description, state }: IGroup): IGroupProps => {
 	return {

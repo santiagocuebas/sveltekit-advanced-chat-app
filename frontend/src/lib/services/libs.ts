@@ -1,8 +1,8 @@
 import type { ISettingsProps, Member, ResponseData } from "$lib/types/global";
-import axios from "axios";
+import axios from "$lib/axios";
 import { DIR } from "$lib/config";
 import { avatarURL } from "$lib/dictionary";
-import { Formats, Inputs } from "$lib/types/enums";
+import { Formats, Inputs, Method } from "$lib/types/enums";
 
 export const changeName = (value: string) => {
 	if (value === Inputs.CONFIRM) return 'Confirm Password';
@@ -62,10 +62,9 @@ export const getImages = async (files: FileList | null) => {
 
 		if (match) {
 			const data: ResponseData = await axios({
-				method: 'POST',
-				url: DIR + '/api/home/images',
-				data: formData,
-				withCredentials: true
+				method: Method.POST,
+				url: '/home/images',
+				data: formData
 			}).then(res => res.data)
 				.catch(err => err.response?.data);
 
@@ -82,10 +81,9 @@ export const sendAvatar = async (file: File, id: string) => {
 	formData.append('id', id);
 
 	const data: ResponseData = await axios({
-		method: 'POST',
-		url: DIR + '/api/home/group',
-		data: formData,
-		withCredentials: true
+		method: Method.POST,
+		url: '/home/group',
+		data: formData
 	}).then(res => res.data)
 		.catch(err => err.response?.data);
 

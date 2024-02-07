@@ -1,15 +1,17 @@
 <script lang="ts">
   import type { IKeys } from '$lib/types/global';
 	import { onMount } from 'svelte';
-	import { socket } from '$lib/socket.js';
+  import {
+		ChatBody,
+		ChatHeader,
+		Contacts,
+		Group,
+		Search,
+		Settings,
+		UserHeader
+	} from '$lib/components';
+	import { socket } from '$lib/socket';
   import { switchs } from '$lib/store';
-  import UserHeader from '$lib/components/UserHeader.svelte';
-  import Contacts from '$lib/components/Contacts.svelte';
-  import ChatUser from '$lib/components/ChatUser.svelte';
-  import Chat from "$lib/components/Chats.svelte";
-  import Search from '$lib/components/Search.svelte';
-  import Group from '$lib/components/Group.svelte';
-  import Settings from '$lib/components/Settings.svelte';
 	
 	let errorMessage: IKeys<string> | null = null;
 
@@ -28,8 +30,8 @@
 <UserHeader />
 <Contacts />
 {#if $switchs.chat}
-	<ChatUser />
-	<Chat />
+	<ChatHeader />
+	<ChatBody />
 {:else if $switchs.search}
 	<Search />
 {:else if $switchs.group}
@@ -37,8 +39,10 @@
 {:else if $switchs.settings}
 	<Settings />
 {:else}
-	<div class='box-chat'>
-		<img src="/smiley-main.jpg" alt="smiley placeholder">
+	<div class="logo">
+		<picture>
+			<img src="/smiley-main.jpg" alt="smiley placeholder">
+		</picture>
 		<h2>Welcome!</h2>
 	</div>
 {/if}
@@ -50,41 +54,36 @@
 {/if}
 
 <style lang="postcss">
-	.box-chat {
+	.logo {
 		grid-column: 2 / span 1;
 		grid-row: 1 / span 3;
-		background-color: #f0f3f3;
-		z-index: 50;
-		@apply flex flex-wrap relative justify-center w-full h-full overflow-hidden;
-	}
+		@apply flex flex-wrap relative justify-center w-full h-full bg-[#f0f3f3] overflow-hidden z-[50];
 
-	.box-chat img {
-		min-width: 295px;
-		min-height: 295px;
-		max-width: 480px;
-		max-height: 480px;
-		@apply self-end w-1/2 rounded-full;
-	}
+		& picture {
+			@apply self-end flex-none w-1/2 min-w-[295px] max-w-[480px] min-h-[295px] max-h-[480px];
+		}
 
-	.box-chat h2 {
-		@apply w-full min-h-min text-center text-6xl leading-none;
+		& img {
+			@apply w-full h-full rounded-full object-cover;
+		}
+
+		& h2 {
+			@apply w-full min-h-min text-center text-6xl leading-none;
+		}
 	}
 
 	.error {
 		grid-column: 2 / span 1;
 		grid-row: 2 / span 1;
-		width: 200px;
 		border: 2px solid #9c1313;
-		background-color: #f1b1b1;
-		z-index: 400;
-		@apply grid absolute justify-items-center self-end justify-self-center m-1 p-2.5 rounded-2xl gap-1;
-	}
+		@apply grid absolute justify-items-center self-end justify-self-center w-[200px] m-1 p-2.5 bg-[#f1b1b1] rounded-2xl gap-1 z-[400];
 
-	.error h3 {
-		@apply w-full overflow-hidden break-words text-center text-2xl leading-none;
-	}
+		& h3 {
+			@apply w-full overflow-hidden break-words text-center text-[24px];
+		}
 
-	.error p {
-		@apply w-full overflow-hidden break-words text-center text-xl leading-tight;
+		& p {
+			@apply w-full overflow-hidden break-words text-center text-[20px] leading-tight;
+		}
 	}
 </style>

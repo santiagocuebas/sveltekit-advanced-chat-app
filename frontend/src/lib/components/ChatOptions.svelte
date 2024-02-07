@@ -1,6 +1,7 @@
 <script lang="ts">
-	import type { IForeign, IGroupProps } from "$lib/types/global";
+  import type { IForeign, IGroupProps } from "$lib/types/global";
   import { onDestroy } from "svelte";
+	import { EditChat as Edit, OptionBox as Box } from "./index";
 	import { DIR } from "$lib/config";
   import {
 		OptionUser,
@@ -8,52 +9,32 @@
 		OptionMod,
 		OptionAdmin,
     avatarURL,
-    Messages,
-    UserText,
-    GroupText
+    Messages
 	} from "$lib/dictionary";
+	import { socket } from "$lib/socket";
+  import { leaveUser, leaveGroup } from '$lib/sockets';
+	import { user, contact, options, users } from "$lib/store";
+  import { isNotMember, addMember, banMember } from "$lib/services/chat-libs";
+  import { changeName, sendAvatar } from "$lib/services/libs";
+  import { socketResult } from "$lib/services/socket-result";
 	import {
 		UserOptions,
 		MemberOptions,
 		ModOptions,
 		AdminOptions,
     StateOption,
-    Formats,
-    Option
+    Formats
 	} from "$lib/types/enums";
-	import { socket } from "$lib/socket";
-  import { leaveUser, leaveGroup } from '$lib/sockets.js';
-  import {
-		setGroupProps,
-		isNotMember,
-		addMember,
-		banMember,
-		isMember,
-		isMod
-	} from "$lib/services/chat-libs";
-  import { changeName, sendAvatar } from "$lib/services/libs";
-  import { socketResult } from "$lib/services/socket-result";
-  import { user, contact, users, options } from "$lib/store";
-  import Edit from "./EditChat.svelte";
-  import List from "./List.svelte";
-  import Box from "./OptionBox.svelte";
 
-	let groupProps: IGroupProps;
+  export let option: string;
+	export let groupProps: IGroupProps;
+
 	let usersValues: IForeign[];
-	let visible = false;
-	let option = '';
 	let socketFile: File;
 
 	$: src = DIR + avatarURL[$contact.type] + $contact.avatar;
 	
 	const unsubUsers = users.subscribe(value => usersValues = value as IForeign[]);
-
-	function selectContact(value: string, key: string) {
-		if (key === Option.GROUP) groupProps = setGroupProps($contact);
-		visible = false;
-		option = value;
-		options.setOption(key);
-	}
 
 	async function handleAvatar(this: HTMLInputElement) {
 		const reader = new FileReader();
@@ -108,6 +89,7 @@
 	
 	onDestroy(unsubUsers);
 </script>
+
 
 {#if $options.user}
 	<Edit handle={userOptions}>
@@ -222,134 +204,36 @@
 	</Edit>
 {/if}
 
-<div class="contact">
-	<img src={DIR + avatarURL[$contact.type] + $contact.avatar} alt={$contact.name}>
-	<div>
-		<h2>{$contact.name}</h2>
-		<p>
-			<span
-				class:green={$contact.logged}
-				class:blue={$contact.type === Option.GROUP}
-			>&#11044;</span>
-			{#if typeof $contact.logged === 'boolean'}
-				{$contact.logged ? 'Connected' : 'Disconnected'}
-			{:else}
-				{$contact.logged} Connected Users
-			{/if}
-		</p>
-	</div>
-	<List bind:visible={visible}>
-		{#if $contact.type === Option.USER}
-			{#each Object.values(UserOptions) as key}
-				<li on:click={() => selectContact(key, Option.USER)} role='none'>
-					{UserText[key]}
-				</li>
-			{/each}
-		{/if}
-		{#if isMember($contact.members, $user.id) || isMod($contact.mods, $user.id)}
-			{#each Object.values(MemberOptions) as key}
-				<li on:click={() => selectContact(key, Option.GROUP)} role='none'>
-					{GroupText[key]}
-				</li>
-			{/each}
-		{/if}
-		{#if isMod($contact.mods, $user.id) || $user.id === $contact.admin}
-			{#each Object.values(ModOptions) as key}
-				<li on:click={() => selectContact(key, Option.GROUP)} role='none'>
-					{GroupText[key]}
-				</li>
-			{/each}
-		{/if}
-		{#if $user.id === $contact.admin}
-			{#each Object.values(AdminOptions) as key}
-				<li on:click={() => selectContact(key, Option.GROUP)} role='none'>
-					{GroupText[key]}
-				</li>
-			{/each}
-		{/if}
-	</List>
-</div>
-
 <style lang="postcss">
-	.list-item {
-		background-color: #f3f3f3;
+  .list-item {
 		box-shadow: 0 0 0 2px #999999;
-		color: #404040;
-		@apply flex flex-wrap justify-between w-full p-2 rounded font-medium;
+		@apply flex flex-wrap justify-between w-full p-2 bg-[#f3f3f3] rounded font-medium text-[#404040];
+
+    & span {
+      @apply w-full text-center leading-tight;
+    }
 	}
 
-	.list-item p {
+	p {
 		grid-column: 1 / span 2;
 		@apply w-full leading-tight;
 	}
 
-	.list-item .label-image {
-		@apply w-60 h-60 mt-1.5 mx-auto;
-	}
-
-	.list-item img {
+	img {
 		box-shadow: 0 0 2px #777777;
 		@apply w-full h-full rounded-full object-cover;
 	}
 
-	.list-item textarea {
+	textarea {
 		outline: 1px solid #b1b1b1;
 		@apply w-full mt-1.5 p-2 rounded-lg;
 	}
 
-	.list-item label {
+	label {
 		@apply leading-tight;
-	}
 
-	.list-item span {
-		@apply w-full text-center leading-tight;
-	}
-
-	.contact {
-		grid-column: 2 / span 1;
-		grid-row: 1 / span 1;
-		background-color: #e7e7e7;
-		@apply flex w-full p-2.5 overflow-hidden gap-x-2.5;
-	}
-
-	.contact img {
-		box-shadow: 0 0 5px #999999;
-		@apply w-10 h-10 object-cover rounded-full;
-	}
-
-	.contact div {
-		@apply overflow-hidden;
-	}
-
-	.contact h2 {
-		@apply h-5 overflow-hidden text-ellipsis text-xl font-semibold leading-none;
-	}
-
-	.contact p {
-		color: #444444;
-		@apply h-5 flex overflow-hidden text-ellipsis font-medium leading-tight gap-1;
-	}
-
-	.contact span {
-		font-size: 8px;
-		@apply self-center;
-	}
-
-	.contact .green {
-		color: #1e9224;
-	}
-
-	.contact .blue {
-		color: #62bdf1;
-	}
-
-	.contact li {
-		padding: 5px 20px;
-		@apply font-bold leading-tight;
-	}
-
-	.contact li:hover {
-		background-color: #999999;
-		color: #ffffff;
+    &.label-image {
+      @apply w-60 h-60 mt-1.5 mx-auto;
+    }
 	}
 </style>

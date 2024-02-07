@@ -1,6 +1,6 @@
 import type { Member } from '../types/global.js';
 import type { AdminSockets } from '../types/sockets.js';
-import fs from 'fs-extra';
+import fs from 'fs/promises';
 import { resolve } from 'path';
 import { getChats } from '../libs/get-data.js';
 import { User, Group } from '../models/index.js';

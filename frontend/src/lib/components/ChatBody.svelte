@@ -2,14 +2,14 @@
   import type { IChat } from "$lib/types/global";
   import { afterUpdate, beforeUpdate, onMount } from "svelte";
 	import validator from 'validator';
+  import { EditChat } from "./index";
 	import { DIR } from "$lib/config";
   import { Option } from "$lib/types/enums";
 	import { socket } from "$lib/socket";
   import { getDate, getImages } from "$lib/services/libs";
   import { getChat } from "$lib/services/chat-libs";
-  import { editGroups } from '$lib/sockets.js';
+  import { editGroups } from '$lib/sockets';
   import { contact, user, options } from "$lib/store";
-  import EditChat from "./EditChat.svelte";
 
 	const	observer = new IntersectionObserver(showMoreChats, {
 		root: null,
@@ -191,93 +191,57 @@
   .image {
     grid-column: 2 / span 1;
     grid-row: 2 / span 1;
-    background-color: #000000;
-    z-index: 100;
-    @apply grid content-center justify-center w-full h-full;
+    @apply grid content-center justify-center w-full h-full bg-black z-[100] [&_img]:w-full [&_img]:max-h-[750px];
+
+		& button {
+			@apply justify-self-end flex fixed items-center justify-center w-9 h-9 mt-2.5 mr-2.5 bg-transparent font-bold leading-none;
+
+			& i {
+				@apply text-[36px] font-bold text-white cursor-pointer;
+			}
+		}
   }
-
-	.image button {
-		margin-top: 10px;
-    background-color: transparent;
-		@apply justify-self-end flex fixed items-center justify-center w-9 h-9 mt-2.5 mr-2.5 font-bold leading-none;
-	}
-
-	.image button i {
-		color: #ffffff;
-		@apply text-4xl font-bold leading-none cursor-pointer;
-	}
-
-  .image img {
-    max-height: 770px;
-    @apply w-full;
-  }
-
-  .message, .chats {
-		grid-column: 2 / span 1;
-		@apply w-full;
-	}
 
   .chats {
+		grid-column: 2 / span 1;
 		grid-row: 2 / span 1;
 		grid-auto-rows: min-content;
 		background-image: url('/smiley.jpg');
 		scrollbar-width: none;
-		@apply grid p-4 bg-no-repeat bg-cover overflow-y-auto gap-y-3;
+		@apply grid w-full p-4 bg-no-repeat bg-cover overflow-y-auto gap-y-3;
 	}
 
 	.chat {
-		max-width: 60%;
-		min-width: 260px;
-		background-color: #ffffff;
 		box-shadow: 0 0 3px #777777;
-		@apply flex flex-wrap justify-around w-fit p-2.5 rounded-lg gap-0.5 select-none;
-	}
+		@apply flex flex-wrap justify-around w-fit min-w-[260px] max-w-[60%] p-2.5 bg-white rounded-lg gap-0.5 select-none [&.me]:ml-auto [&_.left]:text-right;
 
-	.chat img {
-		@apply w-60 h-60 object-cover object-top cursor-pointer;
-	}
+		& img {
+			@apply w-60 h-60 object-cover object-top cursor-pointer;
+		}
 
-	.chat h3, .chat p, .chat a {
-		@apply w-full overflow-hidden leading-tight break-words;
-	}
+		& h3, p, a {
+			@apply w-full overflow-hidden leading-tight break-words;
+		}
 
-	.chat a {
-		color: #346eb1;
-		@apply w-min mr-auto;
-	}
-
-	.chat a:hover {
-		color: #7b24a3;
-	}
-
-	.me {
-		@apply ml-auto;
-	}
-
-	.left {
-		@apply text-right;
+		& a {
+			@apply w-min mr-auto text-[#346eb1] hover:text-[#7b24a3];
+		}
 	}
 
 	.message {
+		grid-column: 2 / span 1;
 		grid-row: 3 / span 1;
-		background-color: #e7e7e7;
-		@apply flex p-2.5 gap-2.5;
-	}
+		@apply flex w-full p-2.5 bg-[#e7e7e7] gap-2.5 [&_form]:w-full;
 
-	.message .text {
-		@apply w-full;
-	}
+		& input {
+			box-shadow: 0 0 0 1px #777777;
+			@apply w-full p-2.5 rounded-lg;
+		}
 
-	.message input {
-		box-shadow: 0 0 0 1px #777777;
-		@apply w-full p-2.5 rounded-lg;
-	}
-
-	.message label {
-		min-width: 40px;
-		min-height: 40px;
-		background-color: #ffffff;
-		box-shadow: 0 0 0 1px #777777;
-		@apply flex justify-center items-center w-10 h-10 rounded-full cursor-pointer;
+		& label {
+			background-color: #ffffff;
+			box-shadow: 0 0 0 1px #777777;
+			@apply flex flex-none justify-center items-center w-10 h-10 bg-white rounded-full cursor-pointer;
+		}
 	}
 </style>

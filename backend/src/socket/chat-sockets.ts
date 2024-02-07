@@ -1,5 +1,5 @@
 import type { ChatSockets } from '../types/sockets.js';
-import fs from 'fs-extra';
+import fs from 'fs/promises';
 import { resolve } from 'path';
 import { Chat } from '../models/index.js';
 import { getChats } from '../libs/get-data.js';

@@ -5,7 +5,9 @@
 	export let name: string = '';
 	export let value: string = '';
 	export let member: Member;
-	export let change: any;
+	export let change: ((member: Member, prop: string[]) => string[]) | ((member: Member, prop: Member[]) => Member[]);
+
+	$: propReact = prop as string[] & Member[];
 </script>
 
 <li>
@@ -14,15 +16,13 @@
 		type="checkbox"
 		name={name}
 		value={value}
-		on:click={() => prop = change(member, prop)}
+		on:click={() => prop = change(member, propReact)}
 	>
 </li>
 
 <style lang="postcss">
 	li {
-		width: 48%;
-		max-height: 20px;
-		@apply flex relative h-min overflow-hidden text-ellipsis leading-tight;
+		@apply flex relative w-[48%] h-min max-h-5 overflow-hidden text-ellipsis leading-tight;
 	}
 
 	input[type='checkbox'] {

@@ -2,9 +2,9 @@
 	import type { Member } from '$lib/types/global';
   import { Messages } from '$lib/dictionary';
   import { socket } from "$lib/socket";
+  import { switchs, users } from '$lib/store';
   import { isMember, isMod } from '$lib/services/chat-libs';
   import { changeName } from '$lib/services/libs';
-  import { switchs, users } from '$lib/store';
 	import { StateOption } from '$lib/types/enums';
 
 	let name = '';
@@ -102,79 +102,62 @@
 
 <style lang="postcss">
 	h1 {
-		font-size: 40px;
+		@apply text-[40px];
 	}
 
 	form {
 		@apply flex flex-wrap h-full content-between justify-center gap-y-10;
-	}
 
-	form div {
-		min-width: 280px;
-		@apply grid w-3/5 gap-2;
-	}
+		& div {
+			@apply grid w-3/5 min-w-[280px] gap-2;
 
-	input[type='text'], form ul {
-		box-shadow: 0 0 0 2px #999999;
-		@apply p-1.5 overflow-y-auto overflow-x-hidden;
-	}
+			&.error input {
+				box-shadow: 0 0 0 2px #db3333;
+			}
 
-	.error input {
-		box-shadow: 0 0 0 2px #db3333;
-	}
+			&.error p {
+				@apply px-2.5 font-bold text-[#db3333] leading-none;
+			}
+		}
 
-	.error p {
-		color: #db3333;
-		@apply px-2.5 font-bold leading-none;
-	}
+		& ul, input[type='text'] {
+			box-shadow: 0 0 0 2px #999999;
+			@apply p-1.5 overflow-y-auto overflow-x-hidden;
+		}
 
-	form ul {
-		height: 120px;
-		@apply p-2.5;
-	}
+		& ul {
+			@apply h-[120px] p-2.5;
+		}
 
-	form li {
-		@apply block w-full font-medium leading-tight cursor-pointer select-none;
-	}
+		& li {
+			@apply block w-full font-medium leading-tight cursor-pointer select-none;
+			
+			.selected {
+				@apply bg-[#3d7cf1] text-white;
+			}
 
-	.selected {
-		background-color: #3d7cf1;
-		color: #ffffff;
-	}
-
-	.disabled {
-		background-color: #d7d7d7;
-		color: #666666;
+			.disabled {
+				@apply bg-[#d7d7d7] text-[#666666];
+			}
+		}
 	}
 
 	.choise-visibility {
 		grid-template-columns: repeat(3, 1fr);
 		grid-auto-rows: min-content;
 		@apply grid justify-items-center font-medium leading-tight gap-y-2;
-	}
 
-	.choise-visibility span {
-		grid-column: 1 / span 3;
-		text-align: center;
+		& span {
+			grid-column: 1 / span 3;
+			@apply text-center;
+		}
 	}
 
 	.create {
-		background-color: #3b8fc7;
-		color: #ffffff;
-		@apply self-end justify-self-center w-min h-min py-2.5 px-10 rounded text-xl font-bold leading-none cursor-pointer;
-	}
+		@apply self-end justify-self-center w-min h-min py-2.5 px-10 bg-[#3b8fc7] rounded text-[20px] text-white font-bold hover:bg-[#2091db];
 
-	.create:hover {
-		background-color: #2091db;
-	}
-
-	.create[disabled] {
-		background-color: #d7d7d7;
-		color: #666666;
-		cursor: default;
-	}
-
-	.create[disabled]:hover {
-		background-color: #d7d7d7;
+		&[disabled] {
+			@apply bg-[#d7d7d7] text-[#666666] cursor-default hover:bg-[#d7d7d7];
+		}
 	}
 </style>

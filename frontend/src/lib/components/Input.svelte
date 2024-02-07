@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Check } from "$lib/types/global";
-  import { Inputs } from "$lib/types/enums";
   import { afterUpdate } from "svelte";
+  import { Inputs } from "$lib/types/enums";
 
 	export let text: string;
 	export let name: string;
@@ -64,63 +64,48 @@
 
 <style lang="postcss">
 	div {
-		min-width: 300px;
-		max-width: 600px;
-		@apply w-1/2;
+		@apply w-1/2 min-w-[300px] max-w-[600px];
+
+		& div {
+			@apply flex items-center w-full pl-2.5 py-0.5 font-bold text-[#df3c3c] gap-1;
+		}
+
+		& i {
+			@apply self-start text-xl leading-tight;
+		}
 	}
 
 	label {
 		box-shadow: 0 0 0 1px #aaaaaa;
-		transition: all 0.1s;
-		gap: 5px;
-		@apply flex flex-wrap w-full h-14 p-2 rounded;
+		@apply flex flex-wrap w-full h-14 p-2 rounded gap-[5px] transition-all delay-100;
+
+		&.focus {
+			box-shadow: 0 0 0 2px #4288d8;
+
+			& p {
+				@apply text-[14px] font-semibold text-[#4288d8] leading-[1.071];
+			}
+		}
+
+		&.error {
+			box-shadow: 0 0 0 2px #df3c3c;
+			@apply flex-wrap;
+			
+			& p {
+				@apply text-[14px] font-semibold text-[#df3c3c] leading-[1.071];
+			}
+		}
+
+		&.focus input, &.error input {
+			@apply h-5 delay-100;
+		}
 	}
 
 	p {
-		color: #222222;
-		transition: all 0.1s;
-		@apply w-full text-xl font-normal leading-loose select-none;
+		@apply w-full text-xl font-normal text-[#222222] leading-loose select-none transition-all delay-100;
 	}
 
 	input {
-		transition: all 0s;
-		@apply h-0 w-full;
-	}
-
-	div div {
-		color: #df3c3c;
-		@apply flex items-center w-full pl-2.5 py-0.5 font-bold gap-1;
-	}
-
-	div i {
-		@apply self-start text-xl leading-tight;
-	}
-
-	.focus {
-		box-shadow: 0 0 0 2px #4288d8;
-	}
-
-	.focus p {
-		font-size: 14px;
-		line-height: 1.071;
-		color: #4288d8;
-		@apply font-semibold;
-	}
-
-	.error {
-		box-shadow: 0 0 0 2px #df3c3c;
-		@apply flex-wrap;
-	}
-
-	.error p {
-		font-size: 14px;
-		line-height: 1.071;
-		color: #df3c3c;
-		@apply font-semibold;
-	}
-
-	.focus input, .error input {
-		height: 20px;
-		transition-delay: 0.1s;
+		@apply h-0 w-full transition-all delay-0;
 	}
 </style>

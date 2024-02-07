@@ -1,5 +1,5 @@
 import type { IGroup, Member } from '../types/global.js';
-import fs from 'fs-extra';
+import fs from 'fs/promises';
 import { resolve } from 'path';
 import { User } from '../models/index.js';
 

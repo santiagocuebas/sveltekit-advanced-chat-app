@@ -1,10 +1,11 @@
 <script lang="ts">
 	import type { RawUser, ResponseData } from '$lib/types/global';
-	import axios from 'axios';
-	import { DIR } from '$lib/config.js';
+  import { List } from "./index";
+	import axios from '$lib/axios';
+	import { DIR } from '$lib/config';
   import { avatarURL } from '$lib/dictionary';
   import { socket } from '$lib/socket';
-  import { Option } from '$lib/types/enums';
+  import { Method, Option } from '$lib/types/enums';
   import {
 		user,
 		contact,
@@ -14,7 +15,6 @@
 		users,
 		groups
 	} from '$lib/store';
-  import List from "./List.svelte";
 
 	let visible = false;
 
@@ -29,9 +29,8 @@
 		visible = false;
 
 		const data: ResponseData = await axios({
-			method: 'POST',
-			url: DIR + '/api/auth/logout',
-			withCredentials: true
+			method: Method.POST,
+			url: '/auth/logout'
 		}).then(res => res.data)
 			.catch(err => err.response.data);
 
@@ -47,7 +46,9 @@
 </script>
 
 <div>
-	<img src={DIR + avatarURL.user + $user.avatar} alt={$user.id}>
+	<picture>
+		<img src={DIR + avatarURL.user + $user.avatar} alt={$user.id}>
+	</picture>
 	<p title={$user.username}>{$user.username}</p>
 	<List bind:visible={visible}>
 		{#if !$switchs.group}
@@ -71,16 +72,16 @@
 
 <style lang="postcss">
 	div {
-		background-color: #e7e7e7;
-		z-index: 152;
-		@apply flex relative items-center w-full h-full p-2.5 gap-2.5;
+		@apply flex relative items-center w-full h-full p-2.5 bg-[#e7e7e7] gap-2.5 z-[160];
+	}
+
+	picture {
+		@apply flex-none w-10 h-10 object-cover rounded-full;
 	}
 
 	img {
-		min-width: 40px;
-		min-height: 40px;
 		box-shadow: 0 0 5px #999999;
-		@apply w-10 h-10 object-cover rounded-full;
+		@apply w-full h-full object-cover rounded-full;
 	}
 
 	p {
@@ -88,16 +89,6 @@
 	}
 
 	li {
-		padding: 5px 20px;
-		@apply flex items-center justify-start font-bold leading-tight gap-5;
-	}
-
-	li:hover {
-		background-color: #999999;
-		color: #ffffff;
-	}
-
-	li i {
-		@apply text-xl leading-none;
+		@apply flex items-center justify-start py-[5px] px-5 font-bold leading-tight gap-5 hover:bg-[#999999] hover:text-white [&_i]:text-[20px];
 	}
 </style>

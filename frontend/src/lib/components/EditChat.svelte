@@ -1,7 +1,7 @@
 <script lang="ts">
   import { options } from "$lib/store";
 
-	export let handle: any;
+	export let handle: () => void;
 </script>
 
 <div class='edit'>
@@ -20,30 +20,15 @@
 	.edit {
 		grid-column: 2 / span 1;
 		grid-row: 1 / span 3;
-		background-color: #00000099;
-		z-index: 300;
-		@apply flex absolute items-start justify-center w-full h-full;
-	}
+		@apply flex absolute items-start justify-center w-full h-full bg-black/70 z-[300];
 
-	.edit div {
-		width: 50%;
-		min-width: 240px;
-		max-width: 400px;
-		margin-top: 180px;
-		background-color: #ffffff;
-		box-shadow: 0 0 0 1px #e7e7e7;
-		row-gap: 10px;
-		@apply flex flex-wrap justify-around p-5 rounded-2xl;
+		& div {
+			box-shadow: 0 0 0 1px #e7e7e7;
+			@apply flex flex-wrap justify-around w-1/2 min-w-[240px] max-w-[400px] mt-[180px] p-5 bg-white rounded-2xl gap-y-2.5;
+		}
 	}
 	
 	button {
-		max-width: 99px;
-		background-color: #343fd4;
-		color: #ffffff;
-		@apply flex justify-center py-2 px-6 rounded text-xl font-bold leading-none cursor-pointer;
-	}
-
-	.red {
-		background-color: #df2c2c;
+		@apply flex justify-center max-w-[99px] py-2 px-6 bg-[#343fd4] rounded text-[20px] font-bold text-white [&.red]:bg-[#df2c2c];
 	}
 </style>

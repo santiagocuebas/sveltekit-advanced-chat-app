@@ -1,5 +1,5 @@
 import type { ActUser } from '../types/types.js';
-import fs from 'fs-extra';
+import fs from 'fs/promises';
 import { resolve } from 'path';
 import { getChats } from './get-data.js';
 

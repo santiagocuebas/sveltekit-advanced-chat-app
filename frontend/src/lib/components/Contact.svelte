@@ -1,10 +1,9 @@
 <script lang="ts">
   import type { IForeign, IGroup } from "$lib/types/global";
-	import { DIR } from '$lib/config.js';
+	import { DIR } from '$lib/config';
   import { avatarURL } from "$lib/dictionary";
 	import { contact as user } from '$lib/store';
   import { getDate } from "$lib/services/libs";
-  import { Option } from "$lib/types/enums";
 
   export let contact: IForeign | IGroup;
   export let join: (value: IForeign | IGroup) => void;
@@ -16,13 +15,15 @@
 	role='none'
 >
 	<span
-		class:green={contact.logged}
-		class:blue={contact.type === Option.GROUP}
+		class:green={contact.logged === true}
+		class:blue={typeof contact.logged === 'number'}
 	>&#149;</span>
-  <img
-		src={DIR + avatarURL[contact.type] + contact.avatar}
-		alt={contact.contactID}
-	>
+  <picture>
+		<img
+			src={DIR + avatarURL[contact.type] + contact.avatar}
+			alt={contact.contactID}
+		>
+	</picture>
 	<div>
 		<h3 title={contact.name}>{contact.name}</h3>
 		{#if contact.content}
@@ -36,36 +37,20 @@
 
 <style lang="postcss">
   li {
-		@apply flex w-full h-20 p-2 overflow-hidden font-medium gap-x-1;
-	}
-
-	li:hover {
-		background-color: #e7e7e7;
-	}
-
-	.selected {
-		background-color: #e7e7e7;
+		@apply flex w-full h-20 p-2 overflow-hidden font-medium gap-x-1 hover:bg-[#e7e7e7] [&.selected]:bg-[#e7e7e7];
 	}
 
 	span {
-		min-width: 12px;
-		color: #444444;
-		font-size: 32px;
-		@apply self-center;
+		@apply self-center min-w-[12px] text-[32px] text-[#444444] [&.green]:text-[#1e9224] [&.blue]:text-[#62bdf1];
 	}
 
-	.green {
-		color: #1e9224;
-	}
-
-	.blue {
-		color: #62bdf1;
+	picture {
+		@apply flex-none w-16 h-16;
 	}
 
 	img {
-		min-width: 64px;
-		box-shadow: 0 0 5px #999999;
-		@apply w-16 h-16 object-cover rounded-full;
+		box-shadow: 0 0 4px #999999;
+		@apply w-full h-full object-cover rounded-full;
 	}
 
 	div {
@@ -73,12 +58,10 @@
 	}
 
 	h3 {
-		@apply h-5 overflow-hidden text-ellipsis text-lg font-semibold leading-none;
+		@apply h-5 overflow-hidden text-ellipsis text-[18px] font-semibold;
 	}
 
 	p {
-		width: 42px;
-		min-width: 42px;
-		@apply ml-auto text-center;
+		@apply flex-none w-[42px] ml-auto text-center;
 	}
 </style>

@@ -18,8 +18,8 @@ export const listItems: IKeys<string>[] = [
 export const avatarURL: IKeys<string> = {
 	user: '/uploads/avatar/',
 	group: '/uploads/group-avatar/',
-	register: '/api/auth/register',
-	signin: '/api/auth/signin'
+	register: '/auth/register',
+	signin: '/auth/signin'
 };
 
 export const SettingsText: IKeys<string> = {

@@ -7,12 +7,13 @@
 		Contacts,
 		ResponseData
 	} from '$lib/types/global';
+  import { goto } from '$app/navigation';
   import { onDestroy, onMount } from 'svelte';
   import { Contact as Box } from './index';
   import axios from '$lib/axios';
   import { selectJoin } from '$lib/dictionary';
 	import { socket } from '$lib/socket';
-  import { contact, switchs, users, groups, list, options } from '$lib/store';
+  import { users, groups, list, contact as user } from '$lib/store';
 	import { Option } from '$lib/types/enums';
 	
 	let input = '';
@@ -30,27 +31,28 @@
 			.then(res => res.data)
 			.catch(err => err.response?.data);
 
-		if (data.contacts) {
-			list.setLists(data.contacts);
-			switchs.setOption(Option.SEARCH);
-		}
-
+		if (data.contacts) list.setLists(data.contacts);
 		input = '';
 	}
 
-	const joinRoom = (user: IForeign | IGroup) => {
-		options.resetOptions();
-		contact.setContact(user as never);
-		switchs.setOption(Option.CHAT);
-		socket.emit(selectJoin[user.type], user.contactID, user.roomID);
-	};
-
 	export const loadContacts = (contacts: Contacts) => {
+		const pathname = location.pathname;
+
+		if (pathname.includes('/users') || pathname.includes('/groups')) {
+			const [id, name] = pathname.split('/').reverse();
+			const contact = contacts[name]?.find(contact => contact.contactID === id);
+
+			if (contact) {
+				user.setContact(contact as Contact);
+				socket.emit(selectJoin[name], contact.contactID, contact.roomID);
+			} else goto('/');
+		}
+
 		users.setUsers(contacts.users);
 		groups.setGroups(contacts.groups);
 
-		if (contacts.users.length > 0) selected = Option.CHATS;
-		else if (contacts.groups.length > 0) selected = Option.ROOMS
+		if (contacts.users.length) selected = Option.CHATS;
+		else if (contacts.groups.length) selected = Option.ROOMS
 		else selected = Option.CHATS;
 	};
 
@@ -84,11 +86,11 @@
 </script>
 
 <div class="sidebar">
-	<form on:submit|preventDefault={searchUser}>
+	<form action="/search" on:submit={searchUser}>
 		<button class="search">
 			<i class="fa-solid fa-search"></i>
 		</button>
-		<input type="text" placeholder="Search a contact" bind:value={input}>
+		<input type="search" name="q" placeholder="Search a contact" bind:value={input}>
 	</form>
 	<button
 		class='button'
@@ -104,7 +106,7 @@
 		{#if selected === Option.CHATS}
 			{#if usersValues.length > 0}
 				{#each usersValues as user (user.contactID)}
-					<Box contact={user} join={joinRoom} /> 
+					<Box contact={user} /> 
 				{/each}
 			{:else}
 				<div>No contacts yet</div>
@@ -112,7 +114,7 @@
 		{:else if selected === Option.ROOMS}
 			{#if groupsValues.length > 0}
 				{#each groupsValues as group (group.roomID)}
-					<Box contact={group} join={joinRoom}/>
+					<Box contact={group} />
 				{/each}
 			{:else}
 				<div>Hasn't joined any groups yet</div>
@@ -133,7 +135,12 @@
 	}
 
   form {
-		@apply flex w-full h-min [&_button]:py-[15px] [&_button]:px-[30px] [&_input]:w-full;
+		@apply flex w-full h-min [&_button]:py-[15px] [&_button]:px-[30px];
+
+		& input {
+			outline: none;
+			@apply w-full;
+		}
 
 		& i {
 			@apply text-xl leading-none text-[#666666];
@@ -157,7 +164,7 @@
 	ul {
 		scrollbar-color: #bbbbbb transparent;
 		scrollbar-width: thin;
-		@apply flex flex-wrap w-full max-h-[720px] overflow-auto;
+		@apply flex flex-col w-full max-h-[720px] overflow-auto;
 
 		& div {
 			@apply flex items-center justify-center w-full p-2.5 text-center text-[24px] font-semibold text-[#666666] leading-tight break-words [&.loading]:gap-x-1;

@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { IKeys, SettingsData } from "$lib/types/global";
+	import { goto } from "$app/navigation";
+	import jsCookie from 'js-cookie';
 	import validator from 'validator';
-  import { Box as ErrorBox, EditChat as Edit, OptionBox as Box } from "./index";
+  import { Box as ErrorBox, EditChat, OptionBox as Box } from "$lib/components";
   import axios from "$lib/axios";
   import { listItems, SettingsText } from "$lib/dictionary";
   import { socket } from "$lib/socket";
-	import { user, options, switchs, users, groups, register } from '$lib/store';
+	import { user, options, users, groups, register } from '$lib/store';
   import {
 		addId,
 		changeName,
@@ -53,18 +55,14 @@
 	}
 
 	function isValidPassword(this: HTMLInputElement) {
-		password = this.value;
-
-		if (
-			validator.isStrongPassword(password) &&
-			validator.isLength(password, { max: 40 })
-		) settingsProps.password.new = true;
-		else settingsProps.password.new = false;
+		settingsProps.password.new = (
+			validator.isStrongPassword(this.value) &&
+			validator.isLength(this.value, { max: 40 })
+		) ? true : false;
 	}
 
 	function isCorrectPassword(this: HTMLInputElement) {
-		if (this.value === password) settingsProps.password.confirm = true;
-		else settingsProps.password.confirm = false;
+		settingsProps.password.confirm = (this.value === password) ? true : false;
 	}
 	
 	async function handleDelete() {
@@ -82,12 +80,16 @@
 		options.setOption(Option.SETTINGS);
 
 		if (data.delete) {
+			axios.defaults.headers.common['Authorization'] = '';
+			
+			jsCookie.remove('authenticate');
 			socket.disconnect();
+			register.resetOptions();
 			user.resetUser();
 			users.resetContacts();
 			groups.resetContacts();
-			switchs.resetOptions();
-			register.setOption(Option.SIGNIN);
+			goto('/register');
+			setTimeout(() => register.setOption(Option.REGISTER), 3000);
 		}
 	}
 
@@ -129,9 +131,11 @@
 </script>
 
 {#if $options.settings}
-	<Edit handle={handleDelete}>
-		<h2 class="title">Are you sure you want to delete this user?</h2>
-	</Edit>
+	<EditChat handle={handleDelete}>
+		<h2 class="title">
+			Are you sure you want to delete this user?
+		</h2>
+	</EditChat>
 {/if}
 
 {#if visible}
@@ -139,7 +143,7 @@
 {/if}
 
 <div class="container-box">
-	<button class="close" on:click={() => switchs.resetOptions()}>
+	<button class="close" on:click={() => goto('/')}>
 		<i class="fa-solid fa-xmark"></i>
 	</button>
 	<h1>Settings</h1>
@@ -241,7 +245,7 @@
 	}
 
 	img {
-		box-shadow: 0 0 0 1px #999999;
+		box-shadow: 0 0 4px #999999;
 		@apply flex-none w-full min-w-[280px] h-[280px] rounded-full object-cover object-center;
 	}
 

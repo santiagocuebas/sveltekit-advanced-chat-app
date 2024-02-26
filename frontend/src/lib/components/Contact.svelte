@@ -1,39 +1,50 @@
 <script lang="ts">
   import type { IForeign, IGroup } from "$lib/types/global";
-	import { DIR } from '$lib/config';
-  import { avatarURL } from "$lib/dictionary";
-	import { contact as user } from '$lib/store';
+  import { selectJoin } from "$lib/dictionary";
+	import { socket } from "$lib/socket";
+	import { options, contact as user } from '$lib/store';
   import { getDate } from "$lib/services/libs";
 
   export let contact: IForeign | IGroup;
-  export let join: (value: IForeign | IGroup) => void;
+
+	$: ({ contactID, type, logged, avatar, name, content, createdAt } = contact);
+
+	const joinRoom = (contact: IForeign | IGroup) => {
+		options.resetOptions();
+		user.setContact(contact as never);
+		socket.emit(selectJoin[contact.type], contact.contactID, contact.roomID);
+	};
+
+	const getUrl = (url: string) => {
+		const [imgURL] = url.split('/').reverse();
+		return imgURL;
+	};
 </script>
 
-<li
-	class:selected={$user.contactID === contact.contactID}
-	on:click={() => join(contact)}
-	role='none'
->
-	<span
-		class:green={contact.logged === true}
-		class:blue={typeof contact.logged === 'number'}
-	>&#149;</span>
-  <picture>
-		<img
-			src={DIR + avatarURL[contact.type] + contact.avatar}
-			alt={contact.contactID}
-		>
-	</picture>
-	<div>
-		<h3 title={contact.name}>{contact.name}</h3>
-		{#if contact.content}
-			{contact.content instanceof Array ? contact.content[0] : contact.content}
+<a href="/{type}s/{contactID}" on:click={() => joinRoom(contact)}>
+	<li class:selected={$user.contactID === contactID}>
+		<span
+			class:green={logged === true}
+			class:blue={typeof logged === 'number'}
+		>&#149;</span>
+		<picture>
+			<img src={avatar} alt={contactID}>
+		</picture>
+		<div>
+			<h3 title={name}>
+				{name}
+			</h3>
+			{#if content}
+				{content instanceof Array ? getUrl(content[0]) : content}
+			{/if}
+		</div>
+		{#if createdAt}
+			<p>
+				{getDate(createdAt)}
+			</p>
 		{/if}
-	</div>
-	{#if contact.createdAt}
-		<p>{getDate(contact.createdAt)}</p>
-	{/if}
-</li>
+	</li>
+</a>
 
 <style lang="postcss">
   li {

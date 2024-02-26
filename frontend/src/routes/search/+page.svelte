@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { IList } from '$lib/types/global';
-	import { onDestroy } from 'svelte';
-	import { DIR } from '$lib/config';
-  import { avatarURL, selectCreate } from "$lib/dictionary";
+	import type { IList, ResponseData } from '$lib/types/global';
+	import { onDestroy, onMount } from 'svelte';
+	import axios from '$lib/axios';
+  import { selectCreate } from "$lib/dictionary";
   import { socket } from "$lib/socket";
 	import { list } from '$lib/store';
 	
@@ -14,6 +14,20 @@
 		socket.emit(selectCreate[type], id);
 	}
 
+	onMount(async () => {
+		const queryString = location.search;
+		const urlParams = new URLSearchParams(queryString);
+		const searchParam = urlParams.get('q');
+
+		if (!listValues.length && searchParam) {
+			const data: ResponseData = await axios({ url: '/home/search/' + searchParam })
+				.then(res => res.data)
+				.catch(err => err.response?.data);
+
+			if (data.contacts) list.setLists(data.contacts);
+		}
+	});
+
 	onDestroy(unsubList);
 </script>
 
@@ -21,7 +35,9 @@
 	{#if listValues.length}
 		{#each listValues as item (item.contactID+item.type)}
 			<li class="item">
-				<img src={DIR + avatarURL[item.type] + item.avatar} alt={item.contactID}>
+				<picture>
+					<img src={item.avatar} alt={item.contactID}>
+				</picture>
 				<h2 title={item.name}>{item.name}</h2>
 				{#if item.description}
 					<p class="content">{item.description}</p>
@@ -55,10 +71,14 @@
 		border-bottom: 2px solid #999999;
 		@apply self-start grid items-center w-full p-3 font-medium gap-x-1.5 [&_.content]:h-[35px];
 
-		& img {
+		& picture {
 			grid-row: 1 / span 2;
-			box-shadow: 0 0 2px #777777;
-			@apply w-16 h-16 rounded-full object-cover object-center;
+			@apply w-16 h-16;
+		}
+
+		& img {
+			box-shadow: 0 0 4px #777777;
+			@apply w-full h-full rounded-full object-cover object-center;
 		}
 
 		& p, h2 {

@@ -1,13 +1,17 @@
 import { Router } from 'express';
-import { upload } from '../config.js';
+import { upload } from '../upload.js';
 import { authCtrl } from '../controllers/index.js';
-import { isValidToken, isNotValidToken } from '../middlewares/logged.js';
+import { isNotValidToken, isValidToken } from '../middlewares/logged.js';
 import { validate } from '../middlewares/validator.js';
-import { arraySignin, arrayRegister } from '../validations/array-validators.js';
+import { arrayRegister } from '../validations/array-validators.js';
 
 const router = Router();
 
 router.use(upload.none());
+
+router.get('/', isValidToken, authCtrl.getData);
+
+router.get('/getAccessToken', isNotValidToken, authCtrl.getAccessToken);
 
 router.post(
 	'/register',
@@ -15,14 +19,5 @@ router.post(
 	validate(arrayRegister),
 	authCtrl.postRegister
 );
-
-router.post(
-	'/signin',
-	isNotValidToken,
-	validate(arraySignin),
-	authCtrl.postSignin
-);
-
-router.post('/logout', isValidToken, authCtrl.postLogout);
 
 export default router;

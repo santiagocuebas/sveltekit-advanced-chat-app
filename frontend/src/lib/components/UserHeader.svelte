@@ -1,26 +1,24 @@
 <script lang="ts">
-	import type { RawUser, ResponseData } from '$lib/types/global';
+	import type { RawUser } from '$lib/types/global';
+  import { goto } from '$app/navigation';
+	import jsCookie from 'js-cookie';
   import { List } from "./index";
-	import axios from '$lib/axios';
-	import { DIR } from '$lib/config';
-  import { avatarURL } from '$lib/dictionary';
+  import axios from '$lib/axios';
   import { socket } from '$lib/socket';
-  import { Method, Option } from '$lib/types/enums';
   import {
 		user,
 		contact,
-		switchs,
 		list,
 		register,
 		users,
 		groups
 	} from '$lib/store';
+  import { Option } from '$lib/types/enums';
 
 	let visible = false;
 
-	function loadChat(option: string) {
+	function loadChat() {
 		visible = false;
-		switchs.setOption(option);
 		contact.resetContact();
 		list.resetContacts();
 	}
@@ -28,42 +26,43 @@
 	async function handleLogout() {
 		visible = false;
 
-		const data: ResponseData = await axios({
-			method: Method.POST,
-			url: '/auth/logout'
-		}).then(res => res.data)
-			.catch(err => err.response.data);
+		const token = jsCookie.get('authenticate');
 
-		if (data.logout) {
-			socket.disconnect();
-			register.setOption(Option.SIGNIN);
-			switchs.resetOptions();
-			users.resetContacts();
-			groups.resetContacts();
-			user.setUser({ } as RawUser);
-		};
+		if (token) jsCookie.remove('authenticate');
+		
+		axios.defaults.headers.common['Authorization'] = '';
+		
+		socket.disconnect();
+		register.resetOptions();
+		users.resetContacts();
+		groups.resetContacts();
+		contact.resetContact();
+		list.resetContacts();
+		user.setUser({ } as RawUser);
+		goto('/register');
+		setTimeout(() => register.setOption(Option.REGISTER), 3000);
 	}
 </script>
 
 <div>
 	<picture>
-		<img src={DIR + avatarURL.user + $user.avatar} alt={$user.id}>
+		<img src={$user.avatar} alt={$user.id}>
 	</picture>
 	<p title={$user.username}>{$user.username}</p>
 	<List bind:visible={visible}>
-		{#if !$switchs.group}
-			<li on:click={() => loadChat(Option.GROUP)} role='none'>
+		<a href="/group" on:click={loadChat}>
+			<li>
 				<i class="fa-solid fa-circle-stop"></i>
 				Create Group
 			</li>
-		{/if}
-		{#if !$switchs.settings}
-			<li on:click={() => loadChat(Option.SETTINGS)} role='none'>
+		</a>
+		<a href="/settings" on:click={loadChat}>
+			<li>
 				<i class="fa-solid fa-gear"></i>
 				Settings
 			</li>
-		{/if}
-		<li on:click={handleLogout} role='none'>
+		</a>
+		<li on:click|preventDefault={handleLogout} role='none'>
 			<i class="fa-solid fa-right-from-bracket"></i>
 			Logout
 		</li>
@@ -80,7 +79,7 @@
 	}
 
 	img {
-		box-shadow: 0 0 5px #999999;
+		box-shadow: 0 0 4px #999999;
 		@apply w-full h-full object-cover rounded-full;
 	}
 

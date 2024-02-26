@@ -1,35 +1,31 @@
-# Svelte Chat
-Svelte Chat is a web application to chatting.
+# SvChat
+SvChat is a web application to chatting.
 ![image](/docs/screenshot1.png)
 ![image](/docs/screenshot2.png)
 
 ## Enviroment Variables
 ### Client
-* `PORT`, the http client port.
 * `PUBLIC_DIR`, the http server port.
+* `PUBLIC_GITHUB_ID`, the github oauth client id.
 ### Server
 * `PORT`, the http server port.
+* `SECRET`, the JWT secret.
+* `ORIGIN`, the http client port.
+* `GITHUB_ID`, the github oauth client id.
+* `GITHUB_SECRET`, the github oauth client secret.
 * `MONGO_URI`, the mongodb database uri.
 * `MONGO_REPLIC`, the mongodb database replic set uri.
 * `SOCKETS_DB`, database name of replic set.
 * `COLLECTION`, collection name of replic set.
-* `SECRET`, the JWT secret.
-* `DOMAIN`, domain of the server cookie.
-* `NODE_ENV`, indicates if the cookie is secure.
-* `ORIGIN`, the http client port.
 
 ## Installation
 ```
-git clone https://github.com/santiagocuebas/sveltekit-advanced-chat-app
+git clone -b svchat-with-fs --single-branch https://github.com/santiagocuebas/sveltekit-advanced-chat-app
 cd sveltekit-advanced-chat-app
 cd backend
-pnpm install
-npm run build
-npm start
+pnpm run todo
 cd frontend
-pnpm install
-npm run build
-npm start
+pnpm run todo
 ```
 
 ## Resources

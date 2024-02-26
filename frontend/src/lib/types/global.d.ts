@@ -2,11 +2,7 @@ export type Contact = IForeign & IGroup;
 
 export type Member = { id: string, name: string };
 
-export type Check = (
-	value: string,
-	custom?: string,
-	pass?: string
-) => string | undefined;
+export type Check = (value: string) => string | undefined;
 
 export type GroupProps = { id: string, name: string, type: TypeContact };
 
@@ -15,6 +11,14 @@ export type ChoiceSocket = (contact: Contact) => IKeys<(value: any) => any>;
 export interface IKeys<Type> {
 	[index: string]: Type;
 }
+
+export interface RegisterInput {
+	value: string;
+	error: string | undefined;
+	active: boolean;
+	class: string;
+	check: Check;
+};
 
 export interface RawUser {
 	id: string;
@@ -67,6 +71,7 @@ export interface IList {
 }
 
 export interface Contacts {
+	[index: string]: IForeign[] | IGroup[];
 	users: IForeign[];
 	groups: IGroup[];
 };
@@ -105,6 +110,7 @@ export interface ISettingsProps {
 export interface ResponseData {
 	[index: string]: string | string[] | boolean | IKeys<string> | IList[] | IUser;
 	user: RawUser;
+	token: string;
 	errors: IKeys<string>;
 	filename: string;
 	filenames: string[];

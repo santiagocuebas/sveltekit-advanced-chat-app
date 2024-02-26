@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { upload } from '../config.js';
+import { upload } from '../upload.js';
 import { homeCtrl } from '../controllers/index.js';
 import { isValidToken } from '../middlewares/logged.js';
 import { validate } from '../middlewares/validator.js';
@@ -16,16 +16,14 @@ router.post(
 	homeCtrl.postAvatar
 );
 
+router.use(upload.none());
+
 router.post(
 	'/images',
 	upload.array('images'),
 	validate(arrayImages),
 	homeCtrl.postImages
 );
-
-router.use(upload.none());
-
-router.get('/main', homeCtrl.getData);
 
 router.get('/search/:param', homeCtrl.getSearch);
 

@@ -25,13 +25,6 @@ function createSwitch(options: IKeys<boolean>) {
 	}
 }
 
-export const switchs = createSwitch({
-	chat: false,
-	search: false,
-	group: false,
-	settings: false
-});
-
 export const options = createSwitch({
 	user: false,
 	group: false,
@@ -40,8 +33,4 @@ export const options = createSwitch({
 	settings: false
 });
 
-export const register = createSwitch({
-	user: false,
-	signin: false,
-	register: false
-});
+export const register = createSwitch({ user: false, register: false });

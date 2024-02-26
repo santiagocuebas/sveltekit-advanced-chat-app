@@ -1,6 +1,5 @@
 import type { IGroup, Member } from '../types/global.js';
-import fs from 'fs/promises';
-import { resolve } from 'path';
+import { v2 as cloudinary } from 'cloudinary';
 import { User } from '../models/index.js';
 
 export const isString = (value: unknown): boolean => typeof value === 'string';
@@ -22,11 +21,17 @@ export const existsImage = async (values: string[]): Promise<boolean> => {
 			break;
 		}
 
-		const data = await fs
-			.readFile(resolve(`uploads/${value}`))
-			.catch(err => err);
+		const [imageFilename] = value.split('/').reverse();
+		const [imageId] = imageFilename.split('.');
 
-		if (!(data instanceof Buffer)) {
+		const data = await cloudinary.api
+			.resources_by_ids('advanced/public/' + imageId)
+			.catch(err => {
+				console.error(err?.message);
+				return null;
+			});
+
+		if (!(data && data.resources.length)) {
 			match = false;
 			break;
 		}

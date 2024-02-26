@@ -1,18 +1,22 @@
 <script lang='ts'>
-	import type { ResponseData } from '$lib/types/global';
+	import type { IKeys, ResponseData } from '$lib/types/global';
 	import { onMount, onDestroy } from 'svelte';
+	import jsCookie from 'js-cookie';
 	import axios from '$lib/axios';
-  import { Sign } from '$lib/components';
+  import { Contacts, UserHeader } from '$lib/components';
   import { socket } from '$lib/socket';
   import sockets, { unsubContact, unsubUsers, unsubGroups } from '$lib/sockets';
   import { user, register } from '$lib/store';
-  import { Inputs, InputsSignin, Option } from '$lib/types/enums';
-
-	const registerInputs = Object.values(Inputs);
-	const signinInputs = Object.values(InputsSignin);
+  import { Option } from '$lib/types/enums';
+	import '../app.css';
+	
+	let errorMessage: IKeys<string> | null = null;
 
 	async function loadUser() {
-		const data: ResponseData = await axios({ url: '/home/main' })
+		const token = jsCookie.get('authenticate');
+		axios.defaults.headers.common['Authorization'] = token;
+		
+		const data: ResponseData = await axios({ url: '/auth' })
 			.then(res => res.data)
 			.catch(err => {
 				return err.response ? err.response.data : { error: err.message };
@@ -20,14 +24,25 @@
 
 		if (data?.user) {
 			user.setUser(data.user);
-			socket.auth = { sessionID: data.user.id };
-			socket.connect();
-			register.setOption(Option.USER);
+
+			setTimeout(() => {
+				socket.auth = { sessionID: data.user.id, token };
+				socket.connect();
+				register.setOption(Option.USER);
+			}, 3000);
 		} else {
-			register.setOption(Option.SIGNIN);
 			console.log(data.error);
+			const token = jsCookie.get('authenticate');
+
+			if (token) jsCookie.remove('authenticate');
+			setTimeout(() => register.setOption(Option.REGISTER), 3000);
 		}
 	}
+
+	const socketError = (err: IKeys<string>) => {
+		errorMessage = err;
+		setTimeout(() => errorMessage = null, 5000);
+	};
 	
 	onMount(() => {
 		socket.on('loggedUser', sockets.loggedUser);
@@ -44,6 +59,7 @@
 		socket.on('removeMods', sockets.removeMods);
 		socket.on('changeAvatar', sockets.changeAvatar);
 		socket.on('destroyUser', sockets.destroyUser);
+		socket.on('socketError', socketError);
 		socket.on('connect_error', sockets.connectError);
 
 		return () => {
@@ -61,6 +77,7 @@
 			socket.off('removeMods', sockets.removeMods);
 			socket.off('changeAvatar', sockets.changeAvatar);
 			socket.off('destroyUser', sockets.destroyUser);
+			socket.off('socketError', socketError);
 			socket.off('connect_error', sockets.connectError);
 		}
 	});
@@ -80,21 +97,26 @@
 	<div class="banner"></div>
 	<div class="container">
 		{#if $register.user}
+			<UserHeader />
+			<Contacts />
 			<slot />
-		{:else if $register.signin}
-			<Sign
-				title={Option.SIGNIN}
-				option={Option.REGISTER}
-				inputs={signinInputs}
-			/>
+			{#if errorMessage}
+				<div class="error">
+					<h3>{errorMessage?.error}</h3>
+					<p>{errorMessage?.message}</p>
+				</div>
+			{/if}
 		{:else if $register.register}
-			<Sign
-				title={Option.REGISTER}
-				option={Option.SIGNIN}
-				inputs={registerInputs}
-			/>
+			<slot />
 		{:else}
-			<Sign title='loading' />
+			<div class="main-loading">
+				<picture>
+					<img src="/images.svg" alt="title">
+				</picture>
+				<h1>
+					Loading
+				</h1>
+			</div>
 		{/if}
 	</div>
 </div>
@@ -143,8 +165,40 @@
 	.container {
 		grid-template-columns: minmax(300px, 30%) 1fr;
 		grid-auto-rows: min-content 1fr min-content;
-		outline: 1px solid #999999;
+		box-shadow: 0 0 4px #999999;
 		@apply grid relative w-full min-w-[600px] max-h-[900px] h-full bg-[#999999] gap-x-px gap-y-px z-[25];
+	}
+
+	.main-loading {
+		grid-auto-rows: min-content;
+		grid-column: 1 / span 2;
+		grid-row: 1 / span 3;
+		box-shadow: 0 0 4px #888888;
+		@apply grid relative justify-items-center content-center w-full bg-white gap-5 [&_h1]:text-[56px];
+
+		& picture {
+			@apply w-[300px] h-[300px];
+		}
+
+		& img {
+			animation: spin 4s linear infinite;
+			@apply w-full h-full rounded-full;
+		}
+	}
+	
+	.error {
+		grid-column: 2 / span 1;
+		grid-row: 2 / span 1;
+		border: 2px solid #9c1313;
+		@apply grid absolute justify-items-center self-end justify-self-center w-[200px] m-1 p-2.5 bg-[#f1b1b1] rounded-2xl gap-1 z-[400];
+
+		& h3 {
+			@apply w-full overflow-hidden break-words text-center text-[24px];
+		}
+
+		& p {
+			@apply w-full overflow-hidden break-words text-center text-[20px] leading-tight;
+		}
 	}
 
 	:global(.container-box) {
@@ -164,5 +218,11 @@
 
 	:global(.title) {
 		@apply text-center text-[18px] font-semibold leading-[1.09];
+	}
+
+	@keyframes spin { 
+    100% { 
+      transform: rotate(360deg); 
+  	}
 	}
 </style>

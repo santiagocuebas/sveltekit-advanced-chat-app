@@ -5,10 +5,10 @@ import type {
 	Member,
 	IChat
 } from '$lib/types/global';
+import { goto } from '$app/navigation';
 import { socket } from './socket';
 import {
 	contact,
-	switchs,
 	groups,
 	users,
 	user,
@@ -43,7 +43,7 @@ export const editGroups = (room: string, { content, createdAt }: IChat) => {
 export const leaveUser = (id: string, room: string, remove?: boolean) => {
 	usersValues = usersValues.filter(user => user.contactID !== id);
 	users.setUsers(usersValues);
-	switchs.resetOptions();
+	goto('/');
 
 	if (remove) socket.emit('removeRoom', room, Option.USER);
 	if (contactValue.contactID === id) contact.resetContact();
@@ -57,7 +57,7 @@ export const leaveGroup = (id: string) => {
 
 	if (contactValue.contactID === id) {
 		contact.resetContact();
-		switchs.resetOptions();
+		goto('/');
 		socket.emit('removeRoom', id, Option.GROUP);
 	}
 };
@@ -229,7 +229,7 @@ export default {
 		groups.setGroups(groupsValues);
 	
 		if (contactValue.admin === id) {
-			switchs.resetOptions();
+			goto('/');
 			contact.resetContact();
 		}
 	},
@@ -238,8 +238,8 @@ export default {
 			user.resetUser();
 			users.resetContacts();
 			groups.resetContacts();
-			switchs.resetOptions();
 			register.setOption(Option.SIGNIN);
+			goto('/signin');
 		}
 	}
 };

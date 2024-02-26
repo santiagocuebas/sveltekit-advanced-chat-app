@@ -2,13 +2,11 @@
   import type { IForeign, IGroupProps } from "$lib/types/global";
   import { onDestroy } from "svelte";
 	import { EditChat as Edit, OptionBox as Box } from "./index";
-	import { DIR } from "$lib/config";
   import {
 		OptionUser,
 		OptionMember,
 		OptionMod,
 		OptionAdmin,
-    avatarURL,
     Messages
 	} from "$lib/dictionary";
 	import { socket } from "$lib/socket";
@@ -32,7 +30,7 @@
 	let usersValues: IForeign[];
 	let socketFile: File;
 
-	$: src = DIR + avatarURL[$contact.type] + $contact.avatar;
+	$: src = $contact.avatar;
 	
 	const unsubUsers = users.subscribe(value => usersValues = value as IForeign[]);
 

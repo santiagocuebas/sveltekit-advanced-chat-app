@@ -4,10 +4,10 @@ import { matchPassword } from '../libs/index.js';
 import { User } from '../models/index.js';
 import { Ext } from '../types/enums.js';
 
-export const isValidEmail: CustomValidator = async email => {
-	const user = await User.findOne({ email });
+export const existsUser: CustomValidator = async username => {
+	const user = await User.findOne({ username });
 
-	if (user === null) throw new Error('Incorrect email');
+	if (user !== null) throw new Error('The username is register');
 
 	return true;
 };
@@ -15,21 +15,13 @@ export const isValidEmail: CustomValidator = async email => {
 export const isValidPassword: CustomValidator = async (value, { req }) => {
 	const user = await User.findOne({ email: req.body.email });
 
-	if (user !== null) {
-		const match = await matchPassword(value, user.password);
+	if (user === null) return true;
+
+	const match = await matchPassword(value, user.password);
 		
-		if (!match) throw new Error('Incorrect password');
-	}
-
-	return true;
-};
-
-export const existsUser: CustomValidator = async email => {
-	const user = await User.findOne({ email });
-
-	if (user !== null) throw new Error('The email is register');
-
-	return true;
+	if (!match) throw new Error('Incorrect password');
+	
+	return match;
 };
 
 export const isUndefinedImage: CustomValidator = (_value, { req }) => {
@@ -44,7 +36,7 @@ export const isValidExtension: CustomValidator = (_value, { req }) => {
 };
 
 export const isValidSize: CustomValidator = (_value, { req }) => {
-	return req.file.size < 1048576;
+	return req.file.size < 1e6;
 };
 
 export const isCorrectPassword: CustomValidator = async (value, { req }): Promise<boolean> => {
@@ -121,7 +113,7 @@ export const isValidSizesAndFormat: CustomValidator = (_value, { req }) => {
 		const ext: string = extname(file.originalname).toLowerCase();
 		const values: string[] = Object.values(Ext);
 
-		if (file.size > 1e7 * 2 || !values.includes(ext)) {
+		if (file.size > 2e7 || !values.includes(ext)) {
 			match = false;
 			break;
 		}

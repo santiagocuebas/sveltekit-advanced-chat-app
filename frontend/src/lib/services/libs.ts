@@ -1,17 +1,40 @@
-import type { ISettingsProps, Member, ResponseData } from "$lib/types/global";
+import type {
+	ISettingsProps,
+	Member,
+	RawUser,
+	ResponseData
+} from "$lib/types/global";
+import { goto } from '$app/navigation';
+import jsCookie from 'js-cookie';
 import axios from "$lib/axios";
-import { DIR } from "$lib/config";
-import { avatarURL } from "$lib/dictionary";
-import { Formats, Inputs, Method } from "$lib/types/enums";
+import { socket } from '$lib/socket';
+import { user, register } from '$lib/store';
+import { Formats, Method, Option } from "$lib/types/enums";
 
-export const changeName = (value: string) => {
-	if (value === Inputs.CONFIRM) return 'Confirm Password';
-	const firstLetter = value.at(0) as string;
-	return value.replace(value.at(0) as string, firstLetter.toUpperCase());
+export const connectSocket = (rawUser: RawUser, token: string) => {
+	user.setUser(rawUser);
+				
+	jsCookie.set('authenticate', token, {
+		expires: 15,
+		path: '/',
+		sameSite: 'lax',
+		secure: location.protocol === 'https'
+	});
+
+	axios.defaults.headers.common['Authorization'] = token;
+	register.resetOptions();
+	goto('/');
+
+	setTimeout(() => {
+		socket.auth = { sessionID: rawUser.id, token };
+		socket.connect();
+		register.setOption(Option.USER);
+	}, 3000);
 };
 
-export const setType = (name: string) => {
-	return (name === Inputs.USERNAME || name === Inputs.EMAIL) ? 'text' : 'password';
+export const changeName = (value: string) => {
+	const firstLetter = value.at(0) as string;
+	return value.replace(value.at(0) as string, firstLetter.toUpperCase());
 };
 
 export const getId = () => {
@@ -92,7 +115,7 @@ export const sendAvatar = async (file: File, id: string) => {
 
 export const setSettingsProps = (avatar: string, description: string): ISettingsProps => {
 	return {
-		avatar: DIR + avatarURL.user + avatar,
+		avatar,
 		username: '',
 		description,
 		password: {
@@ -119,7 +142,7 @@ export const getData = ([actPass, newPass, confirmPass]: (() => void)[]) => {
 export const isDisabled = (avatar: string, description: string) => {
 	return {
 		avatar: (props: ISettingsProps) => {
-			return props.avatar !== DIR + avatarURL.user + avatar;
+			return props.avatar !== avatar;
 		},
 		username: (props: ISettingsProps) => {
 			return props.username.length > 3  && props.username.length <= 40;

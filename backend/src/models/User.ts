@@ -4,12 +4,14 @@ import MLV from 'mongoose-lean-virtuals';
 import { IUser } from '../types/global.js';
 
 const userSchema = new Schema<IUser>({
-	email: { type: String, allowNull: false, unique: true, required: true },
-	password: { type: String, required: true },
-	username: { type: String, required: true },
+	username: { type: String },
+	email: { type: String, unique: true },
+	githubId: { type: Number, unique: true },
+	password: { type: String },
+	type: { type: String, default: 'Email' },
 	logged: { type: Boolean, default: false },
 	tempId: { type: String },
-	avatar: { type: String, default: 'avatar.png' },
+	avatar: { type: String, default: 'https://res.cloudinary.com/dnu1qjhqz/image/upload/v1707468289/advanced/avatar/avatar.png' },
 	description: { type: String, default: "It's just another description of a user" },
 	users: [Object],
 	groupRooms: [String],

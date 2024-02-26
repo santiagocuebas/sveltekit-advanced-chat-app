@@ -1,55 +1,92 @@
-import type { Direction } from '../types/types';
-import { serialize } from 'cookie';
-import type { IUser } from '../types/global.js';
-import { DOMAIN, NODE_ENV } from '../config.js';
-import { encryptPassword, getSerializedCookie, getUser } from '../libs/index.js';
+import type { Direction, IKeys } from '../types/types';
+import axios from 'axios';
+import jwt from 'jsonwebtoken';
+import { GITHUB_ID, GITHUB_SECRET, SECRET } from '../config.js';
+import { encryptPassword, getUser } from '../libs/index.js';
 import { User } from '../models/User.js';
 
-export const postRegister: Direction = async (req, res) => {
-	// Create user
-	const user = await User
-		.create({
-			username: req.body.username,
-			email: req.body.email,
-			password: await encryptPassword(req.body.password)
+export const getData: Direction = async (req, res) => {
+	const user = getUser(req.user);
+
+	return res.json({ user });
+};
+
+export const getAccessToken: Direction = async (req, res) => {
+	const params = `?client_id=${GITHUB_ID}&client_secret=${GITHUB_SECRET}&code=${req.query.code}`;
+
+	const data: IKeys<string> | null = await axios({
+		method: 'POST',
+		url: 'https://github.com/login/oauth/access_token' + params,
+		headers: { accept: 'application/json' }
+	}).then(res => res.data)
+		.catch(err => {
+			console.error(err?.message);
+			return null;
+		});
+		
+	if (!data || !data.access_token) return res.json(null);
+	
+	const githubUserData: IKeys<string> | null = await axios({
+		method: 'GET',
+		url: 'https://api.github.com/user',
+		headers: { 'Authorization': `${data.token_type} ${data.access_token}` }
+	}).then(res => res.data)
+		.catch(err => {
+			console.error(err?.message);
+			return null;
 		});
 
-	// Seriialized cookie
-	const token = getSerializedCookie(user.toJSON());
+	if (!githubUserData || !githubUserData.id) return res.json(null);
+	
+	// Find user
+	let user = await User.findOne({ githubId: githubUserData.id });
 
-	// Set cookie authenticate
-	res.set('Set-Cookie', token);
+	// Create user
+	if (user === null) {
+		user = await User
+			.create({
+				githubId: githubUserData.id,
+				username: githubUserData.login,
+				type: 'Github'
+			});
+	}
+
+	// Generate token
+	const token = jwt.sign({
+		id: user.id,
+		exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 15
+	}, SECRET);
+			
+	const partialUser = getUser(user);
+		
+	return res.json({ user: partialUser, token });
+};
+
+export const postRegister: Direction = async (req, res) => {
+	const { email, password }: IKeys<string> = req.body;
+
+	// Find User
+	let user = await User.findOne({ email });
+
+	// Create user
+	if (user === null) {
+		const [username] = email.split('@');
+
+		user = await User
+			.create({
+				username,
+				email,
+				password: await encryptPassword(password)
+			});
+	}
+
+	// Generate token
+	const token = jwt.sign({
+		id: user.id,
+		exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 15
+	}, SECRET);
 	
 	const partialUser = getUser(user);
 
-	return res.json({ user: partialUser });
-};
-
-export const postSignin: Direction = async (req, res) => {
-	// Search user
-	const user = await User.findOne({ email: req.body.email });
-
-	// Seriialized cookie
-	const token = getSerializedCookie(user?.toJSON() as IUser);
-
-	// Set cookie authenticate
-	res.set('Set-Cookie', token);
-	
-	const partialUser = getUser(user as IUser);
-
-	return res.json({ user: partialUser });
-};
-
-export const postLogout: Direction = async (_req, res) => {
-	// Delete cookie authenticate
-	res.set('Set-Cookie', serialize('authenticate', '', {
-		domain: DOMAIN,
-		httpOnly: true,
-		maxAge: 0,
-		path: '/',
-		sameSite: 'none',
-		secure: NODE_ENV === 'production'
-	}));
-
-	return res.json({ logout: true });
+	return res.json({ user: partialUser, token });
 };

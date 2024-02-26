@@ -1,8 +1,9 @@
 <script lang="ts">
 	import type { Member } from '$lib/types/global';
+	import { goto } from '$app/navigation';
   import { Messages } from '$lib/dictionary';
   import { socket } from "$lib/socket";
-  import { switchs, users } from '$lib/store';
+  import { users } from '$lib/store';
   import { isMember, isMod } from '$lib/services/chat-libs';
   import { changeName } from '$lib/services/libs';
 	import { StateOption } from '$lib/types/enums';
@@ -34,7 +35,7 @@
 </script>
 
 <div class="container-box">
-	<button class="close" on:click={() => switchs.resetOptions()}>
+	<button class="close" on:click={() => goto('/')}>
 		<i class="fa-solid fa-xmark"></i>
 	</button>
 	<h1>Create Group</h1>

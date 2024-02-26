@@ -1,6 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
 import { ValidationChain, validationResult } from 'express-validator';
-import fs from 'fs/promises';
 import { getErrorMessages } from '../libs/index.js';
 
 export const validate = (validations: ValidationChain[]) => {
@@ -10,15 +9,7 @@ export const validate = (validations: ValidationChain[]) => {
 		// Checking if fields are valids
 		const result = validationResult(req);
 
-		if (!result.isEmpty()) {
-			if (req.file !== undefined) fs.unlink(req.file.path);
-			
-			if (req.files !== undefined && req.files instanceof Array) {
-				for (const file of req.files) {
-					fs.unlink(file.path);
-				}
-			}
-			
+		if (!result.isEmpty()) {			
 			// Serializing field errors
 			const errors = getErrorMessages(result.array());
 

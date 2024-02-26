@@ -1,6 +1,5 @@
 import type { ChatSockets } from '../types/sockets.js';
-import fs from 'fs/promises';
-import { resolve } from 'path';
+import { v2 as cloudinary } from 'cloudinary';
 import { Chat } from '../models/index.js';
 import { getChats } from '../libs/get-data.js';
 
@@ -35,14 +34,16 @@ export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomI
 		const chat = await Chat.findOneAndDelete({ _id: id, from: userID });
 
 		if (chat !== null && chat.content instanceof Array) {
-			for (const url of chat.content) {
+			for (const image of chat.content) {
 				// Unlink images if exists
-				const path = resolve(`uploads/${url}`);
-				const err = await fs
-					.unlink(path)
-					.catch(err => err);
+				const [imageFullURL] = image.split('/').reverse();
+				const [imageURL] = imageFullURL.split('.');
 				
-				if (err) console.log(err);
+				await cloudinary.uploader
+					.destroy('advanced/public/' + imageURL)
+					.catch(() => {
+						console.error('An error occurred while trying to delete the image');
+					});
 			}
 		}
 

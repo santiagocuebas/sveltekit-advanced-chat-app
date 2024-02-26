@@ -1,15 +1,13 @@
 import type { Direction, IKeys } from '../types/types.js';
-import fs from 'fs/promises';
-import { extname, resolve } from 'path';
-import { getId, matchId, getUser, matchPassword } from '../libs/index.js';
+import { v2 as cloudinary } from 'cloudinary';
+import {
+	getId,
+	matchId,
+	matchPassword,
+	dataUri
+} from '../libs/index.js';
 import { Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
-
-export const getData: Direction = async (req, res) => {
-	const user = getUser(req.user);
-		
-	return res.json({ user });
-};
 
 export const getSearch: Direction = async (req, res) => {
 	const { param } = req.params;
@@ -90,19 +88,22 @@ export const postPassword: Direction = async (req, res) => {
 };
 
 export const postImages: Direction = async (req, res) => {
-	const files = req.files as Express.Multer.File[];
+	const files = req.files instanceof Array ? req.files : [];
 	const filenames: string[] = [];
 
-	for (const file of files) {
-		const tempPath = file.path as string;
-		const ext = extname(file.originalname).toLowerCase();
-		const avatarURL = await getId() + ext;
-		const targetPath = resolve(`uploads/${avatarURL}`);
- 
-		// Set avatar location
-		await fs.rename(tempPath, targetPath);
+	for (const fileBuffer of files) {
+		const file = dataUri(fileBuffer);
 
-		filenames.push(avatarURL);
+		if (file) {
+			const data = await cloudinary.uploader
+				.upload(file, { public_id: await getId(), folder: 'advanced/public/' })
+				.catch(() => {
+					console.log('An error occurred while trying to uploaded the image');
+					return null;
+				});
+
+			if (data) filenames.push(data.secure_url);
+		}
 	}
 
 	return res.json({ filenames });
@@ -111,24 +112,40 @@ export const postImages: Direction = async (req, res) => {
 export const postAvatar: Direction = async (req, res) => {
 	const group = await Group.findOne({ _id: req.body.id, admin: req.user.id });
 	
-	if (group !== null) {
-		const tempPath = req.file?.path as string;
-		const ext = extname(req.file?.originalname as string).toLowerCase();
-		const avatarURL = await getId(TypeContact.GROUP) + ext;
-		const oldPath = resolve(`uploads/group-avatar/${group.avatar}`);
-		const targetPath = resolve(`uploads/group-avatar/${avatarURL}`);
+	if (group !== null && req.file) {
+		const file = dataUri(req.file);
 
-		// Unlink old avatar
-		if (group.avatar !== 'avatar.jpeg') await fs.unlink(oldPath);
+		if (file) {
+			const data = await cloudinary.uploader
+				.upload(file, {
+					public_id: await getId(TypeContact.GROUP),
+					folder: 'advanced/group-avatar/'
+				})
+				.catch(() => {
+					console.log('An error occurred while trying to uploaded the image');
+					return null;
+				});
 
-		// Set avatar location
-		await fs.rename(tempPath, targetPath);
+			if (data) {
+				// Unlink old avatar
+				if (!group.avatar.includes('avatar.jpeg')) {
+					const [avatarFullFilename] = group.avatar.split('/').reverse();
+					const [avatarFilename] = avatarFullFilename.split('.');
+					
+					await cloudinary.uploader
+						.destroy('advanced/group-avatar/' + avatarFilename)
+						.catch(() => {
+							console.error('An error occurred while trying to delete the image');
+						});
+				}
 
-		// Update database with the new avatar
-		group.avatar = avatarURL;
-		await group.save();
+				// Update database with the new avatar
+				group.avatar = data.secure_url;
+				await group.save();
 
-		return res.json({ filename: avatarURL });
+				return res.json({ filename: data.secure_url });
+			}
+		}
 	}
 
 	return res.json(null);

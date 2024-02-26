@@ -37,11 +37,13 @@ export interface IUser {
 	_id: string;
 	id: string;
 	tempId: string;
+	githubId: number;
 	email: string;
-	password: string;
 	username: string;
+	password: string;
 	name: string;
 	logged: boolean;
+	type: string;
 	avatar: string;
 	description: string;
 	users: Users[];

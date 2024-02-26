@@ -1,8 +1,7 @@
 <script lang="ts">
 	import type { IGroupProps } from "$lib/types/global";
-	import { ChatOptions, List } from "./index";
-	import { DIR } from "$lib/config";
-  import { avatarURL, UserText, GroupText } from "$lib/dictionary";
+	import { List } from "./index";
+  import { UserText, GroupText } from "$lib/dictionary";
 	import { user, contact, options } from "$lib/store";
   import { setGroupProps, isMember, isMod } from "$lib/services/chat-libs";
 	import {
@@ -13,9 +12,10 @@
     Option
 	} from "$lib/types/enums";
 
-	let groupProps: IGroupProps;
+	export let groupProps: IGroupProps;
+	export let option = '';
+
 	let visible = false;
-	let option = '';
 
 	function selectContact(value: string, key: string) {
 		if (key === Option.GROUP) groupProps = setGroupProps($contact);
@@ -25,10 +25,9 @@
 	}
 </script>
 
-<ChatOptions option={option} groupProps={groupProps} />
 <div class="contact">
 	<picture>
-		<img src={DIR + avatarURL[$contact.type] + $contact.avatar} alt={$contact.name}>
+		<img src={$contact.avatar} alt={$contact.name}>
 	</picture>
 	<div>
 		<h2>{$contact.name}</h2>

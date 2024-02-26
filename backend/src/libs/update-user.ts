@@ -1,6 +1,5 @@
 import type { ActUser } from '../types/types.js';
-import fs from 'fs/promises';
-import { resolve } from 'path';
+import { v2 as cloudinary } from 'cloudinary';
 import { getChats } from './get-data.js';
 
 export const actUser: ActUser = (contactID, roomID, user, name) => {
@@ -21,9 +20,15 @@ export const deleteChats = async (userID: string, contactID: string) => {
 
 	for (const chat of chats) {
 		if (chat.content instanceof Array) {
-			for (const url of chat.content) {
-				const path = resolve(`uploads/${url}`);
-				await fs.unlink(path);
+			for (const image of chat.content) {
+				const [imageFullURL] = image.split('/').reverse();
+				const [imageURL] = imageFullURL.split('.');
+				
+				await cloudinary.uploader
+					.destroy('advanced/public/' + imageURL)
+					.catch(() => {
+						console.error('An error occurred while trying to delete the image');
+					});
 			}
 		}
 

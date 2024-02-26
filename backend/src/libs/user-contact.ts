@@ -1,8 +1,8 @@
 import type { IUser, Users } from '../types/global.js';
 import type { IContact, IKeys } from '../types/types.js';
+import { getContact } from './get-data.js';
 import { User, Group } from '../models/index.js';
 import { TypeContact } from '../types/enums.js';
-import { getContact } from './get-data.js';
 
 export const getContacts = async (
 	id: string,

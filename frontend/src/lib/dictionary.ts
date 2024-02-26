@@ -2,7 +2,9 @@ import type { IKeys } from "./types/global";
 
 export const selectJoin: IKeys<string> = {
 	group: 'joinGroupRoom',
-	user: 'joinUserRoom'
+	groups: 'joinGroupRoom',
+	user: 'joinUserRoom',
+	users: 'joinUserRoom'
 };
 
 export const selectCreate: IKeys<string> = {
@@ -14,13 +16,6 @@ export const listItems: IKeys<string>[] = [
 	{ key: 'users', name: 'unblockUsers', text: 'user' },
 	{ key: 'groups', name: 'unblockGroups', text: 'group' }
 ];
-
-export const avatarURL: IKeys<string> = {
-	user: '/uploads/avatar/',
-	group: '/uploads/group-avatar/',
-	register: '/auth/register',
-	signin: '/auth/signin'
-};
 
 export const SettingsText: IKeys<string> = {
 	avatar: 'Change avatar',

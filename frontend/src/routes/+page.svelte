@@ -1,66 +1,65 @@
 <script lang="ts">
-  import type { IKeys } from '$lib/types/global';
-	import { onMount } from 'svelte';
-  import {
-		ChatBody,
-		ChatHeader,
-		Contacts,
-		Group,
-		Search,
-		Settings,
-		UserHeader
-	} from '$lib/components';
-	import { socket } from '$lib/socket';
-  import { switchs } from '$lib/store';
-	
-	let errorMessage: IKeys<string> | null = null;
-
-	const socketError = (err: IKeys<string>) => {
-		errorMessage = err;
-		setTimeout(() => errorMessage = null, 5000);
-	};
-
-	onMount(() => {
-		socket.on('socketError', socketError);
-
-		return () => socket.off('socketError', socketError);
-	});
+  import { PathIcon } from '$lib/types/enums';
 </script>
 
-<UserHeader />
-<Contacts />
-{#if $switchs.chat}
-	<ChatHeader />
-	<ChatBody />
-{:else if $switchs.search}
-	<Search />
-{:else if $switchs.group}
-	<Group />
-{:else if $switchs.settings}
-	<Settings />
-{:else}
-	<div class="logo">
-		<picture>
-			<img src="/smiley-main.jpg" alt="smiley placeholder">
-		</picture>
-		<h2>Welcome!</h2>
-	</div>
-{/if}
-{#if errorMessage}
-	<div class="error">
-		<h3>{errorMessage?.error}</h3>
-		<p>{errorMessage?.message}</p>
-	</div>
-{/if}
+<div class="logo">
+	<picture>
+		<img src="/smiley-main.jpg" alt="smiley placeholder">
+	</picture>
+	<h2>
+		Welcome!
+	</h2>
+	<ul>
+		<li>
+			Deployed using the following techs:
+		</li>
+		<li>
+			<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+				<path d={PathIcon.GITHUB} />
+			</svg>
+			Github
+		</li>
+		<li>
+			<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+				<path d={PathIcon.NETLIFY} />
+			</svg>
+			Netlify
+		</li>
+		<li>
+			<svg viewBox="-8 -8 181 181" xmlns="http://www.w3.org/2000/svg">
+				<path d={PathIcon.RENDER} />
+			</svg>
+			Render
+		</li>
+		<li>
+			<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+				<circle xmlns="http://www.w3.org/2000/svg" cx="512" cy="512" r="512" />
+				<path d={PathIcon.MDBATLAS} />
+			</svg>
+			MongoDB Atlas
+		</li>
+		<li>
+			<svg viewBox="0 -18 120 120" xmlns="http://www.w3.org/2000/svg">
+				<g>
+					<path d={PathIcon.CLOUDINARY} />
+					<path d={PathIcon.LINEONE} />
+					<path d={PathIcon.LINETWO} />
+					<path d={PathIcon.LINETHREE} />
+				</g>
+			</svg>
+			Cloudinary
+		</li>
+	</ul>
+</div>
 
 <style lang="postcss">
 	.logo {
 		grid-column: 2 / span 1;
 		grid-row: 1 / span 3;
-		@apply flex flex-wrap relative justify-center w-full h-full bg-[#f0f3f3] overflow-hidden z-[50];
+		@apply flex flex-col relative items-center justify-center w-full h-full bg-[#f0f3f3] overflow-hidden gap-2.5 z-[50];
 
 		& picture {
-			@apply self-end flex-none w-1/2 min-w-[295px] max-w-[480px] min-h-[295px] max-h-[480px];
+			@apply flex-none w-1/2 min-w-[295px] max-w-[480px] min-h-[295px] max-h-[480px];
 		}
 
 		& img {
@@ -70,20 +69,41 @@
 		& h2 {
 			@apply w-full min-h-min text-center text-6xl leading-none;
 		}
-	}
 
-	.error {
-		grid-column: 2 / span 1;
-		grid-row: 2 / span 1;
-		border: 2px solid #9c1313;
-		@apply grid absolute justify-items-center self-end justify-self-center w-[200px] m-1 p-2.5 bg-[#f1b1b1] rounded-2xl gap-1 z-[400];
-
-		& h3 {
-			@apply w-full overflow-hidden break-words text-center text-[24px];
+		& ul {
+			@apply flex flex-none flex-wrap content-start justify-center w-[290px] gap-1.5;
 		}
 
-		& p {
-			@apply w-full overflow-hidden break-words text-center text-[20px] leading-tight;
+		& svg {
+			@apply w-4 h-4 fill-white;
+		}
+
+		& li {
+			@apply flex items-center p-2 rounded-md font-semibold text-white gap-1.5;
+
+			&:nth-child(1) {
+				@apply p-0 text-[17px] font-medium text-black leading-tight;
+			}
+
+			&:nth-child(2) {
+				@apply bg-black;
+			}
+
+			&:nth-child(3) {
+				@apply bg-teal-700;
+			}
+
+			&:nth-child(4) {
+				@apply bg-[#3bc29c];
+			}
+
+			&:nth-child(5) {
+				@apply bg-[#023430] [&_svg]:fill-[#023430] [&_circle]:fill-white;
+			}
+
+			&:nth-child(6) {
+				@apply bg-[#3448c5];
+			}
 		}
 	}
 </style>

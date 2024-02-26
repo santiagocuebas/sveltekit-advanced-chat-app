@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { upload } from '../config.js';
+import { upload } from '../upload.js';
 import { settingsCtrl } from '../controllers/index.js';
 import { isValidToken } from '../middlewares/logged.js';
 import { validate } from '../middlewares/validator.js';

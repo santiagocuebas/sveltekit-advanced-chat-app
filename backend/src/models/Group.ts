@@ -9,7 +9,7 @@ const groupSchema = new Schema<IGroup>({
 	mods: [Object],
 	members: [Object],
 	name: { type: String, allowNull: false, required: true },
-	avatar: { type: String, default: 'https://res.cloudinary.com/dnu1qjhqz/image/upload/v1707468293/advanced/group-avatar/avatar.jpg' },
+	avatar: { type: String, default: 'uploads/group-avatar/avatar.jpeg' },
 	description: { type: String, default: "It's just another description of a group" },
 	loggedUsers: [String],
 	state: { type: String, default: StateOption.PUBLIC },

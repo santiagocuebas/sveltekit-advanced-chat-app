@@ -1,11 +1,13 @@
 import type { ChatSockets } from '../types/sockets.js';
-import { v2 as cloudinary } from 'cloudinary';
-import { Chat } from '../models/index.js';
+import fs from 'fs/promises';
+import { resolve } from 'path';
 import { getChats } from '../libs/get-data.js';
+import { Chat } from '../models/index.js';
+import { TypeContact } from '../types/enums.js';
 
 export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomID], type, username) => {
 	// Get chats from the contacts
-	const param = username === undefined ? userID : undefined;
+	const param = type === TypeContact.USER ? userID : undefined;
 
 	const messages = await getChats(contactID, param);
 
@@ -25,7 +27,7 @@ export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomI
 		socket.emit('loadChatID', chat.id, tempID);
 		socket.to(roomID).emit('loadChat', chat, roomID);
 
-		const emitString = username ? 'editGroup' : 'editUser';
+		const emitString = type === TypeContact.GROUP ? 'editGroup' : 'editUser';
 		socket.to(roomID).emit(emitString, roomID, chat);
 	});
 
@@ -34,16 +36,12 @@ export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomI
 		const chat = await Chat.findOneAndDelete({ _id: id, from: userID });
 
 		if (chat !== null && chat.content instanceof Array) {
-			for (const image of chat.content) {
+			for (const imageUrl of chat.content) {
 				// Unlink images if exists
-				const [imageFullURL] = image.split('/').reverse();
-				const [imageURL] = imageFullURL.split('.');
-				
-				await cloudinary.uploader
-					.destroy('advanced/public/' + imageURL)
-					.catch(() => {
-						console.error('An error occurred while trying to delete the image');
-					});
+				const path = resolve(imageUrl);
+				await fs
+					.unlink(path)
+					.catch(err => console.error(err));
 			}
 		}
 

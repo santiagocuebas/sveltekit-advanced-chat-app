@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { IGroupProps } from "$lib/types/global";
 	import { List } from "./index";
+  import { DIR } from "$lib/config";
   import { UserText, GroupText } from "$lib/dictionary";
 	import { user, contact, options } from "$lib/store";
   import { setGroupProps, isMember, isMod } from "$lib/services/chat-libs";
@@ -27,7 +28,7 @@
 
 <div class="contact">
 	<picture>
-		<img src={$contact.avatar} alt={$contact.name}>
+		<img src={DIR + '/' + $contact.avatar} alt={$contact.name}>
 	</picture>
 	<div>
 		<h2>{$contact.name}</h2>

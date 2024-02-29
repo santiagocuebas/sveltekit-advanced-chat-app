@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { IForeign, IGroup } from "$lib/types/global";
+	import { DIR } from "$lib/config";
   import { selectJoin } from "$lib/dictionary";
 	import { socket } from "$lib/socket";
 	import { options, contact as user } from '$lib/store';
-  import { getDate } from "$lib/services/libs";
+  import { getDate, getUrl } from "$lib/services/libs";
 
   export let contact: IForeign | IGroup;
 
@@ -14,11 +15,6 @@
 		user.setContact(contact as never);
 		socket.emit(selectJoin[contact.type], contact.contactID, contact.roomID);
 	};
-
-	const getUrl = (url: string) => {
-		const [imgURL] = url.split('/').reverse();
-		return imgURL;
-	};
 </script>
 
 <a href="/{type}s/{contactID}" on:click={() => joinRoom(contact)}>
@@ -28,7 +24,7 @@
 			class:blue={typeof logged === 'number'}
 		>&#149;</span>
 		<picture>
-			<img src={avatar} alt={contactID}>
+			<img src={DIR + '/' + avatar} alt={contactID}>
 		</picture>
 		<div>
 			<h3 title={name}>

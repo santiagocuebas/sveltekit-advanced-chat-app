@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import { setupWorker } from '@socket.io/sticky';
 import { createAdapter } from '@socket.io/mongo-adapter';
 import server from './app.js';
-import { cloudinaryConfig } from './cloudinary.js';
 import {
 	PORT,
 	ORIGIN,
@@ -12,18 +11,24 @@ import {
 	SOCKETS_DB,
 	COLLECTION
 } from './config.js';
-import { verifyToken, wrap } from './libs/index.js';
+import { verifyToken } from './libs/index.js';
 import initSocket from './socket-io.js';
 
 // Create Server
 const { MongoClient } = mongoose.mongo;
-const mongoClient = new MongoClient(MONGO_REPLIC);
+const mongoClient = new MongoClient(MONGO_REPLIC, { directConnection: true });
 
 // Connect Databases
 await mongoClient
 	.connect()
 	.then(() => console.log('MongoDB Cluster is Connected'))
 	.catch(err => console.error('An error has occurred with', err));
+
+await mongoClient
+	.db(SOCKETS_DB)
+	.createCollection(COLLECTION, { capped: true, size: 1e6 })
+	.then(() => console.log('The collection has been created successfully'))
+	.catch(() => console.error('The collection exists'));
 
 mongoose.set('strictQuery', true);
 
@@ -50,9 +55,7 @@ const io = new Server(server, {
 
 setupWorker(io);
 
-// Connect worker
-io.use(wrap(cloudinaryConfig));
-		
+// Connect worker		
 io.use(async (socket, next) => {
 	const { sessionID, token } = socket.handshake.auth;
 	const user = await verifyToken(token)

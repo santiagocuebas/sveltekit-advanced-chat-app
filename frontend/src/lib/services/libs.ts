@@ -66,6 +66,11 @@ export const getDate = (createdAt: string) => {
 	return months[date.getMonth()] + ' ' + date.getFullYear();
 };
 
+export const getUrl = (url: string) => {
+	const [imgURL] = url.split('/').reverse();
+	return imgURL;
+};
+
 export const getImages = async (files: FileList | null) => {
 	let filenames: string[] | null = null;
 

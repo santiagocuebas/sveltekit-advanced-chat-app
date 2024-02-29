@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { IForeign, IGroupProps } from "$lib/types/global";
   import { onDestroy } from "svelte";
-	import { EditChat as Edit, OptionBox as Box } from "./index";
+	import { EditChat as Edit } from "./index";
+  import { DIR } from "$lib/config";
   import {
 		OptionUser,
 		OptionMember,
@@ -30,7 +31,7 @@
 	let usersValues: IForeign[];
 	let socketFile: File;
 
-	$: src = $contact.avatar;
+	$: src = DIR + '/' + $contact.avatar;
 	
 	const unsubUsers = users.subscribe(value => usersValues = value as IForeign[]);
 
@@ -121,7 +122,13 @@
 				{#if isNotMember(usersValues, $contact).length}
 					<p>Add member:</p>
 					{#each isNotMember(usersValues, $contact) as member (member.id)}
-						<Box bind:prop={groupProps.add} {member} change={addMember} />
+						<li>
+							{member.name}
+							<input
+								type="checkbox"
+								on:click={() => groupProps.add = addMember(member, groupProps.add)}
+							>
+						</li>
 					{/each}
 				{:else}
 					All your contacts are members of this group
@@ -130,7 +137,13 @@
 				{#if $contact.members.length}
 					<p>Ban member:</p>
 					{#each $contact.members as member (member.id)}
-						<Box bind:prop={groupProps.ban} {member} change={banMember} />
+						<li>
+							{member.name}
+							<input
+								type="checkbox"
+								on:click={() => groupProps.ban = banMember(member, groupProps.ban)}
+							>
+						</li>
 					{/each}
 				{:else}
 					This group has no contacts
@@ -139,7 +152,13 @@
 				{#if $contact.members.length}
 					<p>Block member:</p>
 					{#each $contact.members as member (member.id)}
-						<Box bind:prop={groupProps.block} {member} change={addMember} />
+						<li>
+							{member.name}
+							<input
+								type="checkbox"
+								on:click={() => groupProps.block = addMember(member, groupProps.block)}
+							>
+						</li>
 					{/each}
 				{:else}
 					This group has no contacts
@@ -148,7 +167,13 @@
 				{#if $contact.blacklist.length}
 					<p>Unblock member:</p>
 					{#each $contact.blacklist as member (member.id)}
-						<Box bind:prop={groupProps.unblock} {member} change={banMember} />
+						<li>
+							{member.name}
+							<input
+								type="checkbox"
+								on:click={() => groupProps.unblock = banMember(member, groupProps.unblock)}
+							>
+						</li>
 					{/each}
 				{:else}
 					This group has no contacts blocked
@@ -157,7 +182,13 @@
 				{#if $contact.members.length}
 					<p>Add member:</p>
 					{#each $contact.members as member (member.id)}
-						<Box bind:prop={groupProps.addMod} {member} change={addMember} />
+						<li>
+							{member.name}
+							<input
+								type="checkbox"
+								on:click={() => groupProps.addMod = addMember(member, groupProps.addMod)}
+							>
+						</li>
 					{/each}
 				{:else}
 					All your contacts are mods of this group
@@ -166,7 +197,13 @@
 				{#if $contact.mods.length}
 					<p>Remove member:</p>
 					{#each $contact.mods as member (member.id)}
-						<Box bind:prop={groupProps.removeMod} {member} change={addMember} />
+						<li>
+							{member.name}
+							<input
+								type="checkbox"
+								on:click={() => groupProps.removeMod = addMember(member, groupProps.removeMod)}
+							>
+						</li>
 					{/each}
 				{:else}
 					None of your contacts are moderators of this group
@@ -205,7 +242,7 @@
 <style lang="postcss">
   .list-item {
 		box-shadow: 0 0 0 2px #999999;
-		@apply flex flex-wrap justify-between w-full p-2 bg-[#f3f3f3] rounded font-medium text-[#404040];
+		@apply flex flex-none flex-wrap justify-between w-full p-2 bg-[#f3f3f3] rounded font-medium text-[#404040];
 
     & span {
       @apply w-full text-center leading-tight;
@@ -231,7 +268,15 @@
 		@apply leading-tight;
 
     &.label-image {
-      @apply w-60 h-60 mt-1.5 mx-auto;
+      @apply aspect-square mt-1.5 mx-auto;
     }
+	}
+
+	li {
+		@apply flex relative w-[48%] h-min max-h-5 overflow-hidden text-ellipsis leading-tight;
+	}
+
+	input[type='checkbox'] {
+		@apply absolute self-center right-0;
 	}
 </style>

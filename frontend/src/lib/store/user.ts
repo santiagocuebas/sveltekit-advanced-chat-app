@@ -1,18 +1,29 @@
 import type { Member, IUser, RawUser, IKeys } from "$lib/types/global";
 import { writable } from "svelte/store";
+import { DIR } from "$lib/config";
 
 function createUser() {
 	const { subscribe, update, set } = writable({ } as IUser);
 
 	return {
 		subscribe,
-		updateProp: (key: string, value: string | IKeys<string[]>) => update(user => {
-			if (typeof value === 'object') {
-				user.blocked.users = user.blocked.users.filter(({ id }) => !value.users.includes(id));
-				user.blocked.groups = user.blocked.groups.filter(({ id }) => !value.groups.includes(id));
-			} else if (typeof value === 'string') user[key] = value;
-	
-			return user;
+		updateAvatar: (avatar: string) => update(user => {
+			return {
+				...user,
+				avatar: DIR + '/' + avatar
+			};
+		}),
+		updateUsername: (username: string) => update(user => {
+			return { ...user, username };
+		}),
+		unblockContacts: ({ users, groups }: IKeys<string[]>) => update(user => {
+			return {
+				...user,
+				blocked: {
+					users: user.blocked.users.filter(({ id }) => !users.includes(id)),
+					groups: user.blocked.groups.filter(({ id }) => !groups.includes(id))
+				}
+			};
 		}),
 		blockContact: (value: Member, prop: string) => update(user => {
 			user.blocked[prop].push(value);
@@ -23,7 +34,7 @@ function createUser() {
 			const user: IUser = {
 				id: value.id,
         username: value.username,
-        avatar: value.avatar,
+        avatar: DIR + '/' + value.avatar,
         description: value.description,
         blocked: {
 					users: value.blockedUsers,

@@ -3,7 +3,7 @@
 	import { goto } from "$app/navigation";
 	import jsCookie from 'js-cookie';
 	import validator from 'validator';
-  import { Box as ErrorBox, EditChat, OptionBox as Box } from "$lib/components";
+  import { Box as ErrorBox, EditChat } from "$lib/components";
   import axios from "$lib/axios";
   import { listItems, SettingsText } from "$lib/dictionary";
   import { socket } from "$lib/socket";
@@ -110,18 +110,21 @@
 			success = data.success;
 			message = data.message;
 
-			if (data.filename) settingsProps.avatar = data.filename;
+			if (this.id === Settings.AVATAR && data.filename) {
+				user.updateAvatar(data.filename);
+			}
 
-			if (this.id !== Settings.PASSWORD && this.id !== Settings.DELETE) {
-				user.updateProp(this.id, settingsProps[this.id] as never);
+			if (this.id === Settings.USERNAME) {
+				user.updateUsername(settingsProps.username);
 			}
 
 			if (this.id === Settings.UNBLOCK) {
+				user.unblockContacts(settingsProps.unblock);
 				socket.emit('emitUnblock', settingsProps.unblock);
 			}
 
 			if (this.id !== Settings.DESCRIPTION && this.id !== Settings.DELETE) {
-				settingsProps = setSettingsProps(settingsProps.avatar, settingsProps.description);
+				settingsProps = setSettingsProps($user.avatar, settingsProps.description);
 			}
 		}
 
@@ -188,16 +191,20 @@
 						{#if $user.blocked[key].length}
 							<p>{changeName(key)}:</p>
 							{#each $user.blocked[key] as member (member.id)}
-								<Box
-									bind:prop={settingsProps.unblock[key]}
-									{name}
-									{member}
-									value={member.id}
-									change={addId}
-								/>
+								<li class="checkbox">
+									{member.name}
+									<input
+										type="checkbox"
+										name={name}
+										value={member.id}
+										on:click={() => settingsProps.unblock[key] = addId(member, settingsProps.unblock[key])}
+									>
+								</li>
 							{/each}
 						{:else}
-							<li>You haven't blocked any {text} yet! :D</li>
+							<li class="no-blocked">
+								You haven't blocked any {text} yet! :D
+							</li>
 						{/if}
 						{#if key === 'users'}
 							<span></span>
@@ -264,7 +271,19 @@
 	}
 
 	li {
-		@apply flex items-center w-full text-center text-xl font-medium leading-snug;
+		@apply flex relative flex-none items-center w-[48%];
+
+		&.checkbox {
+			@apply text-center text-xl font-medium leading-snug;
+		}
+
+		&.no-blocked {
+			@apply w-full h-min max-h-5 overflow-hidden text-ellipsis leading-tight;
+		}
+	}
+
+	input[type='checkbox'] {
+		@apply absolute self-center right-0;
 	}
 
 	span {

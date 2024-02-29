@@ -1,5 +1,6 @@
 import type { IGroup, Member } from '../types/global.js';
-import { v2 as cloudinary } from 'cloudinary';
+import fs from 'fs/promises';
+import { resolve } from 'path';
 import { User } from '../models/index.js';
 
 export const isString = (value: unknown): boolean => typeof value === 'string';
@@ -21,17 +22,16 @@ export const existsImage = async (values: string[]): Promise<boolean> => {
 			break;
 		}
 
-		const [imageFilename] = value.split('/').reverse();
-		const [imageId] = imageFilename.split('.');
+		const path = resolve(value);
 
-		const data = await cloudinary.api
-			.resources_by_ids('advanced/public/' + imageId)
+		const stringBuffer = await fs
+			.readFile(path)
 			.catch(err => {
-				console.error(err?.message);
+				console.error(err);
 				return null;
 			});
 
-		if (!(data && data.resources.length)) {
+		if (!stringBuffer) {
 			match = false;
 			break;
 		}
@@ -49,13 +49,7 @@ export const isValidUser = async (
 		.select('blockedGroups')
 		.lean({ virtuals: true });
 
-	if (user !== null) {
-		if (user.blockedGroupsIDs.includes(groupID)) return true;
-
-		return false;
-	}
-
-	return true;
+	return !(user !== null && !user.blockedGroupsIDs.includes(groupID));
 };
 
 export const groupList = ({ admin, memberIDs, modIDs, blockedIDs }: IGroup) => {

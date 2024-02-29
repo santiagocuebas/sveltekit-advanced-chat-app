@@ -1,53 +1,30 @@
 import type { Direction } from '../types/types.js';
-import { v2 as cloudinary } from 'cloudinary';
-import { dataUri, encryptPassword, getId } from '../libs/index.js';
+import fs from 'fs/promises';
+import { extname, resolve } from 'path';
+import { encryptPassword, getId } from '../libs/index.js';
 import { Chat, Group, User } from '../models/index.js';
 import { TypeContact } from '../types/enums.js';
 
 export const postAvatar: Direction = async (req, res) => {
 	const { id, avatar } = req.user;
-	
-	if (req.file) {
-		const file = dataUri(req.file);
+	const ext = extname(req.file?.originalname as string).toLowerCase();
+	const avatarURL = await getId(TypeContact.USER) + ext;
+	const oldPath = resolve(avatar);
+	const targetPath = resolve(avatarURL);
 
-		if (file) {
-			const data = await cloudinary.uploader
-				.upload(file, {
-					public_id: await getId(TypeContact.USER),
-					folder: 'advanced/avatar/'
-				})
-				.catch(() => {
-					console.log('An error occurred while trying to uploaded the image');
-					return null;
-				});
+	// Unlink old avatar
+	if (!avatar.includes('avatar.png')) await fs.unlink(oldPath);
 
-			if (data) {
-				// Unlink old avatar
-				if (!avatar.includes('avatar.png')) {
-					const [avatarFullFilename] = avatar.split('/').reverse();
-					const [avatarFilename] = avatarFullFilename.split('.');
-					
-					await cloudinary.uploader
-						.destroy('advanced/group-avatar/' + avatarFilename)
-						.catch(() => {
-							console.error('An error occurred while trying to delete the image');
-						});
-				}
+	// Set avatar location
+	await fs.rename(req.file?.path ?? '', targetPath);
 
-				// Update database with the new avatar
-				await User.updateOne({ _id: id }, { avatar: data.secure_url });
-
-				return res.json({
-					success: true,
-					filename: data.secure_url,
-					message: 'Your avatar has been successfully updated'
-				});
-			}
-		}
-	}
+	// Update database with the new avatar
+	await User.updateOne({ _id: id }, { avatar: avatarURL });
 
 	return res.json({
-		message: { log: 'Your avatar has been successfully updated' }
+		success: true,
+		filename: avatarURL,
+		message: 'Your avatar has been successfully updated'
 	});
 };
 
@@ -115,35 +92,24 @@ export const deleteUser: Direction = async (req, res) => {
 	if (user !== null) {
 		// Unlink avatar
 		if (!user.avatar.includes('avatar.png')) {
-			const [avatarFullFilename] = user.avatar.split('/').reverse();
-			const [avatarFilename] = avatarFullFilename.split('.');
-			
-			await cloudinary.uploader
-				.destroy('advanced/avatar/' + avatarFilename)
-				.catch(() => {
-					console.error('An error occurred while trying to delete the image');
-				});
+			const path = resolve(user.avatar);
+			await fs
+				.unlink(path)
+				.catch(err => console.error(err));
 		}
 
 		// Find and delete chats
 		const chats = await Chat.find({
-			$or: [
-				{ from: id },
-				{ to: id }
-			]
+			$or: [{ from: id }, { to: id }]
 		});
 
 		for (const chat of chats) {
 			if (chat.content instanceof Array) {
-				for (const image of chat.content) {
-					const [imageFullURL] = image.split('/').reverse();
-					const [imageURL] = imageFullURL.split('.');
-					
-					await cloudinary.uploader
-						.destroy('advanced/public/' + imageURL)
-						.catch(() => {
-							console.error('An error occurred while trying to delete the image');
-						});
+				for (const imageUrl of chat.content) {
+					const path = resolve(imageUrl);
+					await fs
+						.unlink(path)
+						.catch(err => console.error(err));
 				}
 			}
 
@@ -177,14 +143,10 @@ export const deleteUser: Direction = async (req, res) => {
 		for (const group of groups) {
 			// Unlink avatar
 			if (!group.avatar.includes('avatar.jpeg')) {
-				const [avatarFullFilename] = group.avatar.split('/').reverse();
-				const [avatarFilename] = avatarFullFilename.split('.');
-				
-				await cloudinary.uploader
-					.destroy('advanced/group-avatar/' + avatarFilename)
-					.catch(() => {
-						console.error('An error occurred while trying to delete the image');
-					});
+				const path = resolve(group.avatar);
+				await fs
+					.unlink(path)
+					.catch(err => console.error(err));
 			}
 
 			const groupID = String(group._id);
@@ -194,15 +156,11 @@ export const deleteUser: Direction = async (req, res) => {
 			
 			for (const chat of chats) {
 				if (chat.content instanceof Array) {
-					for (const image of chat.content) {
-						const [imageFullURL] = image.split('/').reverse();
-						const [imageURL] = imageFullURL.split('.');
-						
-						await cloudinary.uploader
-							.destroy('advanced/public/' + imageURL)
-							.catch(() => {
-								console.error('An error occurred while trying to delete the image');
-							});
+					for (const imageUrl of chat.content) {
+						const path = resolve(imageUrl);
+						await fs
+							.unlink(path)
+							.catch(err => console.error(err));
 					}
 				}
 	

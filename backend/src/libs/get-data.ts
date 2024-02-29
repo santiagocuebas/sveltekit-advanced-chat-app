@@ -79,15 +79,17 @@ export const getId = async (type?: string): Promise<string> => {
 
 	if (type === TypeContact.USER) {
 		data = await User.findOne({ avatar: { $regex: id + '.*' } });
+		id = 'avatar/' + id;
 	} else if (type === TypeContact.GROUP) {
 		data = await Group.findOne({ avatar: { $regex: id + '.*' } });
+		id = 'group-avatar/' + id;
 	} else {
 		data = await Chat.findOne({ content: { $elemMatch: { $regex: id + '.*' } } });
 	}
 
 	if (data !== null) getId(type);
 
-	return id;
+	return 'uploads/' + id;
 };
 
 export const getChats: Chats = async (contactID, userID) => {

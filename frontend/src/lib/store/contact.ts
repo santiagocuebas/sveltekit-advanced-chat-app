@@ -6,22 +6,18 @@ function createContact() {
 
 	return {
 		subscribe,
-		changeLogged: (log: boolean) => update(value => {
-			value.logged = log;
-
-			return value;
+		changeLogged: (log: number | boolean) => update(contact => {
+			return {
+				...contact,
+				logged: (typeof contact.logged === 'number' && typeof log === 'number')
+					? contact.logged + log
+					: log
+			};
 		}),
-		countLogged: (num: number) => update(value => {
-			if (typeof value.logged === 'number') value.logged = value.logged + num;
-
-			return value;
+		changeAvatar: (avatar: string) => update(contact => {
+			return { ...contact, avatar };
 		}),
-		changeAvatar: (avatar: string) => update(value => {
-			value.avatar = avatar;
-
-			return value;
-		}),
-		setContact: (value: Contact) => set(value),
+		setContact: (contact: Contact) => set(contact),
 		resetContact: () => set({ } as Contact)
 	}
 }

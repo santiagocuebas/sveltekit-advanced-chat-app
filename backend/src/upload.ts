@@ -1,5 +1,7 @@
 import multer from 'multer';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 
-const storage = multer.memoryStorage();
+export const __dirname: string = dirname(fileURLToPath(import.meta.url));
 
-export const upload = multer({ storage });
+export const upload = multer({ dest: join(__dirname, '../uploads/temp') });

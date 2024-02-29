@@ -2,9 +2,10 @@ import express from 'express';
 import morgan from 'morgan';
 import bodyParser from 'body-parser';
 import cors from 'cors';
+import { join } from 'path';
 import { createServer } from 'http';
-import { cloudinaryConfig } from './cloudinary.js';
 import { ORIGIN } from './config.js';
+import { __dirname } from './upload.js';
 
 // Index Routes
 import * as routes from './routes/index.js';
@@ -23,7 +24,9 @@ app.use(cors({
 	allowedHeaders: 'Origin, Authorization, X-Requested-With, Content-Type, Accept',
 	credentials: true
 }));
-app.use('*', cloudinaryConfig);
+
+// Uploads directory
+app.use('/uploads', express.static(join(__dirname, '../uploads')));
 
 // Routes
 app.use('/api/auth', routes.Auth);

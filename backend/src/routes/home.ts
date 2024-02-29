@@ -16,14 +16,14 @@ router.post(
 	homeCtrl.postAvatar
 );
 
-router.use(upload.none());
-
 router.post(
 	'/images',
 	upload.array('images'),
 	validate(arrayImages),
 	homeCtrl.postImages
 );
+
+router.use(upload.none());
 
 router.get('/search/:param', homeCtrl.getSearch);
 

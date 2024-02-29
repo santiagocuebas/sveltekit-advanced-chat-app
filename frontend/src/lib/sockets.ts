@@ -15,6 +15,7 @@ import {
 	register,
 	options
 } from './store';
+import { getUrl } from './services/libs';
 import { Option } from './types/enums';
 
 let contactValue: Contact;
@@ -30,7 +31,7 @@ export const unsubGroups = groups.subscribe(value => groupsValues = value as IGr
 export const editGroups = (room: string, { content, createdAt }: IChat) => {
 	groupsValues = groupsValues.map(group => {
 		if (group.roomID === room) {
-			group.content = content instanceof Array ? content[0] : content;
+			group.content = content instanceof Array ? getUrl(content[0]) : content;
 			group.createdAt = createdAt;
 		};
 
@@ -118,7 +119,6 @@ export const unblockMembers = (id: string, ...unblockIDs: string[]) => {
 };
 
 export const addMods = (id: string, ...mods: Member[]) => {
-	console.log(mods)
 	groupsValues = groupsValues.map(group => {
 		if (group.contactID === id) {
 			const modIDs = mods.map(mod => mod.id);
@@ -190,14 +190,14 @@ export default {
 			return group;
 		});
 	
-		if (contactValue.contactID === id) contact.countLogged(num);
+		if (contactValue.contactID === id) contact.changeLogged(num);
 	
 		groups.setGroups(groupsValues);
 	},
 	editUsers: (room: string, { content, createdAt }: IChat) => {
 		usersValues = usersValues.map(user => {
 			if (user.roomID === room) {
-				user.content = content instanceof Array ? content[0] : content;
+				user.content = content instanceof Array ? getUrl(content[0]) : content;
 				user.createdAt = createdAt;
 			};
 	
@@ -238,8 +238,8 @@ export default {
 			user.resetUser();
 			users.resetContacts();
 			groups.resetContacts();
-			register.setOption(Option.SIGNIN);
-			goto('/signin');
+			register.setOption(Option.REGISTER);
+			goto('/register');
 		}
 	}
 };

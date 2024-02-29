@@ -2,6 +2,7 @@
 	import type { IList, ResponseData } from '$lib/types/global';
 	import { onDestroy, onMount } from 'svelte';
 	import axios from '$lib/axios';
+	import { DIR } from '$lib/config';
   import { selectCreate } from "$lib/dictionary";
   import { socket } from "$lib/socket";
 	import { list } from '$lib/store';
@@ -36,7 +37,7 @@
 		{#each listValues as item (item.contactID+item.type)}
 			<li class="item">
 				<picture>
-					<img src={item.avatar} alt={item.contactID}>
+					<img src={DIR + '/' + item.avatar} alt={item.contactID}>
 				</picture>
 				<h2 title={item.name}>{item.name}</h2>
 				{#if item.description}

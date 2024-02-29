@@ -2,6 +2,7 @@
   import type { IChat } from "$lib/types/global";
   import { afterUpdate, beforeUpdate, onMount } from "svelte";
 	import validator from 'validator';
+  import { DIR } from "$lib/config";
   import { socket } from "$lib/socket";
   import { user, options } from "$lib/store";
   import { getDate } from "$lib/services/libs";
@@ -96,7 +97,12 @@
 			{/if}
 			{#if (chat.content instanceof Array)}
 				{#each chat.content as image (image)}
-					<img src={image} alt={chat._id} on:click={handleImage} role='none'>
+					<img
+						src={DIR + '/' + image}
+						alt={chat._id}
+						on:click={handleImage}
+						role='none'
+					>
 				{/each}
 			{:else if validator.isURL(chat.content)}
 				<a href='{chat.content}' target="_blank">

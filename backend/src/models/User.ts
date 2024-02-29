@@ -11,7 +11,7 @@ const userSchema = new Schema<IUser>({
 	type: { type: String, default: 'Email' },
 	logged: { type: Boolean, default: false },
 	tempId: { type: String },
-	avatar: { type: String, default: 'https://res.cloudinary.com/dnu1qjhqz/image/upload/v1707468289/advanced/avatar/avatar.png' },
+	avatar: { type: String, default: 'uploads/avatar/avatar.png' },
 	description: { type: String, default: "It's just another description of a user" },
 	users: [Object],
 	groupRooms: [String],

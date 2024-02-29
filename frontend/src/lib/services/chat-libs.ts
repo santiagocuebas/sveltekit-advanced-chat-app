@@ -58,10 +58,10 @@ export const addMember = (member: Member, members: Member[]): Member[] => {
 		: members.filter(user => user.id !== member.id);
 };
 
-export const banMember = ({ id }: Member, banIDs: string[]): string[] => {
-	return !banIDs.includes(id)
-		? [id, ...banIDs]
-		: banIDs.filter(banID => banID !== id);
+export const banMember = (member: Member, banIDs: string[]): string[] => {
+	return !banIDs.includes(member.id)
+		? [member.id, ...banIDs]
+		: banIDs.filter(banID => banID !== member.id);
 };
 
 export const isMod = (mods: Member[], id: string) => {

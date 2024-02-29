@@ -133,11 +133,11 @@
 		& li {
 			@apply block w-full font-medium leading-tight cursor-pointer select-none;
 			
-			.selected {
+			&.selected {
 				@apply bg-[#3d7cf1] text-white;
 			}
 
-			.disabled {
+			&.disabled {
 				@apply bg-[#d7d7d7] text-[#666666];
 			}
 		}

@@ -1,6 +1,7 @@
 import type { Member } from '../types/global.js';
 import type { AdminSockets } from '../types/sockets.js';
-import { v2 as cloudinary } from 'cloudinary';
+import fs from 'fs/promises';
+import { resolve } from 'path';
 import { getChats } from '../libs/get-data.js';
 import { User, Group } from '../models/index.js';
 
@@ -64,15 +65,11 @@ export const adminSockets: AdminSockets = (socket, [userID, contactID]) => {
 
 			for (const chat of chats) {
 				if (chat.content instanceof Array) {
-					for (const image of chat.content) {
-						const [imageFullURL] = image.split('/').reverse();
-						const [imageURL] = imageFullURL.split('.');
-						
-						await cloudinary.uploader
-							.destroy('advanced/public/' + imageURL)
-							.catch(() => {
-								console.error('An error occurred while trying to delete the image');
-							});
+					for (const urlImage of chat.content) {
+						const path = resolve(urlImage);
+						await fs
+							.unlink(path)
+							.catch(err => console.error(err));
 					}
 				}
 
@@ -81,14 +78,10 @@ export const adminSockets: AdminSockets = (socket, [userID, contactID]) => {
 
 			// Unlink avatar
 			if (!group.avatar.includes('avatar.jpeg')) {
-				const [avatarFullFilename] = group.avatar.split('/').reverse();
-				const [avatarFilename] = avatarFullFilename.split('.');
-				
-				await cloudinary.uploader
-					.destroy('advanced/group-avatar/' + avatarFilename)
-					.catch(() => {
-						console.error('An error occurred while trying to delete the image');
-					});
+				const path = resolve(group.avatar);
+				await fs
+					.unlink(path)
+					.catch(err => console.error(err));
 			}
 
 			socket.user.groupRooms = socket.user.groupRooms.filter(id => id !== contactID);

@@ -2,22 +2,13 @@ import type { IForeign, IGroup, IList } from "$lib/types/global";
 import { writable } from "svelte/store";
 
 function createContacts(contacts: IForeign[] | IGroup[] | IList[]) {
-	const { subscribe, update, set } = writable(contacts);
+	const { subscribe, set } = writable(contacts);
 
 	return {
 		subscribe,
-		setUsers: (value: IForeign[]) => update(contacts => {
-			contacts = value;
-			return contacts;
-		}),
-		setGroups: (value: IGroup[]) => update(contacts => {
-			contacts = value;
-			return contacts;
-		}),
-		setLists: (value: IList[]) => update(contacts => {
-			contacts = value;
-			return contacts;
-		}),
+		setUsers: (value: IForeign[]) => set(value),
+		setGroups: (value: IGroup[]) => set(value),
+		setLists: (value: IList[]) => set(value),
 		resetContacts: () => set([])
 	}
 }

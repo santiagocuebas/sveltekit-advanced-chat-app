@@ -57,7 +57,7 @@ export interface IUser {
 	createdAt: Date;
 }
 
-export type IPartialUser = Pick<IUser, 'id' | 'username' | 'avatar' | 'description' | 'blockedUsers' | 'blockedGroups'>;
+export type IPartialUser = Pick<IUser, 'id' | 'username' | 'type' | 'avatar' | 'description' | 'blockedUsers' | 'blockedGroups'>;
 
 export interface IGroup {
 	_id: string;

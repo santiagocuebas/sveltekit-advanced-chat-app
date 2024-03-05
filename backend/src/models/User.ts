@@ -1,14 +1,15 @@
 /* eslint-disable quotes */
+import type { IUser } from '../types/global.js';
 import { Schema, model } from 'mongoose';
 import MLV from 'mongoose-lean-virtuals';
-import { IUser } from '../types/global.js';
+import { TypeUser } from '../types/enums.js';
 
 const userSchema = new Schema<IUser>({
 	username: { type: String },
 	email: { type: String, unique: true },
 	githubId: { type: Number, unique: true },
 	password: { type: String },
-	type: { type: String, default: 'Email' },
+	type: { type: String, default: TypeUser.EMAIL },
 	logged: { type: Boolean, default: false },
 	tempId: { type: String },
 	avatar: { type: String, default: 'https://res.cloudinary.com/dnu1qjhqz/image/upload/v1707468289/advanced/avatar/avatar.png' },

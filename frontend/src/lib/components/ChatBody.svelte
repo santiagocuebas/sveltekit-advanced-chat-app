@@ -2,9 +2,9 @@
   import type { IChat } from "$lib/types/global";
   import { afterUpdate, beforeUpdate, onMount } from "svelte";
 	import validator from 'validator';
+  import { getDate } from "$lib/services";
   import { socket } from "$lib/socket";
   import { user, options } from "$lib/store";
-  import { getDate } from "$lib/services/libs";
   import { Option } from "$lib/types/enums";
 
   export let id: string;

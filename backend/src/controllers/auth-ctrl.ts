@@ -2,13 +2,31 @@ import type { Direction, IKeys } from '../types/types';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { GITHUB_ID, GITHUB_SECRET, SECRET } from '../config.js';
-import { encryptPassword, getUser } from '../libs/index.js';
-import { User } from '../models/User.js';
+import { encryptPassword, getUser, matchPassword } from '../libs/index.js';
+import { User } from '../models/index.js';
+import { TypeUser } from '../types/enums.js';
 
 export const getData: Direction = async (req, res) => {
 	const user = getUser(req.user);
 
 	return res.json({ user });
+};
+
+export const postPassword: Direction = async (req, res) => {
+	const { password } = req.body;
+
+	// Check if is correct password
+	const match = typeof password === 'string' &&
+		req.user.type === TypeUser.EMAIL &&
+		await matchPassword(password, req.user.password)
+			.catch(err => {
+				console.log(err?.message);
+				return false;
+			});
+
+	console.log(password, match);
+
+	return res.json(match);
 };
 
 export const getAccessToken: Direction = async (req, res) => {
@@ -47,7 +65,7 @@ export const getAccessToken: Direction = async (req, res) => {
 			.create({
 				githubId: githubUserData.id,
 				username: githubUserData.login,
-				type: 'Github'
+				type: TypeUser.GITHUB
 			});
 	}
 

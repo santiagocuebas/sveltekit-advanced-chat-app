@@ -24,7 +24,7 @@
 
 		& div {
 			box-shadow: 0 0 0 1px #e7e7e7;
-			@apply flex flex-wrap justify-around w-1/2 min-w-[240px] max-w-[400px] mt-[180px] p-5 bg-white rounded-2xl gap-y-2.5;
+			@apply flex flex-wrap justify-around w-1/2 min-w-[280px] max-w-[400px] mt-[8%] p-5 bg-white rounded-2xl gap-y-2.5;
 		}
 	}
 	

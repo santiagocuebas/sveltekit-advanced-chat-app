@@ -238,8 +238,8 @@ export default {
 			user.resetUser();
 			users.resetContacts();
 			groups.resetContacts();
-			register.setOption(Option.SIGNIN);
-			goto('/signin');
+			register.setOption(Option.REGISTER);
+			goto('/register');
 		}
 	}
 };

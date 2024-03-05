@@ -8,6 +8,10 @@ export type GroupProps = { id: string, name: string, type: TypeContact };
 
 export type ChoiceSocket = (contact: Contact) => IKeys<(value: any) => any>;
 
+export type SetSettingsProps = (user: IUser) => ISettingsProps;
+
+export type IsDisabledButton = (user: IUser) => IDisabledButton;
+
 export interface IKeys<Type> {
 	[index: string]: Type;
 }
@@ -23,6 +27,7 @@ export interface RegisterInput {
 export interface RawUser {
 	id: string;
 	username: string;
+	type: string;
 	avatar: string;
 	description: string;
 	blockedUsers: Member[];
@@ -33,6 +38,7 @@ export interface IUser {
 	[index: string]: string | IKeys<Member[]>;
 	id: string;
 	username: string;
+	type: string;
 	avatar: string;
 	description: string;
 	blocked: IKeys<Member[]>;
@@ -99,16 +105,26 @@ export interface IGroupProps {
 }
 
 export interface ISettingsProps {
-	[index: string]: string | IKeys<boolean> | IKeys<string[]> | ((key: string) => void);
+	[index: string]: string | IKeys<boolean> | IKeys<string[]>;
 	avatar: string;
   username: string;
 	description: string;
-	password: IKeys<boolean>;
+	password: IKeys<boolean>,
   unblock: IKeys<string[]>;
 }
 
+export interface IDisabledButton {
+	[index: string]: ((value: string) => boolean) | ((pass: IKeys<boolean>) => boolean) | ((list: IKeys<string[]>) => boolean);
+	avatar: (value: any) => boolean;
+  username: (value: any) => boolean;
+	description: (value: any) => boolean;
+	password: (pass: any) => boolean;
+  unblock: (list: any) => boolean;
+	delete: () => boolean;
+}
+
 export interface ResponseData {
-	[index: string]: string | string[] | boolean | IKeys<string> | IList[] | IUser;
+	[index: string]: string | string[] | boolean | IKeys<string> | IList[] | RawUser;
 	user: RawUser;
 	token: string;
 	errors: IKeys<string>;

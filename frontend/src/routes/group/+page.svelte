@@ -2,10 +2,9 @@
 	import type { Member } from '$lib/types/global';
 	import { goto } from '$app/navigation';
   import { Messages } from '$lib/dictionary';
+  import { isMember, isMod, changeName } from '$lib/services';
   import { socket } from "$lib/socket";
   import { users } from '$lib/store';
-  import { isMember, isMod } from '$lib/services/chat-libs';
-  import { changeName } from '$lib/services/libs';
 	import { StateOption } from '$lib/types/enums';
 
 	let name = '';
@@ -133,11 +132,11 @@
 		& li {
 			@apply block w-full font-medium leading-tight cursor-pointer select-none;
 			
-			.selected {
+			&.selected {
 				@apply bg-[#3d7cf1] text-white;
 			}
 
-			.disabled {
+			&.disabled {
 				@apply bg-[#d7d7d7] text-[#666666];
 			}
 		}

@@ -49,11 +49,7 @@ export const isValidUser = async (
 		.select('blockedGroups')
 		.lean({ virtuals: true });
 
-	if (user !== null) {
-		if (user.blockedGroupsIDs.includes(groupID)) return true;
-
-		return false;
-	}
+	if (user !== null && !user.blockedGroupsIDs.includes(groupID)) return false;
 
 	return true;
 };

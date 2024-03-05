@@ -9,19 +9,24 @@
 		OptionAdmin,
     Messages
 	} from "$lib/dictionary";
+  import {
+		isNotMember,
+		addMember,
+		banMember,
+		changeName,
+		loadImage,
+		sendAvatar,
+		socketResult
+	} from "$lib/services";
 	import { socket } from "$lib/socket";
   import { leaveUser, leaveGroup } from '$lib/sockets';
 	import { user, contact, options, users } from "$lib/store";
-  import { isNotMember, addMember, banMember } from "$lib/services/chat-libs";
-  import { changeName, sendAvatar } from "$lib/services/libs";
-  import { socketResult } from "$lib/services/socket-result";
 	import {
 		UserOptions,
 		MemberOptions,
 		ModOptions,
 		AdminOptions,
-    StateOption,
-    Formats
+    StateOption
 	} from "$lib/types/enums";
 
   export let option: string;
@@ -33,20 +38,16 @@
 	$: src = $contact.avatar;
 	
 	const unsubUsers = users.subscribe(value => usersValues = value as IForeign[]);
-
-	async function handleAvatar(this: HTMLInputElement) {
-		const reader = new FileReader();
-		const validFormat: string[] = Object.values(Formats);
-		const files = this.files as FileList;
-
-		reader.addEventListener('load', async ({ target }) => {
-			src = target?.result as string;
-			socketFile = files[0];
-		});
-
-		if (files && files[0].size <= 512000 && validFormat.includes(files[0].type)) {
-			reader.readAsDataURL(files[0]);
+	
+	async function handleDrop(e: DragEvent) {
+		if (e.dataTransfer) {
+			[src, socketFile] = await loadImage(e.dataTransfer.files[0]);
+			e.dataTransfer.items.clear();
 		}
+	}
+
+	async function handleImage(this: HTMLInputElement) {
+		if (this.files) [src, socketFile] = await loadImage(this.files[0]);
 	}
 
 	function userOptions() {
@@ -173,9 +174,9 @@
 				{/if}
 			{:else if option === AdminOptions.AVATAR}
 				Load the new image (max. 500KB):
-				<label class="label-image">
+				<label class="label-image" on:drop|preventDefault={handleDrop}>
 					<img src={src} alt={$contact.name}>
-					<input type="file" name="avatar" on:change={handleAvatar}>
+					<input type="file" name="avatar" on:change={handleImage}>
 				</label>
 			{:else if option === AdminOptions.DESCRIPTION}
 				Insert the new description (max. 420 characters):
@@ -205,7 +206,7 @@
 <style lang="postcss">
   .list-item {
 		box-shadow: 0 0 0 2px #999999;
-		@apply flex flex-wrap justify-between w-full p-2 bg-[#f3f3f3] rounded font-medium text-[#404040];
+		@apply flex flex-wrap justify-center w-full p-2 bg-[#f3f3f3] rounded text-center font-medium text-[#404040] gap-x-1.5;
 
     & span {
       @apply w-full text-center leading-tight;
@@ -214,7 +215,7 @@
 
 	p {
 		grid-column: 1 / span 2;
-		@apply w-full leading-tight;
+		@apply w-full text-start leading-tight;
 	}
 
 	img {
@@ -228,10 +229,10 @@
 	}
 
 	label {
-		@apply leading-tight;
+		@apply flex flex-none flex-wrap items-center leading-tight gap-x-1.5;
 
     &.label-image {
-      @apply w-60 h-60 mt-1.5 mx-auto;
+      @apply w-full mt-1.5 mx-auto aspect-square;
     }
 	}
 </style>

@@ -16,8 +16,6 @@ router.post(
 	homeCtrl.postAvatar
 );
 
-router.use(upload.none());
-
 router.post(
 	'/images',
 	upload.array('images'),
@@ -25,8 +23,6 @@ router.post(
 	homeCtrl.postImages
 );
 
-router.get('/search/:param', homeCtrl.getSearch);
-
-router.post('/password', homeCtrl.postPassword);
+router.get('/search/:param', upload.none(), homeCtrl.getSearch);
 
 export default router;

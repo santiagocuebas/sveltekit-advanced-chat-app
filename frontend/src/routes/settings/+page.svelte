@@ -6,63 +6,56 @@
   import { Box as ErrorBox, EditChat, OptionBox as Box } from "$lib/components";
   import axios from "$lib/axios";
   import { listItems, SettingsText } from "$lib/dictionary";
-  import { socket } from "$lib/socket";
-	import { user, options, users, groups, register } from '$lib/store';
   import {
 		addId,
 		changeName,
-		getData,
-		isDisabled,
+		isDisabledButton,
+		loadImage,
 		setSettingsProps
-	} from "$lib/services/libs";
-	import { Formats, Method, Option, Settings } from "$lib/types/enums";
-	
-	const data = getData([isValidOldPassword, isValidPassword, isCorrectPassword]);
-	let settingsProps = setSettingsProps($user.avatar, $user.description);
+	} from "$lib/services";
+  import { socket } from "$lib/socket";
+	import { user, options, users, groups, register } from '$lib/store';
+	import { Method, Option, Settings } from "$lib/types/enums";
+
+	let settingsProps = setSettingsProps($user);
+	let disabledButton = isDisabledButton($user);
+	let passwordValue = { old: '', new: '', confirm: '' };
 	let visible = false;
-	let password: string;
 	let success: boolean;
 	let errors: boolean;
 	let message: string | IKeys<string>;
 
-	async function handleAvatar(this: HTMLInputElement) {
-		const fileReader = new FileReader();
-		const validFormats: string[] = Object.values(Formats);
-		const files = this.files;
+	async function checkOldPassword() {
+		const options = {
+			method: Method.POST,
+			url: '/auth/password',
+			data: { password: passwordValue.old }
+		};
 
-		fileReader.addEventListener('load', ({ target }) => {
-			settingsProps.avatar = target?.result as string;
-		});
+		settingsProps.password.old = passwordValue.old.length >= 8 &&
+			await axios(options)
+				.then(res => res.data)
+				.catch(() => false);
+	};
 
-		if (files && files[0].size <= 512000 && validFormats.includes(files[0].type)) {
-			fileReader.readAsDataURL(files[0]);
+	function checkNewPassword() {
+		settingsProps.password.new = validator.isStrongPassword(passwordValue.new) &&
+			validator.isLength(passwordValue.new, { max: 40 });
+	};
+
+	function checkConfirmPassword() {
+		settingsProps.password.confirm = passwordValue.confirm === passwordValue.new;
+	};
+	
+	async function handleDrop(e: DragEvent) {
+		if (e.dataTransfer) {
+			[settingsProps.avatar] = await loadImage(e.dataTransfer.files[0]);
+			e.dataTransfer.items.clear();
 		}
 	}
 
-	async function isValidOldPassword(this: HTMLInputElement) {
-		if (validator.isStrongPassword(this.value)) {
-			const data = await axios({
-				method: Method.POST,
-				url: '/home/password',
-				data: { password: this.value }
-			}).then(res => res.data)
-				.catch(() => {
-					return { match: false };
-				});
-
-			settingsProps.password.match = data.match;
-		} else settingsProps.password.match = false;
-	}
-
-	function isValidPassword(this: HTMLInputElement) {
-		settingsProps.password.new = (
-			validator.isStrongPassword(this.value) &&
-			validator.isLength(this.value, { max: 40 })
-		) ? true : false;
-	}
-
-	function isCorrectPassword(this: HTMLInputElement) {
-		settingsProps.password.confirm = (this.value === password) ? true : false;
+	async function handleImage(this: HTMLInputElement) {
+		if (this.files) [settingsProps.avatar] = await loadImage(this.files[0]);
 	}
 	
 	async function handleDelete() {
@@ -99,7 +92,7 @@
 			url: this.action.replace(location.origin, ''),
 			data: this
 		}).then(res => res.data)
-			.catch(err => err.response?.data);
+			.catch(err => err.response?.data ?? { });
 
 		if (data.errors) {
 			errors = data.errors;
@@ -107,21 +100,30 @@
 		}
 
 		if (data.success) {
+			passwordValue = { old: '', new: '', confirm: '' };
 			success = data.success;
 			message = data.message;
 
-			if (data.filename) settingsProps.avatar = data.filename;
+			if (this.id === Settings.AVATAR) {
+				user.updateAvatar(data.filename);
+			}
 
-			if (this.id !== Settings.PASSWORD && this.id !== Settings.DELETE) {
-				user.updateProp(this.id, settingsProps[this.id] as never);
+			if (this.id === Settings.USERNAME) {
+				user.updateUsername(settingsProps.username);
+			}
+
+			if (this.id === Settings.DESCRIPTION) {
+				user.changeDescription(settingsProps.description);
 			}
 
 			if (this.id === Settings.UNBLOCK) {
+				user.unblockContact(settingsProps.unblock);
 				socket.emit('emitUnblock', settingsProps.unblock);
 			}
 
-			if (this.id !== Settings.DESCRIPTION && this.id !== Settings.DELETE) {
-				settingsProps = setSettingsProps(settingsProps.avatar, settingsProps.description);
+			if (this.id !== Settings.DELETE) {
+				settingsProps = setSettingsProps($user);
+				disabledButton = isDisabledButton($user);
 			}
 		}
 
@@ -150,6 +152,7 @@
 	{#each Object.values(Settings) as key}
 		<form
 			id={key}
+			class:occult={key === Settings.PASSWORD && $user.type !== 'Email'}
 			action={'/settings/' + key}
 			method={key !== Settings.DELETE ? Method.POST : Method.DELETE}
 			on:submit|preventDefault={key !== Settings.DELETE ? handleSubmit : () => options.setOption(Option.SETTINGS)}
@@ -158,9 +161,9 @@
 				{SettingsText[key]}:
 			</label>
 			{#if key === Settings.AVATAR}
-				<label class="center">
+				<label class="center" on:drop|preventDefault={handleDrop}>
 					<img src={settingsProps.avatar} alt={$user.username}>
-					<input type="file" name="avatar" on:change={handleAvatar}>
+					<input type="file" name="avatar" on:change={handleImage}>
 				</label>
 			{:else if key === Settings.USERNAME}
 				<input
@@ -177,11 +180,29 @@
 					rows="5"
 				></textarea>
 			{:else if key === Settings.PASSWORD}
-				{#each data as { name, text, key }}
-					{#if name !== 'confirmPassword' || settingsProps.password.new}
-						<input type="password" name={name} on:keyup={key} placeholder={text}>
-					{/if}
-				{/each}
+				<input
+					type="password"
+					name="actPassword"
+					placeholder="Enter the actual password"
+					bind:value={passwordValue.old}
+					on:keyup={checkOldPassword}
+				>
+				<input
+					type="password"
+					name="newPassword"
+					placeholder="Enter the new password"
+					bind:value={passwordValue.new}
+					on:keyup={checkNewPassword}
+				>
+				{#if settingsProps.password.new}
+					<input
+						type="password"
+						name="confirmPassword"
+						placeholder="Confirm the password"
+						bind:value={passwordValue.confirm}
+						on:keyup={checkConfirmPassword}
+					>
+				{/if}
 			{:else if key === Settings.UNBLOCK}
 				<ul>
 					{#each listItems as { key, name, text }}
@@ -204,16 +225,15 @@
 						{/if}
 					{/each}
 				</ul>
-			{:else}
-				<button class="delete">
-					Delete
-				</button>
 			{/if}
-			{#if key !== Settings.DELETE && (key !== Settings.UNBLOCK || ($user.blocked.users.length || $user.blocked.groups.length))}
+			{#if key !== Settings.UNBLOCK ||
+				$user.blocked.users.length ||
+				$user.blocked.groups.length}
 				<button
-					class='accept'
-					disabled={!isDisabled($user.avatar, $user.description)[key](settingsProps)}
-				>Accept</button>
+					class:accept={key !== Settings.DELETE}
+					class:delete={key === Settings.DELETE}
+					disabled={!disabledButton[key](settingsProps[key])}
+				>{key === Settings.DELETE ? 'Delete' : 'Accept'}</button>
 			{/if}
 		</form>
 	{/each}
@@ -226,6 +246,10 @@
 
 	form {
 		@apply grid w-3/5 min-w-[280px] gap-3 [&_label]:font-semibold;
+
+		&.occult {
+			@apply hidden;
+		}
 
 		& .center {
 			@apply justify-self-center w-min h-min;

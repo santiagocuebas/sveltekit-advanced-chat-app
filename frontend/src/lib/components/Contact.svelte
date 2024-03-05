@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { IForeign, IGroup } from "$lib/types/global";
   import { selectJoin } from "$lib/dictionary";
+  import { getDate } from "$lib/services";
 	import { socket } from "$lib/socket";
 	import { options, contact as user } from '$lib/store';
-  import { getDate } from "$lib/services/libs";
 
   export let contact: IForeign | IGroup;
 

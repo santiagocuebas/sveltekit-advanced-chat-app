@@ -40,7 +40,11 @@ export const isValidSize: CustomValidator = (_value, { req }) => {
 };
 
 export const isCorrectPassword: CustomValidator = async (value, { req }): Promise<boolean> => {
-	const match: boolean = await matchPassword(value, req.user.password);
+	const match = await matchPassword(value, req.user.password)
+		.catch(err => {
+			console.error(err?.message);
+			return false;
+		});
 
 	if (!match) throw new Error('Incorrect password');
 

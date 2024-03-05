@@ -13,6 +13,7 @@ export const getUser = (user: IUser): IPartialUser => {
 	return {
 		id: user.id,
 		username: user.username,
+		type: user.type,
 		avatar: user.avatar,
 		description: user.description,
 		blockedUsers: user.blockedUsers,

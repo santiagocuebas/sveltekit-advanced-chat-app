@@ -11,7 +11,7 @@
 </script>
 
 <li>
-	{member.name}
+	<p>{member.name}</p>
 	<input
 		type="checkbox"
 		name={name}
@@ -22,10 +22,15 @@
 
 <style lang="postcss">
 	li {
-		@apply flex relative w-[48%] h-min max-h-5 overflow-hidden text-ellipsis leading-tight;
+		grid-template-columns: 1fr 20px;
+		@apply grid relative items-center w-[48%] gap-1;
+	}
+
+	p {
+		@apply max-w-full overflow-hidden text-ellipsis leading-tight;
 	}
 
 	input[type='checkbox'] {
-		@apply absolute self-center right-0;
+		@apply self-center justify-self-start;
 	}
 </style>

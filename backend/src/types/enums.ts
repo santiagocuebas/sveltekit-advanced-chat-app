@@ -15,3 +15,8 @@ export enum Ext {
   JPEG = '.jpeg',
   GIF = '.gif'
 }
+
+export enum TypeUser {
+  EMAIL = 'Email',
+  GITHUB = 'Github'
+}

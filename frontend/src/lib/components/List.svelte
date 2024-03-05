@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { clickOutside } from "$lib/services/out-click";
+  import { clickOutside } from "$lib/services";
 
 	export let visible: boolean;
 </script>

@@ -5,8 +5,8 @@
 	import jsCookie from 'js-cookie';
 	import axios from '$lib/axios';
   import { GITHUB_ACCESS } from '$lib/config';
+	import { changeName, connectSocket } from '$lib/services';
   import { emailInput, passInput, register } from '$lib/store';
-	import { changeName, connectSocket } from '$lib/services/libs';
   import { Method, Option, PathIcon } from '$lib/types/enums';
 
 	let visible = false;

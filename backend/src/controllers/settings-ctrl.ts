@@ -75,10 +75,14 @@ export const postDescription: Direction = async (req, res) => {
 };
 
 export const postPassword: Direction = async (req, res) => {
-	const password = await encryptPassword(req.body.password);
+	const password = await encryptPassword(req.body.newPassword)
+		.catch(err => {
+			console.error(err?.message);
+			return null;
+		});
 
 	// Change password
-	await User.updateOne({ _id: req.user.id }, { password });
+	if (password) await User.updateOne({ _id: req.user.id }, { password });
 
 	return res.json({
 		success: true,

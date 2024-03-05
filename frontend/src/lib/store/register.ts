@@ -1,6 +1,6 @@
 import type { RegisterInput } from "$lib/types/global";
 import { writable } from "svelte/store";
-import { checkEmail, checkPassword } from "$lib/services/validations";
+import { checkEmail, checkPassword } from "$lib/services";
 
 function createRegister(option: RegisterInput) {
 	const { subscribe, update } = writable(option);

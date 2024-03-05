@@ -2,8 +2,8 @@
 	import type { IGroupProps } from "$lib/types/global";
 	import { List } from "./index";
   import { UserText, GroupText } from "$lib/dictionary";
+  import { setGroupProps, isMember, isMod } from "$lib/services";
 	import { user, contact, options } from "$lib/store";
-  import { setGroupProps, isMember, isMod } from "$lib/services/chat-libs";
 	import {
 		UserOptions,
 		MemberOptions,

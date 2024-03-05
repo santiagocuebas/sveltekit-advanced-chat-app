@@ -1,11 +1,6 @@
 import type { Direction, IKeys } from '../types/types.js';
 import { v2 as cloudinary } from 'cloudinary';
-import {
-	getId,
-	matchId,
-	matchPassword,
-	dataUri
-} from '../libs/index.js';
+import { getId, matchId, dataUri } from '../libs/index.js';
 import { Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
 
@@ -73,18 +68,6 @@ export const getSearch: Direction = async (req, res) => {
 	}
 
 	return res.json({ contacts });
-};
-
-export const postPassword: Direction = async (req, res) => {
-	const { password } = req.body;
-	let match = false;
-
-	if (typeof password === 'string') {
-		// Check if is correct password
-		match = await matchPassword(password, req.user.password);
-	}
-
-	return res.json({ match });
 };
 
 export const postImages: Direction = async (req, res) => {

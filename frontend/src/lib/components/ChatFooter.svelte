@@ -1,10 +1,9 @@
 <script lang="ts">
   import type { IChat } from "$lib/types/global";
+  import { getImages, getChat } from "$lib/services";
 	import { socket } from "$lib/socket";
   import { editGroups } from '$lib/sockets';
   import { contact, user } from "$lib/store";
-  import { getImages } from "$lib/services/libs";
-  import { getChat } from "$lib/services/chat-libs";
   import { Option } from "$lib/types/enums";
 
 	export let loadChat: (chat: IChat, id: string) => void;

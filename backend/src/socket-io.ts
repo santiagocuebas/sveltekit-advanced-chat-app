@@ -1,4 +1,6 @@
 import type { Socket } from 'socket.io';
+import type { IKeys } from './types/types.js';
+import { ErrorMessage } from './dictionary.js';
 import { getContacts } from './libs/index.js';
 import { User, Group } from './models/index.js';
 import {
@@ -19,6 +21,8 @@ export default async (socket: Socket) => {
 		'emitChat', 'emitDelete', 'emitLeave', 'emitBlock', 'emitDestroy', 'emitBlockDestroy', 'emitLeaveGroup', 'emitBlockGroup', 'emitAddMember', 'emitBanMember', 'emitBlockMember', 'emitUnblockMember', 'emitAddMod', 'emitRemoveMod', 'emitChangeAvatar', 'emitChangeDescription', 'emitChangeState', 'emitDestroyGroup'
 	];
 	const userID = socket.user.id;
+	socket.user.logged = true;
+	socket.user.tempId = socket.id;
 
 	// Connecting user
 	await User.updateOne({ _id: userID }, { logged: true, tempId: socket.id });
@@ -39,17 +43,17 @@ export default async (socket: Socket) => {
 	
 	socket.use(async ([event, ...args], next) => {
 		console.log(event, args);
+		const selectedFunction = socketIndex[event];
+		let match: IKeys<string> | boolean = ErrorMessage.socketError;
 
-		if (typeof event === 'string' && socketIndex[event] !== undefined) {
+		if (typeof event === 'string' && selectedFunction !== undefined) {
 			// Check if the event and arguments are valid
-			const match = await socketIndex[event](args as never, socket.user);
+			match = await selectedFunction(args as never, socket.user);
 
 			if (match === true) return next();
-
-			socket.emit('socketError', match);
-		} else {
-			socket.emit('socketError', { error: 'Socket Error', message: 'The socket emitted no exist' });
 		}
+		
+		socket.emit('socketError', match);
 	});
 
 	socket.on('joinUserRoom', async (contactID: string, roomID: string) => {
@@ -72,6 +76,10 @@ export default async (socket: Socket) => {
 		adminSockets(socket, IDs);
 	});
 
+	socket.on('removeListeners', () => {
+		emitArray.forEach(emitString => socket.removeAllListeners(emitString));
+	});
+
 	genericSockets(socket, userID, socket.user);
 
 	socket.on('disconnect', async () => {
@@ -82,7 +90,7 @@ export default async (socket: Socket) => {
 		// Disconnecting user from the group
 		await Group.updateMany(
 			{ _id: socket.user.groupRooms },
-			{ $pull: { loggedUsers: userID } }
+			{ $pull: { loggedUsers: [userID] } }
 		);
 
 		socket.to(socket.user.userRooms).emit('loggedUser', userID, false);

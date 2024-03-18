@@ -1,46 +1,32 @@
 <script lang="ts">
-  import type {
-		IForeign,
-		IGroup,
-		IList,
-		Contact,
-		Contacts,
-		ResponseData
-	} from '$lib/types/global';
+  import type { Contact, Contacts, ResponseData } from '$lib/types/global';
   import { goto } from '$app/navigation';
-  import { onDestroy, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import { Contact as Box } from './index';
   import axios from '$lib/axios';
   import { selectJoin } from '$lib/dictionary';
 	import { socket } from '$lib/socket';
-  import { users, groups, list, contact as user } from '$lib/store';
+  import { contacts, contact as user } from '$lib/store';
 	import { Option } from '$lib/types/enums';
 	
 	let input = '';
-	let usersValues: IForeign[];
-	let groupsValues: IGroup[];
-	let listValues: IList[];
 	let selected: string;
-
-	const unsubUsers = users.subscribe(value => usersValues = value as IForeign[]);
-	const unsubGroups = groups.subscribe(value => groupsValues = value as IGroup[]);
-	const unsubLists = list.subscribe(value => listValues = value as IList[]);
 
 	async function searchUser() {
 		const data: ResponseData = await axios({ url: '/home/search/' + input })
 			.then(res => res.data)
-			.catch(err => err.response?.data);
+			.catch(err => err.response?.data ?? { });
 
-		if (data.contacts) list.setLists(data.contacts);
+		if (data.contacts) contacts.setLists(data.contacts);
 		input = '';
 	}
 
-	export const loadContacts = (contacts: Contacts) => {
+	export const loadContacts = (lists: Contacts) => {
 		const pathname = location.pathname;
 
 		if (pathname.includes('/users') || pathname.includes('/groups')) {
 			const [id, name] = pathname.split('/').reverse();
-			const contact = contacts[name]?.find(contact => contact.contactID === id);
+			const contact = lists[name]?.find(contact => contact.contactID === id);
 
 			if (contact) {
 				user.setContact(contact as Contact);
@@ -48,20 +34,18 @@
 			} else goto('/');
 		}
 
-		users.setUsers(contacts.users);
-		groups.setGroups(contacts.groups);
+		contacts.setContacts(lists);
 
-		if (contacts.users.length) selected = Option.CHATS;
-		else if (contacts.groups.length) selected = Option.ROOMS
+		if (lists.users.length) selected = Option.CHATS;
+		else if (lists.groups.length) selected = Option.ROOMS
 		else selected = Option.CHATS;
 	};
 
 	const updateContacts = (user: Contact, emit: boolean) => {
-		if (user.type === Option.USER) users.setUsers([...usersValues, user]);
-		else groups.setGroups([...groupsValues, user]);
+		if (user.type === Option.USER) contacts.addContact(user);
+		else contacts.addGroup(user);
 
-		const actList = listValues.filter(item => item.contactID !== user.contactID);
-		list.setLists(actList);
+		contacts.removeItem(user.contactID);
 		
 		if (emit) socket.emit('joinUpdate', user);
 	};
@@ -75,14 +59,6 @@
 			socket.off('updateContacts', updateContacts);
 		}
 	});
-
-	onDestroy(() => {
-		return {
-			unsubUsers,
-			unsubGroups,
-			unsubLists
-		}
-	})
 </script>
 
 <div class="sidebar">
@@ -104,16 +80,16 @@
 	><i class='fa-solid fa-users'></i></button>
 	<ul>
 		{#if selected === Option.CHATS}
-			{#if usersValues.length > 0}
-				{#each usersValues as user (user.contactID)}
+			{#if $contacts.users.length > 0}
+				{#each $contacts.users as user (user.contactID)}
 					<Box contact={user} /> 
 				{/each}
 			{:else}
 				<div>No contacts yet</div>
 			{/if}
 		{:else if selected === Option.ROOMS}
-			{#if groupsValues.length > 0}
-				{#each groupsValues as group (group.roomID)}
+			{#if $contacts.groups.length > 0}
+				{#each $contacts.groups as group (group.roomID)}
 					<Box contact={group} />
 				{/each}
 			{:else}

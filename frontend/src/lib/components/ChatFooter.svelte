@@ -2,27 +2,24 @@
   import type { IChat } from "$lib/types/global";
   import { getImages, getChat } from "$lib/services";
 	import { socket } from "$lib/socket";
-  import { editGroups } from '$lib/sockets';
-  import { contact, user } from "$lib/store";
+  import { contact, contacts, user } from "$lib/store";
   import { Option } from "$lib/types/enums";
 
 	export let loadChat: (chat: IChat, id: string) => void;
-	let input: HTMLInputElement;
+	let message: string;
 
 	function handleChat(data: string | string[]) {
 		const chat = getChat($user, $contact, data);
 		loadChat(chat, $contact.roomID);
 		socket.emit('emitChat', data, chat._id);
 
-		if ($contact.type === Option.GROUP) editGroups($contact.roomID, chat);
+		if ($contact.type === Option.GROUP) contacts.editGroups($contact.roomID, chat);
 	}
 
-	function sendMessage(this: HTMLFormElement) {
-		const message = new FormData(this).get('message') as string;
+	function sendMessage() {
+		handleChat(message);
 
-		if (message?.length) handleChat(message);
-
-		input.value = '';
+		message = '';
 	}
 
 	async function sendImage(this: HTMLInputElement) {
@@ -34,7 +31,7 @@
 
 <div>
 	<form class="text" on:submit|preventDefault={sendMessage}>
-		<input type="text" name='message' bind:this={input}>
+		<input type="text" name='message' bind:value={message}>
 	</form>
 	<label>
 		<i class="fa-solid fa-images"></i>
@@ -49,13 +46,13 @@
 		@apply flex w-full p-2.5 bg-[#e7e7e7] gap-2.5 [&_form]:w-full;
 
 		& input {
-			box-shadow: 0 0 0 1px #777777;
-			@apply w-full p-2.5 rounded-lg;
+			box-shadow: 0 0 0 1px #999999;
+			@apply w-full p-2.5 rounded-sm;
 		}
 
 		& label {
 			background-color: #ffffff;
-			box-shadow: 0 0 0 1px #777777;
+			box-shadow: 0 0 0 1px #999999;
 			@apply flex flex-none justify-center items-center w-10 h-10 bg-white rounded-full cursor-pointer;
 		}
 	}

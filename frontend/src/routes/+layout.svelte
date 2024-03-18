@@ -1,16 +1,31 @@
 <script lang='ts'>
 	import type { IKeys, ResponseData } from '$lib/types/global';
-	import { onMount, onDestroy } from 'svelte';
+	import { beforeNavigate, goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import jsCookie from 'js-cookie';
 	import axios from '$lib/axios';
-  import { Contacts, UserHeader } from '$lib/components';
+  import { Contacts, UserHeader, LoadingBox } from '$lib/components';
+	import { joinRoom } from '$lib/services';
   import { socket } from '$lib/socket';
-  import sockets, { unsubContact, unsubUsers, unsubGroups } from '$lib/sockets';
-  import { user, register } from '$lib/store';
+  import { user, register, contacts } from '$lib/store';
   import { Option } from '$lib/types/enums';
 	import '../app.css';
 	
 	let errorMessage: IKeys<string> | null = null;
+
+	const socketError = (err: IKeys<string>) => {
+		errorMessage = err;
+		setTimeout(() => errorMessage = null, 5000);
+	};
+
+	const connectError = (err: Error) => {
+		if (err.message === 'Unauthorized') {
+			user.resetUser();
+			contacts.resetContacts();
+			register.setOption(Option.REGISTER);
+			goto('/register');
+		}
+	};
 
 	async function loadUser() {
 		const token = jsCookie.get('authenticate');
@@ -38,55 +53,57 @@
 			setTimeout(() => register.setOption(Option.REGISTER), 3000);
 		}
 	}
-
-	const socketError = (err: IKeys<string>) => {
-		errorMessage = err;
-		setTimeout(() => errorMessage = null, 5000);
-	};
 	
 	onMount(() => {
-		socket.on('loggedUser', sockets.loggedUser);
-		socket.on('countMembers', sockets.countMembers);
-		socket.on('editUser', sockets.editUsers);
-		socket.on('editGroup', sockets.editGroups);
-		socket.on('leaveUser', sockets.leaveUser);
-		socket.on('leaveGroup', sockets.leaveGroup);
-		socket.on('addMembers', sockets.addMembers);
-		socket.on('banMembers', sockets.banMembers);
-		socket.on('blockMembers', sockets.blockMembers);
-		socket.on('unblockMembers', sockets.unblockMembers);
-		socket.on('addMods', sockets.addMods);
-		socket.on('removeMods', sockets.removeMods);
-		socket.on('changeAvatar', sockets.changeAvatar);
-		socket.on('destroyUser', sockets.destroyUser);
+		socket.on('loggedUser', contacts.loggedUser);
+		socket.on('countMembers', contacts.countMembers);
+		socket.on('editUser', contacts.editUsers);
+		socket.on('editGroup', contacts.editGroups);
+		socket.on('leaveUser', contacts.leaveUser);
+		socket.on('leaveGroup', contacts.leaveGroup);
+		socket.on('addMembers', contacts.addMembers);
+		socket.on('banMembers', contacts.banMembers);
+		socket.on('blockMembers', contacts.blockMembers);
+		socket.on('unblockMembers', contacts.unblockMembers);
+		socket.on('addMods', contacts.addMods);
+		socket.on('removeMods', contacts.removeMods);
+		socket.on('changeAvatar', contacts.changeAvatar);
+		socket.on('destroyUser', contacts.destroyUser);
 		socket.on('socketError', socketError);
-		socket.on('connect_error', sockets.connectError);
+		socket.on('connect_error', connectError);
 
 		return () => {
-			socket.off('loggedUser', sockets.loggedUser);
-			socket.off('countMembers', sockets.countMembers);
-			socket.off('editUsers', sockets.editUsers);
-			socket.off('editGroups', sockets.editGroups);
-			socket.off('leaveUser', sockets.leaveUser);
-			socket.off('leaveGroup', sockets.leaveGroup);
-			socket.off('addMembers', sockets.addMembers);
-			socket.off('banMembers', sockets.banMembers);
-			socket.off('blockMembers', sockets.blockMembers);
-			socket.off('unblockMembers', sockets.unblockMembers);
-			socket.off('addMods', sockets.addMods);
-			socket.off('removeMods', sockets.removeMods);
-			socket.off('changeAvatar', sockets.changeAvatar);
-			socket.off('destroyUser', sockets.destroyUser);
+			socket.off('loggedUser', contacts.loggedUser);
+			socket.off('countMembers', contacts.countMembers);
+			socket.off('editUsers', contacts.editUsers);
+			socket.off('editGroups', contacts.editGroups);
+			socket.off('leaveUser', contacts.leaveUser);
+			socket.off('leaveGroup', contacts.leaveGroup);
+			socket.off('addMembers', contacts.addMembers);
+			socket.off('banMembers', contacts.banMembers);
+			socket.off('blockMembers', contacts.blockMembers);
+			socket.off('unblockMembers', contacts.unblockMembers);
+			socket.off('addMods', contacts.addMods);
+			socket.off('removeMods', contacts.removeMods);
+			socket.off('changeAvatar', contacts.changeAvatar);
+			socket.off('destroyUser', contacts.destroyUser);
 			socket.off('socketError', socketError);
-			socket.off('connect_error', sockets.connectError);
+			socket.off('connect_error', connectError);
 		}
 	});
 
-	onDestroy(() => {
-		return {
-			unsubContact,
-			unsubUsers,
-			unsubGroups
+	beforeNavigate(({ to, delta }) => {
+		if (
+			delta !== undefined &&
+			to?.params &&
+			(to.params.contact === Option.USERS || to.params.contact === Option.GROUPS) &&
+			typeof to.params.id === 'string'
+		) {
+			const indexContact = to.params.contact;
+			const contact = $contacts[indexContact].find(({ contactID }) => to.params?.id === contactID);
+			
+			if (contact) joinRoom(contact);
+			else goto('/');
 		}
 	});
 </script>
@@ -102,21 +119,18 @@
 			<slot />
 			{#if errorMessage}
 				<div class="error">
-					<h3>{errorMessage?.error}</h3>
-					<p>{errorMessage?.message}</p>
+					<h3>
+						{errorMessage?.error}
+					</h3>
+					<p>
+						{errorMessage?.message}
+					</p>
 				</div>
 			{/if}
 		{:else if $register.register}
 			<slot />
 		{:else}
-			<div class="main-loading">
-				<picture>
-					<img src="/images.svg" alt="title">
-				</picture>
-				<h1>
-					Loading
-				</h1>
-			</div>
+			<LoadingBox className={'main-loading'} />
 		{/if}
 	</div>
 </div>
@@ -168,23 +182,6 @@
 		box-shadow: 0 0 4px #999999;
 		@apply grid relative w-full min-w-[600px] max-h-[900px] h-full bg-[#999999] gap-x-px gap-y-px z-[25];
 	}
-
-	.main-loading {
-		grid-auto-rows: min-content;
-		grid-column: 1 / span 2;
-		grid-row: 1 / span 3;
-		box-shadow: 0 0 4px #888888;
-		@apply grid relative justify-items-center content-center w-full bg-white gap-5 [&_h1]:text-[56px];
-
-		& picture {
-			@apply w-[300px] h-[300px];
-		}
-
-		& img {
-			animation: spin 4s linear infinite;
-			@apply w-full h-full rounded-full;
-		}
-	}
 	
 	.error {
 		grid-column: 2 / span 1;
@@ -193,11 +190,11 @@
 		@apply grid absolute justify-items-center self-end justify-self-center w-[200px] m-1 p-2.5 bg-[#f1b1b1] rounded-2xl gap-1 z-[400];
 
 		& h3 {
-			@apply w-full overflow-hidden break-words text-center text-[24px];
+			@apply w-full overflow-hidden break-words text-center font-semibold text-[24px];
 		}
 
 		& p {
-			@apply w-full overflow-hidden break-words text-center text-[20px] leading-tight;
+			@apply w-full overflow-hidden break-words text-center text-[18px] leading-tight;
 		}
 	}
 
@@ -218,11 +215,5 @@
 
 	:global(.title) {
 		@apply text-center text-[18px] font-semibold leading-[1.09];
-	}
-
-	@keyframes spin { 
-    100% { 
-      transform: rotate(360deg); 
-  	}
 	}
 </style>

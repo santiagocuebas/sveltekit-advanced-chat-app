@@ -1,19 +1,11 @@
 <script lang="ts">
   import type { IForeign, IGroup } from "$lib/types/global";
-  import { selectJoin } from "$lib/dictionary";
-  import { getDate } from "$lib/services";
-	import { socket } from "$lib/socket";
-	import { options, contact as user } from '$lib/store';
+  import { getDate, joinRoom } from "$lib/services";
+	import { contact as user } from '$lib/store';
 
   export let contact: IForeign | IGroup;
 
 	$: ({ contactID, type, logged, avatar, name, content, createdAt } = contact);
-
-	const joinRoom = (contact: IForeign | IGroup) => {
-		options.resetOptions();
-		user.setContact(contact as never);
-		socket.emit(selectJoin[contact.type], contact.contactID, contact.roomID);
-	};
 
 	const getUrl = (url: string) => {
 		const [imgURL] = url.split('/').reverse();

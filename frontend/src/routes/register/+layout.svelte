@@ -43,8 +43,10 @@
 
 		if (codeParam && !token) {
 			register.resetOptions();
-			const data: ResponseData = await axios({ url: '/auth/getAccessToken?code=' + codeParam })
-				.then(res => res.data)
+			const data: ResponseData = await axios({
+				method: Method.POST,
+				url: '/auth/registerGithub?code=' + codeParam
+			}).then(res => res.data)
 				.catch(err => {
 					console.error(err?.message);
 					return null;

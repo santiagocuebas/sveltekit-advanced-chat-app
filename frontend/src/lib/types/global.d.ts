@@ -6,7 +6,7 @@ export type Check = (value: string) => string | undefined;
 
 export type GroupProps = { id: string, name: string, type: TypeContact };
 
-export type ChoiceSocket = (contact: Contact) => IKeys<(value: any) => any>;
+export type ChoiceSocket = (contact: Contact) => IChoiseResult;
 
 export type SetSettingsProps = (user: IUser) => ISettingsProps;
 
@@ -82,6 +82,12 @@ export interface Contacts {
 	groups: IGroup[];
 };
 
+export interface IContacts {
+	users: IForeign[];
+	groups: IGroup[];
+	list: IList[];
+}
+
 export interface IChat {
 	_id: string;
 	from: string;
@@ -91,14 +97,31 @@ export interface IChat {
 	createdAt: string;
 }
 
+export interface IChoiseResult {
+	[index: string]: ((value?) => never[]) | ((value?) => string[]) | ((value: string) => string[]) | ((avatar: string) => Promise<string[]>) | ((members: Member[]) => [Member[], string]) | ((banIDs: string[]) => [string[], string]);
+	leave: () => never[];
+	blockGroup: () => string[];
+	add: (members: any) => [Member[], string];
+	ban: (banIDs: any) => [string[], string];
+	block: (blockUsers: any) => [Member[], string];
+	unblock: (unblockIDs: any) => [string[], string];
+	addMod: (newMods: any) => [Member[], string];
+	removeMod: (removeMod: any) => [Member[], string];
+	avatar: (avatar: any) => Promise<string[]>;
+	description: (description: any) => string[];
+	state: (state: any) => string[];
+	destroy: () => never[];
+}
+
 export interface IGroupProps {
-	[index: string]: Member[] | string[] | string | ((key: string) => void) | undefined;
+	[index: string]: string | File | string[] | Member[] | undefined;
 	add: Member[];
 	ban: string[];
 	block: Member[];
 	unblock: string[];
 	addMod: Member[];
 	removeMod: Member[];
+	avatar: string | File;
 	description: string;
 	state: string;
 	destroy?;

@@ -1,28 +1,54 @@
 import type { Contact } from "$lib/types/global";
+import { goto } from "$app/navigation";
 import { writable } from "svelte/store";
+import { groupProps } from "./index";
+import { Option } from "$lib/types/enums";
 
 function createContact() {
 	const { subscribe, update, set } = writable({ } as Contact);
 
 	return {
 		subscribe,
-		changeLogged: (log: boolean) => update(value => {
-			value.logged = log;
+		changeLogged: (id: string, logged: boolean) => update(contact => {
+			if (contact.contactID === id && contact.type === Option.USER) {
+				contact.logged = logged;
+			}
 
-			return value;
+			return contact;
 		}),
-		countLogged: (num: number) => update(value => {
-			if (typeof value.logged === 'number') value.logged = value.logged + num;
+		countLogged: (id: string, num: number) => update(contact => {
+			if (contact.contactID === id && typeof contact.logged === 'number') {
+				contact.logged = contact.logged + num;
+			}
 
-			return value;
+			return contact;
 		}),
-		changeAvatar: (avatar: string) => update(value => {
-			value.avatar = avatar;
+		changeAvatar: (id: string, avatar: string) => update(contact => {
+			if (contact.contactID === id) contact.avatar = avatar;
 
-			return value;
+			return contact;
+		}),
+		resetContactWithId: (id: string) => update(contact => {
+			if (contact.contactID === id) {
+				contact = { } as Contact;
+				goto('/');
+			}
+
+			return contact;
+		}),
+		destroyIfAdmin: (id: string) => update(contact => {
+			if (contact.admin === id) {
+				goto('/');
+				contact = { } as Contact;
+			}
+			
+			return contact;
 		}),
 		setContact: (value: Contact) => set(value),
-		resetContact: () => set({ } as Contact)
+		resetContact: () => {
+			groupProps.resetProps();
+			set({ } as Contact);
+		}
 	}
 }
 

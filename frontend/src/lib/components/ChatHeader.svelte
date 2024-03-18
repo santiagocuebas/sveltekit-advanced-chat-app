@@ -1,9 +1,8 @@
 <script lang="ts">
-	import type { IGroupProps } from "$lib/types/global";
 	import { List } from "./index";
   import { UserText, GroupText } from "$lib/dictionary";
-  import { setGroupProps, isMember, isMod } from "$lib/services";
-	import { user, contact, options } from "$lib/store";
+  import { isMember, isMod } from "$lib/services";
+	import { user, contact, options, groupProps } from "$lib/store";
 	import {
 		UserOptions,
 		MemberOptions,
@@ -12,13 +11,12 @@
     Option
 	} from "$lib/types/enums";
 
-	export let groupProps: IGroupProps;
 	export let option = '';
 
 	let visible = false;
 
 	function selectContact(value: string, key: string) {
-		if (key === Option.GROUP) groupProps = setGroupProps($contact);
+		if (key === Option.GROUP) groupProps.setProps($contact);
 		visible = false;
 		option = value;
 		options.setOption(key);

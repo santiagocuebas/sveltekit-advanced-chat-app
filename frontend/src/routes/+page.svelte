@@ -1,5 +1,14 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation';
+  import { socket } from '$lib/socket';
+  import { contact, contacts } from '$lib/store';
   import { PathIcon } from '$lib/types/enums';
+
+	afterNavigate(() => {
+		contact.resetContact();
+		contacts.resetList();
+		socket.emit('removeListeners');
+	});
 </script>
 
 <div class="logo">

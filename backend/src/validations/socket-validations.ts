@@ -1,4 +1,4 @@
-import type { IGroup, IUser, Member } from '../types/global.js';
+import type { IUser, Member } from '../types/global.js';
 import type { GroupInit, IContact, IKeys } from '../types/types.js';
 import {
 	existsImage,
@@ -11,6 +11,7 @@ import {
 	isValidUsers,
 	isValidUser
 } from './socket-custom.js';
+import { ErrorMessage } from '../dictionary.js';
 import { Chat, Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
 
@@ -18,39 +19,26 @@ export const joinUserRoom = (
 	[contactID, roomID]: [string, string],
 	{ id, userIDs, userRooms }: IUser
 ) => {
-	if (
+	return (
 		isString(contactID) &&
 		isString(roomID) &&
 		userIDs.includes(contactID) &&
 		userRooms.includes(roomID) &&
 		(contactID + id === roomID || id + contactID === roomID)
-	) return true;
-
-	return {
-		error: 'Join Error',
-		message: 'An error occurred while trying to join'
-	};
+	) ? true : ErrorMessage.connectRoom;
 };
 
 export const joinGroupRoom = ([contactID]: [string], { groupRooms }: IUser) => {
-	if (isString(contactID) && groupRooms.includes(contactID)) return true;
-
-	return {
-		error: 'Join Error',
-		message: 'An error occurred while trying to join'
-	};
+	return (isString(contactID) && groupRooms.includes(contactID))
+		? true
+		: ErrorMessage.connectRoom;
 };
 
 export const createChat = async ([chat, tempID]: [string & string[], string]) => {
-	if (isString(tempID)) {
-		if (isString(chat) && isLength(chat, 0, 420)) return true;
-		if (isArray(chat) && isLength(chat, 0, 3) && await existsImage(chat)) return true;
-	}
-
-	return {
-		error: 'Chat Error',
-		message: 'The chat content is invalid'
-	};
+	return (
+		isString(tempID) &&
+		((isString(chat) && isLength(chat, 0, 420)) || (isArray(chat) && isLength(chat, 0, 3) && await existsImage(chat)))
+	) ? true : ErrorMessage.createChat;
 };
 
 export const deleteChat = async ([id]: [string]) => {
@@ -60,19 +48,11 @@ export const deleteChat = async ([id]: [string]) => {
 		if (chat !== null) return true;
 	}
 
-	return {
-		error: 'Chat Error',
-		message: 'The id is invalid'
-	};
+	return ErrorMessage.deleteChat;
 };
 
 export const blockGroup = ([name]: [string]) => {
-	if (isString(name) && isLength(name, 3, 40)) return true;
-
-	return {
-		error: 'Group Error',
-		message: 'The id or name is invalid'
-	};
+	return (isString(name) && isLength(name, 3, 40)) ? true : ErrorMessage.blockGroup;
 };
 
 export const addMembers = async (
@@ -89,7 +69,6 @@ export const addMembers = async (
 
 		if (group !== null) {
 			const { allIDs, validIDs } = groupList(group);
-			let match: boolean | IKeys<string> = true;
 
 			for (const member of members) {
 				if (
@@ -99,24 +78,14 @@ export const addMembers = async (
 					allIDs.includes(member.id) ||
 					!validIDs.includes(id) ||
 					await isValidUser(groupID, member)
-				) {
-					match = {
-						error: 'Group Error',
-						message: 'An error occurred while trying to join the user'
-					};
-
-					break;
-				}
+				) return ErrorMessage.addMembers;
 			}
 
-			return match;
+			return true;
 		}
 	}
 
-	return {
-		error: 'Join Error',
-		message: 'An error occurred while trying to join'
-	};
+	return ErrorMessage.connectRoom;
 };
 
 export const banMembers = async (
@@ -133,7 +102,6 @@ export const banMembers = async (
 
 		if (group !== null) {
 			const { memberIDs, blockedIDs, validIDs } = groupList(group);
-			let match: boolean | IKeys<string> = true;
 
 			for (const userID of userIDs) {
 				if (
@@ -141,24 +109,14 @@ export const banMembers = async (
 					!memberIDs.includes(userID) ||
 					!validIDs.includes(id) ||
 					blockedIDs.includes(userID)
-				) {
-					match = {
-						error: 'Group Error',
-						message: 'An error occurred while trying ban the user'
-					};
-
-					break;
-				}
+				) return ErrorMessage.banMembers;
 			}
 
-			return match;
+			return true;
 		}
 	}
 
-	return {
-		error: 'Join Error',
-		message: 'An error occurred while trying to join'
-	};
+	return ErrorMessage.connectRoom;
 };
 
 export const blockMembers = async (
@@ -175,7 +133,6 @@ export const blockMembers = async (
 
 		if (group !== null) {
 			const { memberIDs, blockedIDs, validIDs } = groupList(group);
-			let match: boolean | IKeys<string> = true;
 
 			for (const member of members) {
 				if (
@@ -185,24 +142,14 @@ export const blockMembers = async (
 					!memberIDs.includes(member.id) ||
 					!validIDs.includes(id) ||
 					blockedIDs.includes(member.id)
-				) {
-					match = {
-						error: 'Group Error',
-						message: 'An error occurred while trying block the user'
-					};
-
-					break;
-				}
+				) return ErrorMessage.blockMembers;
 			}
 
-			return match;
+			return true;
 		}
 	}
 
-	return {
-		error: 'Join Error',
-		message: 'An error occurred while trying to join'
-	};
+	return ErrorMessage.connectRoom;
 };
 
 export const unblockMembers = async (
@@ -219,31 +166,20 @@ export const unblockMembers = async (
 
 		if (group !== null) {
 			const { blockedIDs, validIDs } = groupList(group);
-			let match: boolean | IKeys<string> = true;
 
 			for (const userID of userIDs) {
 				if (
 					!isString(userID) ||
 					!validIDs.includes(id) ||
 					!blockedIDs.includes(userID)
-				) {
-					match = {
-						error: 'Group Error',
-						message: 'An error occurred while trying unblocking the user'
-					};
-
-					break;
-				}
+				) return ErrorMessage.unblockMembers;
 			}
 
-			return match;
+			return true;
 		}
 	}
 
-	return {
-		error: 'Join Error',
-		message: 'An error occurred while trying to join'
-	};
+	return ErrorMessage.connectRoom;
 };
 
 export const addMods = async (
@@ -260,7 +196,6 @@ export const addMods = async (
 
 		if (group !== null) {
 			const { memberIDs, adminID } = groupList(group);
-			let match: boolean | IKeys<string> = true;
 
 			for (const member of members) {
 				if (
@@ -269,24 +204,14 @@ export const addMods = async (
 					!isString(member.name) ||
 					id !== adminID ||
 					!memberIDs.includes(member.id)
-				) {
-					match = {
-						error: 'Group Error',
-						message: 'An error occurred while trying add the mod'
-					};
-
-					break;
-				}
+				) return ErrorMessage.addMods;
 			}
 
-			return match;
+			return true;
 		}
 	}
 
-	return {
-		error: 'Join Error',
-		message: 'An error occurred while trying to join'
-	};
+	return ErrorMessage.connectRoom;
 };
 
 export const removeMods = async (
@@ -303,7 +228,6 @@ export const removeMods = async (
 
 		if (group !== null) {
 			const { modIDs, adminID } = groupList(group);
-			let match: boolean | IKeys<string> = true;
 
 			for (const member of members) {
 				if (
@@ -312,24 +236,14 @@ export const removeMods = async (
 					!isString(member.name) ||
 					id !== adminID ||
 					!modIDs.includes(member.id)
-				) {
-					match = {
-						error: 'Group Error',
-						message: 'An error occurred while trying remove the mod'
-					};
-
-					break;
-				}
+				) return ErrorMessage.removeMods;
 			}
 
-			return match;
+			return true;
 		}
 	}
 
-	return {
-		error: 'Join Error',
-		message: 'An error occurred while trying to join'
-	};
+	return ErrorMessage.connectRoom;
 };
 
 export const avatar = async ([avatar]: [string]) => {
@@ -339,29 +253,19 @@ export const avatar = async ([avatar]: [string]) => {
 		if (group !== null) return true;
 	}
 
-	return {
-		error: 'Avatar Error',
-		message: 'The avatar is invalid'
-	};
+	return ErrorMessage.avatar;
 };
 
 export const description = ([description]: [string]) => {
-	if (isString(description), isLength(description, 0, 420)) return true;
-
-	return {
-		error: 'Description Error',
-		message: 'The description is invalid'
-	};
+	return (isString(description), isLength(description, 0, 420))
+		? true
+		: ErrorMessage.description;
 };
 
 export const state = ([state]: [string]) => {
 	const validStates: string[] = Object.values(StateOption);
-	if (validStates.includes(state)) return true;
 
-	return {
-		error: 'State Error',
-		message: 'The state is invalid'
-	};
+	return (validStates.includes(state)) ? true : ErrorMessage.state;
 };
 
 export const unblock = (
@@ -377,10 +281,7 @@ export const unblock = (
 		}
 	}
 
-	return {
-		error: 'Unblock Error',
-		message: 'Please reload the page'
-	};
+	return ErrorMessage.unblock;
 };
 
 export const joinRoom = async (
@@ -395,25 +296,16 @@ export const joinRoom = async (
 			(type === TypeContact.GROUP && !groupRooms.includes(roomID))
 		)
 	) {
-		let match: IUser | IGroup | null = null;
-
-		if (type === TypeContact.USER) {
-			match = await User.findOne(
-				{ _id: id, users: { $elemMatch: { userID: contactID, roomID } } }
-			);
-		} else {
-			match = await Group.findOne(
-				{ _id: roomID, members: { $elemMatch: { id } } }
-			);
-		}
+		const match = (type === TypeContact.USER) 
+			? await User.findOne({
+				_id: id,
+				users: { $elemMatch: { userID: contactID, roomID } }
+			}) : await Group.findOne({ _id: roomID, members: { $elemMatch: { id } } });
 
 		if (match !== null) return true;
 	}
 
-	return {
-		error: 'Join Error',
-		message: 'An error occurred while trying to join'
-	};
+	return ErrorMessage.connectRoom;
 };
 
 export const removeRoom = async (
@@ -422,16 +314,11 @@ export const removeRoom = async (
 ) => {
 	const typeContacts = Object.values(TypeContact);
 
-	if (
+	return (
 		isString(id) &&
 		(userRooms.includes(id) || groupRooms.includes(id)) &&
 		typeContacts.includes(type)
-	) return true;
-
-	return {
-		error: 'Join Error',
-		message: 'An error occurred while trying delete to room'
-	};
+	) ? true : ErrorMessage.removeRoom;
 };
 
 export const joinUser = async (
@@ -450,10 +337,7 @@ export const joinUser = async (
 		if (user && !user.blockedUsersIDs.includes(id)) return true;
 	}
 
-	return {
-		error: 'Join Error',
-		message: 'An error occurred while trying to join'
-	};
+	return ErrorMessage.connectRoom;
 };
 
 export const joinGroup = async (
@@ -472,16 +356,13 @@ export const joinGroup = async (
 		if (group && !group.blockedIDs.includes(id)) return true;
 	}
 
-	return {
-		error: 'Join Error',
-		message: 'An error occurred while trying to join'
-	};
+	return ErrorMessage.connectRoom;
 };
 
 export const groupInit = async ([group]: [GroupInit], { userIDs }: IUser) => {
 	const validStates: string[] = Object.values(StateOption);
 
-	if (
+	return (
 		isObject(group) &&
 		isValidKey(Object.keys(group)) &&
 		isString(group.name) &&
@@ -489,10 +370,5 @@ export const groupInit = async ([group]: [GroupInit], { userIDs }: IUser) => {
 		group.members instanceof Array &&
 		group.mods instanceof Array &&
 		await isValidUsers([...group.members, ...group.mods], userIDs)
-	) return true;
-
-	return {
-		error: 'Group Error',
-		message: 'An error occurred while trying to create the group'
-	};
+	) ? true : ErrorMessage.groupInit;
 };

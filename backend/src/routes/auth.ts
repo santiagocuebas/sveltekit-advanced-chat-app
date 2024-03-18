@@ -13,7 +13,7 @@ router.get('/', isValidToken, authCtrl.getData);
 
 router.post('/password', isValidToken, authCtrl.postPassword);
 
-router.get('/getAccessToken', isNotValidToken, authCtrl.getAccessToken);
+router.post('/registerGithub', isNotValidToken, authCtrl.postGithubToken);
 
 router.post(
 	'/register',

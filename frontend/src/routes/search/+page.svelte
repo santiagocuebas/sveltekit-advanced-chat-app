@@ -1,14 +1,11 @@
 <script lang="ts">
-	import type { IList, ResponseData } from '$lib/types/global';
-	import { onDestroy, onMount } from 'svelte';
+	import type { ResponseData } from '$lib/types/global';
+	import { afterNavigate } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import axios from '$lib/axios';
   import { selectCreate } from "$lib/dictionary";
   import { socket } from "$lib/socket";
-	import { list } from '$lib/store';
-	
-	let listValues: IList[];
-
-	const unsubList = list.subscribe(value => listValues = value as IList[]);
+	import { contact, contacts } from '$lib/store';
 
 	function createRoom(id: string, type: string) {
 		socket.emit(selectCreate[type], id);
@@ -19,21 +16,24 @@
 		const urlParams = new URLSearchParams(queryString);
 		const searchParam = urlParams.get('q');
 
-		if (!listValues.length && searchParam) {
+		if (!$contacts.list.length && searchParam) {
 			const data: ResponseData = await axios({ url: '/home/search/' + searchParam })
 				.then(res => res.data)
-				.catch(err => err.response?.data);
+				.catch(err => err.response?.data ?? { });
 
-			if (data.contacts) list.setLists(data.contacts);
+			if (data.contacts) contacts.setLists(data.contacts);
 		}
 	});
-
-	onDestroy(unsubList);
+	
+	afterNavigate(() => {
+		contact.resetContact();
+		socket.emit('removeListeners');
+	});
 </script>
 
 <ul>
-	{#if listValues.length}
-		{#each listValues as item (item.contactID+item.type)}
+	{#if $contacts.list.length}
+		{#each $contacts.list as item (item.contactID+item.type)}
 			<li class="item">
 				<picture>
 					<img src={item.avatar} alt={item.contactID}>

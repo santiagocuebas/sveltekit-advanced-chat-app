@@ -24,17 +24,15 @@ export const postPassword: Direction = async (req, res) => {
 				return false;
 			});
 
-	console.log(password, match);
-
 	return res.json(match);
 };
 
-export const getAccessToken: Direction = async (req, res) => {
-	const params = `?client_id=${GITHUB_ID}&client_secret=${GITHUB_SECRET}&code=${req.query.code}`;
+export const postGithubToken: Direction = async (req, res) => {
+	const params = `client_id=${GITHUB_ID}&client_secret=${GITHUB_SECRET}&code=${req.query.code}`;
 
 	const data: IKeys<string> | null = await axios({
 		method: 'POST',
-		url: 'https://github.com/login/oauth/access_token' + params,
+		url: 'https://github.com/login/oauth/access_token?' + params,
 		headers: { accept: 'application/json' }
 	}).then(res => res.data)
 		.catch(err => {
@@ -94,7 +92,8 @@ export const postRegister: Direction = async (req, res) => {
 			.create({
 				username,
 				email,
-				password: await encryptPassword(password)
+				password: await encryptPassword(password),
+				type: TypeUser.EMAIL
 			});
 	}
 

@@ -7,5 +7,6 @@ export { default as Contact } from './Contact.svelte';
 export { default as Contacts } from './Contacts.svelte';
 export { default as EditChat } from './EditChat.svelte';
 export { default as List } from './List.svelte';
+export { default as LoadingBox } from './LoadingBox.svelte';
 export { default as OptionBox } from './OptionBox.svelte';
 export { default as UserHeader } from './UserHeader.svelte';

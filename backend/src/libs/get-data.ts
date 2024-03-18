@@ -54,18 +54,13 @@ export const getContact: Contact = async (roomID, contact, type, id) => {
 };
 
 export const matchId = (group: IGroup, userIDs: string[]) => {
-	let match = false;
-
 	if (group.state === StateOption.PROTECTED) {
 		for (const id of [group.admin, ...group.modIDs, ...group.memberIDs]) {
-			if (userIDs.includes(id)) {
-				match = true;
-				break;
-			}
+			if (userIDs.includes(id)) return true;
 		}
 	}
 
-	return match;
+	return false;
 };
 
 export const getId = async (type?: string): Promise<string> => {

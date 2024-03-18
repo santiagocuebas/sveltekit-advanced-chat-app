@@ -1,12 +1,13 @@
 <script lang="ts">
-	import type { IChat, IGroupProps } from "$lib/types/global";
+	import type { IChat } from "$lib/types/global";
   import { onMount } from "svelte";
 	import {
 		ChatBody,
 		ChatFooter,
 		ChatHeader,
 		ChatOptions,
-		EditChat
+		EditChat,
+    LoadingBox
 	} from '$lib/components';
 	import { socket } from "$lib/socket";
 	import { contact, options } from "$lib/store";
@@ -17,7 +18,6 @@
 	let visibleChats: IChat[] = [];
 	let img: string;
 	let alt: string;
-	let groupProps: IGroupProps;
 
 	function emitDelete() {
 		socket.emit('emitDelete', id);
@@ -33,11 +33,11 @@
 
 	function loadChat(message: IChat, roomID: string) {
 		if (roomID === $contact.roomID) visibleChats = [...visibleChats, message];
-	};
+	}
 
-	function deleteChat(id: string)  {
+	function deleteChat(id: string) {
 		visibleChats = visibleChats.filter(({ _id }) => _id !== id);
-	};
+	}
 	
   onMount(() => {
 		socket.on('loadChat', loadChat);
@@ -46,12 +46,12 @@
 		return () => {
 			socket.off('loadChat', loadChat);
 			socket.off('deleteChat', deleteChat);
-		};
+		}
 	});
 </script>
 
 {#if $options.chat}
-	<EditChat handle={emitDelete}>
+	<EditChat on:click={emitDelete}>
 		<h2 class="title">
 			Are you sure you want delete this message?
 		</h2>
@@ -68,19 +68,12 @@
 {/if}
 
 {#if $contact.contactID}
-	<ChatHeader bind:option={option} bind:groupProps={groupProps} />
-	<ChatOptions bind:option={option} bind:groupProps={groupProps} />
+	<ChatHeader bind:option={option} />
+	<ChatOptions bind:option={option} />
 	<ChatBody bind:id={id} bind:visibleChats={visibleChats} {handleImage} />
 	<ChatFooter {loadChat} />
-	{:else}
-	<div class="box-loading">
-		<picture>
-			<img src="/images.svg" alt="title">
-		</picture>
-		<h1>
-			Loading
-		</h1>
-	</div>
+{:else}
+	<LoadingBox className={'box-loading'} />
 {/if}
 
 <style lang="postcss">
@@ -96,26 +89,5 @@
 				@apply text-[36px] font-bold text-white;
 			}
 		}
-	}
-
-	.box-loading {
-		grid-column: 2 / span 1;
-		grid-row: 1 / span 3;
-		@apply flex flex-col items-center justify-center w-full h-full bg-white gap-2 [&_h1]:text-[56px];
-		
-		& picture {
-			@apply flex-none w-[250px] h-[250px];
-		}
-
-		& img {
-			animation: spin 4s linear infinite;
-			@apply w-full h-full rounded-full;
-		}
-	}
-
-	@keyframes spin { 
-    100% { 
-      transform: rotate(360deg); 
-  	}
 	}
 </style>

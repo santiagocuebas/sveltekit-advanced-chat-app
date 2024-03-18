@@ -4,13 +4,14 @@ import { User, Group } from '../models/index.js';
 export const memberSockets: MemberSockets = (socket, [userID, contactID], user) => {
 	socket.on('emitLeaveGroup', async () => {
 		socket.to(contactID).emit('banMembers', contactID, userID);
+		socket.to(contactID).emit('countMembers', contactID, -1);
 
 		// Remove user id from the group
 		await Group.updateOne(
 			{ _id: contactID },
 			{
 				$pull: {
-					connectedUsers: userID,
+					loggedUsers: userID,
 					mods: { id: userID },
 					members: { id: userID }
 				}
@@ -27,13 +28,14 @@ export const memberSockets: MemberSockets = (socket, [userID, contactID], user) 
 
 	socket.on('emitBlockGroup', async (name: string) => {
 		socket.to(contactID).emit('banMembers', contactID, userID);
+		socket.to(contactID).emit('countMembers', contactID, -1);
 
 		// Remove user id from the group
 		await Group.updateOne(
 			{ _id: contactID },
 			{
 				$pull: {
-					connectedUsers: userID,
+					loggedUsers: userID,
 					mods: { id: userID },
 					members: { id: userID }
 				}

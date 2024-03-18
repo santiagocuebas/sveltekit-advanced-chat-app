@@ -14,7 +14,7 @@
 		setSettingsProps
 	} from "$lib/services";
   import { socket } from "$lib/socket";
-	import { user, options, users, groups, register } from '$lib/store';
+	import { user, options, register, contacts } from '$lib/store';
 	import { Method, Option, Settings } from "$lib/types/enums";
 
 	let settingsProps = setSettingsProps($user);
@@ -49,13 +49,13 @@
 	
 	async function handleDrop(e: DragEvent) {
 		if (e.dataTransfer) {
-			[settingsProps.avatar] = await loadImage(e.dataTransfer.files[0]);
+			settingsProps.avatar = await loadImage(e.dataTransfer.files[0]);
 			e.dataTransfer.items.clear();
 		}
 	}
 
 	async function handleImage(this: HTMLInputElement) {
-		if (this.files) [settingsProps.avatar] = await loadImage(this.files[0]);
+		if (this.files) settingsProps.avatar = await loadImage(this.files[0]);
 	}
 	
 	async function handleDelete() {
@@ -79,8 +79,7 @@
 			socket.disconnect();
 			register.resetOptions();
 			user.resetUser();
-			users.resetContacts();
-			groups.resetContacts();
+			contacts.resetContacts();
 			goto('/register');
 			setTimeout(() => register.setOption(Option.REGISTER), 3000);
 		}
@@ -133,7 +132,7 @@
 </script>
 
 {#if $options.settings}
-	<EditChat handle={handleDelete}>
+	<EditChat on:click={handleDelete}>
 		<h2 class="title">
 			Are you sure you want to delete this user?
 		</h2>
@@ -210,11 +209,9 @@
 							<p>{changeName(key)}:</p>
 							{#each $user.blocked[key] as member (member.id)}
 								<Box
-									bind:prop={settingsProps.unblock[key]}
-									{name}
 									{member}
-									value={member.id}
-									change={addId}
+									{name}
+									on:click={() => settingsProps.unblock[key] = addId(member, settingsProps.unblock[key])}
 								/>
 							{/each}
 						{:else}
@@ -292,6 +289,6 @@
 	}
 
 	span {
-		@apply w-full h-0.5 bg-black;
+		@apply w-full h-0.5 my-1.5 bg-black;
 	}
 </style>

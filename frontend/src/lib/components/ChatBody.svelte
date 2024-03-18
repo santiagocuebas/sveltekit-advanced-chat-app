@@ -124,8 +124,8 @@
 		@apply grid w-full p-4 bg-no-repeat bg-cover overflow-y-auto gap-y-3;
 
 		& div {
-			box-shadow: 0 0 3px #777777;
-			@apply flex flex-wrap justify-around w-fit min-w-[260px] max-w-[60%] p-2.5 bg-white rounded-lg gap-0.5 select-none [&.me]:ml-auto [&_.left]:text-right;
+			box-shadow: 0 0 2px #888888;
+			@apply flex flex-wrap justify-around w-fit min-w-[260px] max-w-[60%] p-2.5 bg-white rounded-md gap-0.5 select-none [&.me]:ml-auto [&_.left]:text-right;
 		}
 	}
 	

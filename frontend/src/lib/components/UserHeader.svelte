@@ -5,22 +5,16 @@
   import { List } from "./index";
   import axios from '$lib/axios';
   import { socket } from '$lib/socket';
-  import {
-		user,
-		contact,
-		list,
-		register,
-		users,
-		groups
-	} from '$lib/store';
+  import { user, contact, contacts, register } from '$lib/store';
   import { Option } from '$lib/types/enums';
 
 	let visible = false;
 
-	function loadChat() {
+	function resetContact() {
 		visible = false;
 		contact.resetContact();
-		list.resetContacts();
+		contacts.resetList();
+		socket.emit('removeListeners');
 	}
 
 	async function handleLogout() {
@@ -34,10 +28,8 @@
 		
 		socket.disconnect();
 		register.resetOptions();
-		users.resetContacts();
-		groups.resetContacts();
+		contacts.resetContacts();
 		contact.resetContact();
-		list.resetContacts();
 		user.setUser({ } as RawUser);
 		goto('/register');
 		setTimeout(() => register.setOption(Option.REGISTER), 3000);
@@ -50,13 +42,13 @@
 	</picture>
 	<p title={$user.username}>{$user.username}</p>
 	<List bind:visible={visible}>
-		<a href="/group" on:click={loadChat}>
+		<a href="/group" on:click={resetContact}>
 			<li>
 				<i class="fa-solid fa-circle-stop"></i>
 				Create Group
 			</li>
 		</a>
-		<a href="/settings" on:click={loadChat}>
+		<a href="/settings" on:click={resetContact}>
 			<li>
 				<i class="fa-solid fa-gear"></i>
 				Settings
@@ -88,6 +80,6 @@
 	}
 
 	li {
-		@apply flex items-center justify-start py-[5px] px-5 font-bold leading-tight gap-5 hover:bg-[#999999] hover:text-white [&_i]:text-[20px];
+		@apply flex items-center justify-start py-[5px] px-5 font-bold leading-tight gap-5 cursor-pointer hover:bg-[#999999] hover:text-white [&_i]:text-[20px];
 	}
 </style>

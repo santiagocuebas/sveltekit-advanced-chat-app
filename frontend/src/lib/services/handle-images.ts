@@ -1,18 +1,20 @@
 import type { ResponseData } from "$lib/types/global";
 import axios from "$lib/axios";
+import { groupProps } from "$lib/store";
 import { Formats, Method } from "$lib/types/enums";
 
-export const loadImage = (file: File): Promise<[string, File]> => {
+export const loadImage = (file: File): Promise<string> => {
   return new Promise((resolve) => {
     const reader = new FileReader();
 		const validFormats: string[] = Object.values(Formats);
 
 		reader.addEventListener('load', ({ target }) => {
 			const result = String(target?.result);
-			resolve([result, file]);
+			resolve(result);
+			groupProps.changeAvatar(file);
 		}, false);
 
-		if (file && file.size < 2 * 1e7 && validFormats.includes(file.type)) {
+		if (file && file.size < 2e7 && validFormats.includes(file.type)) {
 			reader.readAsDataURL(file);
 		}
   })
@@ -50,9 +52,10 @@ export const getImages = async (files: FileList | null) => {
 	return filenames;
 };
 
-export const sendAvatar = async (file: File, id: string) => {
-	const formData = new FormData()
-	formData.append('avatar', file);
+export const sendAvatar = async (avatar: string, id: string) => {
+	const formData = new FormData();
+
+	formData.append('avatar', avatar);
 	formData.append('id', id);
 
 	const data: ResponseData = await axios({

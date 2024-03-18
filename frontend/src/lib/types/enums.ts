@@ -14,6 +14,8 @@ export enum Method {
 export enum Option {
 	USER = 'user',
 	GROUP = 'group',
+	USERS = 'users',
+	GROUPS = 'groups',
 	REGISTER = 'register',
 	SETTINGS = 'settings',
 	CHAT = 'chat',

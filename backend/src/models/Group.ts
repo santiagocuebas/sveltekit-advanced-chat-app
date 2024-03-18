@@ -19,7 +19,8 @@ const groupSchema = new Schema<IGroup>({
 		createdAt: true,
 		updatedAt: false
 	},
-	toJSON: { virtuals: true }
+	toJSON: { virtuals: true },
+	virtuals: true
 });
 
 groupSchema

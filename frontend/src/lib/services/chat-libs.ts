@@ -1,27 +1,6 @@
-import type {
-	Contact,
-	IForeign,
-	IGroup,
-	IGroupProps,
-	IUser,
-	Member
-} from "$lib/types/global";
+import type { Contact, IForeign, IGroup, IUser, Member } from "$lib/types/global";
 import { getId } from "./libs";
 import { Option } from "$lib/types/enums";
-
-export const setGroupProps = ({ description, state }: IGroup): IGroupProps => {
-	return {
-		add: [],
-		ban: [],
-		block: [],
-		unblock: [],
-		addMod: [],
-		removeMod: [],
-		description: description,
-		state: state,
-		destroy: undefined
-	}
-};
 
 export const getChat = (user: IUser, contact: Contact, message: string | string[]) => {
 	return {
@@ -58,7 +37,7 @@ export const addMember = (member: Member, members: Member[]): Member[] => {
 		: members.filter(user => user.id !== member.id);
 };
 
-export const banMember = ({ id }: Member, banIDs: string[]): string[] => {
+export const banMember = (id: string, banIDs: string[]): string[] => {
 	return !banIDs.includes(id)
 		? [id, ...banIDs]
 		: banIDs.filter(banID => banID !== id);

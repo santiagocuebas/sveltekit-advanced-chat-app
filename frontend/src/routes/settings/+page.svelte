@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type { IKeys, SettingsData } from "$lib/types/global";
-	import { goto } from "$app/navigation";
+	import type { IErrorsProps, SettingsData } from "$lib/types/global";
+	import { afterNavigate, goto } from "$app/navigation";
 	import jsCookie from 'js-cookie';
 	import validator from 'validator';
-  import { Box as ErrorBox, EditChat, OptionBox as Box } from "$lib/components";
   import axios from "$lib/axios";
+  import { Box as ErrorBox, EditChat, OptionBox as Box } from "$lib/components";
   import { listItems, SettingsText } from "$lib/dictionary";
   import {
 		addId,
@@ -14,16 +14,14 @@
 		setSettingsProps
 	} from "$lib/services";
   import { socket } from "$lib/socket";
-	import { user, options, register, contacts } from '$lib/store';
+	import { user, options, register, contacts, contact } from '$lib/store';
 	import { Method, Option, Settings } from "$lib/types/enums";
 
 	let settingsProps = setSettingsProps($user);
 	let disabledButton = isDisabledButton($user);
 	let passwordValue = { old: '', new: '', confirm: '' };
+	let errorsProps: IErrorsProps = { success: false, message: '' };
 	let visible = false;
-	let success: boolean;
-	let errors: boolean;
-	let message: string | IKeys<string>;
 
 	async function checkOldPassword() {
 		const options = {
@@ -91,25 +89,17 @@
 			url: this.action.replace(location.origin, ''),
 			data: this
 		}).then(res => res.data)
-			.catch(err => err.response?.data ?? { });
+			.catch(err => err.response?.data ?? { success: false, message: 'Network Error' });
 
-		if (data.errors) {
-			errors = data.errors;
-			message = data.message;
-		}
+		if (!data.success) errorsProps = data;
 
 		if (data.success) {
 			passwordValue = { old: '', new: '', confirm: '' };
-			success = data.success;
-			message = data.message;
+			errorsProps = data;
 
-			if (this.id === Settings.AVATAR) {
-				user.updateAvatar(data.filename);
-			}
+			if (this.id === Settings.AVATAR) user.updateAvatar(data.filename);
 
-			if (this.id === Settings.USERNAME) {
-				user.updateUsername(settingsProps.username);
-			}
+			if (this.id === Settings.USERNAME) user.updateUsername(settingsProps.username);
 
 			if (this.id === Settings.DESCRIPTION) {
 				user.changeDescription(settingsProps.description);
@@ -129,6 +119,12 @@
 		visible = true;
 		setTimeout(() => visible = false, 5000);
 	}
+	
+	afterNavigate(() => {
+		contact.resetContact();
+		contacts.resetList();
+		socket.emit('removeListeners');
+	});
 </script>
 
 {#if $options.settings}
@@ -140,14 +136,16 @@
 {/if}
 
 {#if visible}
-	<ErrorBox {success} {errors} {message} />
+	<ErrorBox success={errorsProps.success} message={errorsProps.message} />
 {/if}
 
 <div class="container-box">
 	<button class="close" on:click={() => goto('/')}>
 		<i class="fa-solid fa-xmark"></i>
 	</button>
-	<h1>Settings</h1>
+	<h1>
+		Settings
+	</h1>
 	{#each Object.values(Settings) as key}
 		<form
 			id={key}
@@ -238,7 +236,7 @@
 
 <style lang="postcss">
 	h1 {
-		@apply text-[56px];
+		@apply font-medium text-[56px];
 	}
 
 	form {

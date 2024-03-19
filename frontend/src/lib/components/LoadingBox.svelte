@@ -25,13 +25,13 @@
 		grid-auto-rows: min-content;
 		grid-column: 1 / span 2;
 		grid-row: 1 / span 3;
-		@apply grid relative justify-items-center content-center w-full bg-white gap-5 [&_h1]:text-[56px];
+		@apply grid relative justify-items-center content-center w-full py-5 bg-white gap-5;
 	}
   
   .box-loading {
 		grid-column: 2 / span 1;
 		grid-row: 1 / span 3;
-		@apply flex flex-col items-center justify-center w-full h-full bg-white gap-2 [&_h1]:text-[56px];
+		@apply flex flex-col items-center justify-center w-full h-full py-5 bg-white gap-2;
 		
 		& svg {
 			@apply flex-none w-[250px] h-[250px];
@@ -42,6 +42,10 @@
 		animation: spin 4s linear infinite;
 		@apply w-[300px] h-[300px] rounded-full;
 	}
+
+  h1 {
+    @apply font-medium text-[56px];
+  }
 
 	@keyframes spin { 
     100% { 

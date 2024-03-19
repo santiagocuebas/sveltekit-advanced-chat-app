@@ -2,16 +2,17 @@
   import type { IKeys } from "$lib/types/global";
 
 	export let success: boolean = false;
-	export let errors: boolean = false;
 	export let message: string | IKeys<string>;
 </script>
 
-<div class:success={success} class:errors={errors}>
+<div class:success={success} class:errors={!success}>
 	{#if typeof message === 'string'}
 		{message}
 	{:else}
 		{#each Object.entries(message) as [key, value]}
-			<p><strong>{key}</strong>: {value}</p>
+			<p>
+				<strong>{key}</strong>: {value}
+			</p>
 		{/each}
 	{/if}
 </div>
@@ -28,7 +29,6 @@
 	}
 
 	.errors {
-		grid-auto-rows: min-content;
 		border: 2px solid #7c0b0b;
 		@apply items-start bg-[#ecb0b0] gap-1.5;
 	}

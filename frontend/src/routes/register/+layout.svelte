@@ -95,12 +95,16 @@
 		grid-auto-rows: min-content;
 		grid-column: 1 / span 2;
 		grid-row: 1 / span 3;
-		@apply grid relative justify-items-center content-center w-full py-5 bg-white gap-5 [&_h1]:text-[56px];
+		@apply grid relative justify-items-center content-center w-full py-5 bg-white gap-5;
 
 		& div {
 			box-shadow: 0 0 0 2px #928a1a;
 			@apply w-max p-[18px] bg-[#f2f8a1] rounded text-center font-bold text-[#727010];
 		}
+	}
+
+	h1 {
+		@apply font-medium text-[56px];
 	}
 
 	form {

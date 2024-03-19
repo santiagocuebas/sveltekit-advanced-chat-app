@@ -187,10 +187,10 @@
 		grid-column: 2 / span 1;
 		grid-row: 2 / span 1;
 		border: 2px solid #9c1313;
-		@apply grid absolute justify-items-center self-end justify-self-center w-[200px] m-1 p-2.5 bg-[#f1b1b1] rounded-2xl gap-1 z-[400];
+		@apply grid absolute justify-items-center self-end justify-self-center w-[200px] mb-2.5 p-2.5 bg-[#f1b1b1] rounded-2xl gap-1 z-[400];
 
 		& h3 {
-			@apply w-full overflow-hidden break-words text-center font-semibold text-[24px];
+			@apply w-full overflow-hidden break-words text-center font-semibold text-[20px];
 		}
 
 		& p {

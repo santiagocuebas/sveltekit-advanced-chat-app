@@ -43,7 +43,9 @@
 	<button class="close" on:click={() => goto('/')}>
 		<i class="fa-solid fa-xmark"></i>
 	</button>
-	<h1>Create Group</h1>
+	<h1>
+		Create Group
+	</h1>
 	<form on:submit|preventDefault={handleSubmit}>
 		<div class:error={(name.length > 0 && name.length < 3) || name.length > 40}>
 			Choice name:
@@ -95,7 +97,9 @@
 						{changeName(option)}
 					</label>
 				{/each}
-				<span>{Messages[state]}</span>
+				<span>
+					{Messages[state]}
+				</span>
 			</span>
 		</div>
 		<div>
@@ -108,14 +112,14 @@
 
 <style lang="postcss">
 	h1 {
-		@apply text-[40px];
+		@apply font-medium text-[40px];
 	}
 
 	form {
 		@apply flex flex-wrap h-full content-between justify-center gap-y-10;
 
 		& div {
-			@apply grid relative w-3/5 min-w-[280px] gap-2;
+			@apply grid relative w-3/5 min-w-[280px] gap-2 font-semibold;
 
 			&.error input {
 				box-shadow: 0 0 0 2px #db3333;

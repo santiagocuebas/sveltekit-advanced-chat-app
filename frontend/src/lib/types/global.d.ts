@@ -16,6 +16,11 @@ export interface IKeys<Type> {
 	[index: string]: Type;
 }
 
+export interface IErrorsProps {
+	success: boolean;
+	message: string | IKeys<string>;
+}
+
 export interface RegisterInput {
 	value: string;
 	error: string | undefined;
@@ -159,10 +164,8 @@ export interface ResponseData {
 }
 
 export interface SettingsData {
-	[index: string]: string | IKeys<string>;
-	errors: boolean;
+	[index: string]: string | boolean | IKeys<string>;
 	success: boolean;
 	filename: string;
 	message: string | IKeys<string>;
-	error: IKeys<string>;
 }

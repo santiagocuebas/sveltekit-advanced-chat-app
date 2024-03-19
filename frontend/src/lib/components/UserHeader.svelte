@@ -10,13 +10,6 @@
 
 	let visible = false;
 
-	function resetContact() {
-		visible = false;
-		contact.resetContact();
-		contacts.resetList();
-		socket.emit('removeListeners');
-	}
-
 	async function handleLogout() {
 		visible = false;
 
@@ -42,13 +35,13 @@
 	</picture>
 	<p title={$user.username}>{$user.username}</p>
 	<List bind:visible={visible}>
-		<a href="/group" on:click={resetContact}>
+		<a href="/group" on:click={() => visible = false}>
 			<li>
 				<i class="fa-solid fa-circle-stop"></i>
 				Create Group
 			</li>
 		</a>
-		<a href="/settings" on:click={resetContact}>
+		<a href="/settings" on:click={() => visible = false}>
 			<li>
 				<i class="fa-solid fa-gear"></i>
 				Settings

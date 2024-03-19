@@ -47,7 +47,8 @@ export const postAvatar: Direction = async (req, res) => {
 	}
 
 	return res.json({
-		message: { log: 'Your avatar has been successfully updated' }
+		success: false,
+		message: { log: 'An error occurred while trying to update your avatar' }
 	});
 };
 

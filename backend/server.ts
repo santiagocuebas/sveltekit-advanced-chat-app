@@ -22,7 +22,7 @@ cluster.setupPrimary({
 	serialization: 'advanced'
 });
 
-for (let i = 0; i < numCPUs && i < 1; i++) {
+for (let i = 0; i < numCPUs && i < 3; i++) {
 	cluster.fork();
 }
 

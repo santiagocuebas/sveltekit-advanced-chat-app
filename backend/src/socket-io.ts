@@ -85,12 +85,12 @@ export default async (socket: Socket) => {
 	socket.on('disconnect', async () => {
 		console.log(socket.id, '==== disconnected');
 		// Disconnecting user
-		await User.updateOne({ _id: userID }, { logged: false });
+		await User.updateOne({ _id: userID }, { logged: false, tempId: '' });
 
 		// Disconnecting user from the group
 		await Group.updateMany(
 			{ _id: socket.user.groupRooms },
-			{ $pull: { loggedUsers: [userID] } }
+			{ $pull: { loggedUsers: userID } }
 		);
 
 		socket.to(socket.user.userRooms).emit('loggedUser', userID, false);

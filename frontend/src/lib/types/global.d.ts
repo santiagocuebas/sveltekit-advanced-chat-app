@@ -1,4 +1,6 @@
-export type Contact = IForeign & IGroup;
+export type Contact = IPartialForeign & IPartialGroup & {
+	logged: boolean | string[]
+};
 
 export type Member = { id: string, name: string };
 
@@ -40,13 +42,13 @@ export interface RawUser {
 }
 
 export interface IUser {
-	[index: string]: string | IKeys<Member[]>;
-	id: string;
-	username: string;
-	type: string;
-	avatar: string;
-	description: string;
-	blocked: IKeys<Member[]>;
+	[index: string]: string | IKeys<Member[]> | undefined;
+	id?: string;
+	username?: string;
+	type?: string;
+	avatar?: string;
+	description?: string;
+	blocked?: IKeys<Member[]>;
 }
 
 interface IContact {
@@ -54,23 +56,31 @@ interface IContact {
 	roomID: string;
 	name: string;
 	avatar: string;
-	logged: boolean | number;
 	type: string;
 	content?: string | string[];
 	createdAt?: string;
 }
 
-export interface IForeign extends IContact {
+interface IPartialForeign extends IContact {
 	blockedIDs: string[];
 }
 
-export interface IGroup extends IContact {
+export interface IForeign extends IPartialForeign {
+	logged: boolean;
+}
+
+interface IPartialGroup extends IContact {
 	admin: string;
 	mods: Member[];
 	members: Member[];
 	blacklist: Member[];
+	allIDs: string[];
 	description: string;
 	state: string;
+}
+
+export interface IGroup extends IPartialGroup {
+	logged: string[];
 }
 
 export interface IList {
@@ -90,7 +100,6 @@ export interface Contacts {
 export interface IContacts {
 	users: IForeign[];
 	groups: IGroup[];
-	list: IList[];
 }
 
 export interface IChat {
@@ -133,10 +142,10 @@ export interface IGroupProps {
 }
 
 export interface ISettingsProps {
-	[index: string]: string | IKeys<boolean> | IKeys<string[]>;
-	avatar: string;
+	[index: string]: string | IKeys<boolean> | IKeys<string[]> | undefined;
+	avatar?: string;
   username: string;
-	description: string;
+	description?: string;
 	password: IKeys<boolean>,
   unblock: IKeys<string[]>;
 }

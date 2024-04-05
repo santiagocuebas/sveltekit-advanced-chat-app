@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { IErrorsProps, SettingsData } from "$lib/types/global";
+	import type { IErrorsProps, IKeys, SettingsData } from "$lib/types/global";
 	import { afterNavigate, goto } from "$app/navigation";
 	import jsCookie from 'js-cookie';
 	import validator from 'validator';
@@ -19,7 +19,7 @@
 
 	let settingsProps = setSettingsProps($user);
 	let disabledButton = isDisabledButton($user);
-	let passwordValue = { old: '', new: '', confirm: '' };
+	let passwordValue: IKeys<string> = { old: '', new: '', confirm: '' };
 	let errorsProps: IErrorsProps = { success: false, message: '' };
 	let visible = false;
 
@@ -34,16 +34,26 @@
 			await axios(options)
 				.then(res => res.data)
 				.catch(() => false);
-	};
+	}
 
 	function checkNewPassword() {
 		settingsProps.password.new = validator.isStrongPassword(passwordValue.new) &&
 			validator.isLength(passwordValue.new, { max: 40 });
-	};
+	}
 
 	function checkConfirmPassword() {
 		settingsProps.password.confirm = passwordValue.confirm === passwordValue.new;
-	};
+	}
+	
+	async function handleDrop2(e: DragEvent) {
+		if (e.dataTransfer) {
+			console.log(e.dataTransfer.items);
+			console.log(e.dataTransfer.files);
+			e.dataTransfer.items.clear();
+			console.log(e.dataTransfer.items);
+			console.log(e.dataTransfer.files);
+		}
+	}
 	
 	async function handleDrop(e: DragEvent) {
 		if (e.dataTransfer) {
@@ -122,7 +132,6 @@
 	
 	afterNavigate(() => {
 		contact.resetContact();
-		contacts.resetList();
 		socket.emit('removeListeners');
 	});
 </script>
@@ -158,7 +167,12 @@
 				{SettingsText[key]}:
 			</label>
 			{#if key === Settings.AVATAR}
-				<label class="center" on:drop|preventDefault={handleDrop}>
+				<label
+					class="center"
+					on:dragenter|preventDefault={() => {}}
+					on:drop|preventDefault={handleDrop}
+					on:dragover|preventDefault={() => {}}
+				>
 					<img src={settingsProps.avatar} alt={$user.username}>
 					<input type="file" name="avatar" on:change={handleImage}>
 				</label>
@@ -203,7 +217,7 @@
 			{:else if key === Settings.UNBLOCK}
 				<ul>
 					{#each listItems as { key, name, text }}
-						{#if $user.blocked[key].length}
+						{#if $user.blocked && $user.blocked[key].length}
 							<p>{changeName(key)}:</p>
 							{#each $user.blocked[key] as member (member.id)}
 								<Box
@@ -222,8 +236,8 @@
 				</ul>
 			{/if}
 			{#if key !== Settings.UNBLOCK ||
-				$user.blocked.users.length ||
-				$user.blocked.groups.length}
+				$user.blocked?.users.length ||
+				$user.blocked?.groups.length}
 				<button
 					class:accept={key !== Settings.DELETE}
 					class:delete={key === Settings.DELETE}

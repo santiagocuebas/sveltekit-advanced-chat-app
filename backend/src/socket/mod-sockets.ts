@@ -15,27 +15,30 @@ export const modSockets: ModSockets = (socket, contactID) => {
 			.find({ _id: userIDs, logged: true })
 			.lean({ virtuals: true });
 
+		const loggedUsers = users.map(user => user.id);
+
 		// Add contacts to the group
 		const group = await Group.findOneAndUpdate(
 			{ _id: contactID },
 			{
 				$push: {
 					members: { $each: members },
-					loggedUsers: { $each: users.map(user => user.id) }
+					loggedUsers: { $each: loggedUsers }
 				}
 			}
 		) as IGroup;
 
 		group.members = [...members, ...group.members];
 
-		socket.emit('countMembers', contactID, users.length);
-		socket.to(contactID).emit('addMembers', contactID, ...members);
-		socket.to(contactID).emit('countMembers', contactID, users.length);
+		socket.emit('countMembers', contactID, loggedUsers);
+		socket.to(contactID).emit('addMembers', contactID, members, loggedUsers);
 
 		if (users.length) {
 			// Find chats
 			const contact = await getContact(contactID, group, TypeContact.GROUP);
-			if (typeof contact.logged === 'number') contact.logged++;
+			if (typeof contact.logged !== 'boolean') {
+				contact.logged = [...loggedUsers, ...group.logged];
+			}
 			
 			socket.to(users.map(user => user.tempId)).emit('updateContacts', contact, true);
 		}
@@ -58,10 +61,10 @@ export const modSockets: ModSockets = (socket, contactID) => {
 		await User.updateMany({ _id: userIDs }, { $pull: { groupRooms: contactID } });
 
 		const users = await User.find({ _id: userIDs, logged: true });
+		const loggedUsers = users.map(user => user.id);
 		
-		socket.emit('countMembers', contactID, -users.length);
-		socket.to(contactID).emit('banMembers', contactID, ...userIDs);
-		socket.to(contactID).emit('countMembers', contactID, -users.length);
+		socket.emit('discountMembers', contactID, loggedUsers);
+		socket.to(contactID).emit('banMembers', contactID, userIDs, loggedUsers);
 
 		if (users.length) {
 			socket.to(users.map(user => user.tempId)).emit('leaveGroup', contactID);
@@ -88,10 +91,10 @@ export const modSockets: ModSockets = (socket, contactID) => {
 		await User.updateMany({ _id: userIDs }, { $pull: { groupRooms: contactID } });
 
 		const users = await User.find({ _id: userIDs, logged: true });
+		const loggedUsers = users.map(user => user.id);
 		
-		socket.emit('countMembers', contactID, -users.length);
-		socket.to(contactID).emit('blockMembers', contactID, ...members);
-		socket.to(contactID).emit('countMembers', contactID, -users.length);
+		socket.emit('discountMembers', contactID, loggedUsers);
+		socket.to(contactID).emit('blockMembers', contactID, members, loggedUsers);
 		
 		if (users.length) {
 			socket.to(users.map(user => user.tempId)).emit('leaveGroup', contactID);
@@ -105,6 +108,6 @@ export const modSockets: ModSockets = (socket, contactID) => {
 			{ $pull: { blacklist: { id: { $in: userIDs } } } }
 		);
 		
-		socket.to(contactID).emit('unblockMembers', contactID, ...userIDs);
+		socket.to(contactID).emit('unblockMembers', contactID, userIDs);
 	});
 };

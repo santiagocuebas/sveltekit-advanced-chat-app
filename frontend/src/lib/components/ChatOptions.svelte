@@ -20,7 +20,7 @@
 
   export let option: string;
 
-	$: avatar = $contact.avatar;
+	$: avatar = $contact?.avatar;
 	
 	async function handleDrop(e: DragEvent) {
 		if (e.dataTransfer) {
@@ -34,33 +34,36 @@
 	}
 
 	function userOptions() {
-		if (OptionUser[option]) {
+		if (OptionUser[option] && $contact) {
 			socket.emit(OptionUser[option], $contact.contactID, $contact.roomID);
 
 			if (option === UserOptions.BLOCK || option === UserOptions.BAD) {
 				user.blockContact({ id: $contact.contactID, name: $contact.name }, 'users');
 			}
+
+			contacts.leaveUser($contact.contactID, $contact.roomID);
 		}
 
 		options.resetOptions();
-		contacts.leaveUser($contact.contactID, $contact.roomID);
 	}
 
 	async function groupOptions() {
-		const choiceResult = socketResult($contact);
-		const data = $groupProps ? $groupProps[option] : undefined;
+		if ($contact) {
+			const choiceResult = socketResult($contact);
+			const data = $groupProps ? $groupProps[option] : undefined;
 
-		if (OptionMember[option]) {
-			const result = await choiceResult[option](undefined);
-			socket.emit(OptionMember[option], ...result);
-			contacts.leaveGroup($contact.contactID);
-		} else if (OptionMod[option]) {
-			const result = await choiceResult[option](data);
-			socket.emit(OptionMod[option], ...result);
-		} else if (OptionAdmin[option]) {
-			const result = await choiceResult[option](data);
-			socket.emit(OptionAdmin[option], ...result);
-			if (option === AdminOptions.DESTROY) contacts.leaveGroup($contact.contactID);
+			if (OptionMember[option]) {
+				const result = await choiceResult[option](undefined);
+				socket.emit(OptionMember[option], ...result);
+				contacts.leaveGroup($contact.contactID);
+			} else if (OptionMod[option]) {
+				const result = await choiceResult[option](data);
+				socket.emit(OptionMod[option], ...result);
+			} else if (OptionAdmin[option]) {
+				const result = await choiceResult[option](data);
+				socket.emit(OptionAdmin[option], ...result);
+				if (option === AdminOptions.DESTROY) contacts.leaveGroup($contact.contactID);
+			}
 		}
 		
 		options.resetOptions();
@@ -110,7 +113,7 @@
 					All your contacts are members of this group
 				{/if}
 			{:else if option === ModOptions.BAN}
-				{#if $contact.members.length}
+				{#if $contact?.members.length}
 					<p>Ban member:</p>
 					<ul>
 						{#each $contact.members as member (member.id)}
@@ -121,7 +124,7 @@
 					This group has no contacts
 				{/if}
 			{:else if option === ModOptions.BLOCK}
-				{#if $contact.members.length}
+				{#if $contact?.members.length}
 					<p>Block member:</p>
 					<ul>
 						{#each $contact.members as member (member.id)}
@@ -132,7 +135,7 @@
 					This group has no contacts
 				{/if}
 			{:else if option === ModOptions.UNBLOCK}
-				{#if $contact.blacklist.length}
+				{#if $contact?.blacklist.length}
 					<p>Unblock member:</p>
 					<ul>
 						{#each $contact.blacklist as member (member.id)}
@@ -143,7 +146,7 @@
 					This group has no contacts blocked
 				{/if}
 			{:else if option === AdminOptions.ADDMOD}
-				{#if $contact.members.length}
+				{#if $contact?.members.length}
 					<p>Add mods:</p>
 					<ul>
 						{#each $contact.members as member (member.id)}
@@ -154,7 +157,7 @@
 					All your contacts are mods of this group
 				{/if}
 			{:else if option === AdminOptions.REMOVEMOD}
-				{#if $contact.mods.length}
+				{#if $contact?.mods.length}
 					<p>Remove mods:</p>
 					<ul>
 						{#each $contact.mods as member (member.id)}
@@ -166,15 +169,20 @@
 				{/if}
 			{:else if option === AdminOptions.AVATAR}
 				<p class="center">Load avatar (max. 500KB):</p>
-				<label class="label-image" on:drop|preventDefault={handleDrop}>
-					<img src={avatar} alt={$contact.name}>
+				<label
+					class="label-image"
+					on:dragenter|preventDefault={() => {}}
+					on:drop|preventDefault={handleDrop}
+					on:dragover|preventDefault={() => {}}
+				>
+					<img src={avatar} alt={$contact?.name}>
 					<input type="file" name="avatar" on:change={handleImage}>
 				</label>
 			{:else if option === AdminOptions.DESCRIPTION}
 				<p class="center">Insert the new description (max. 420 characters):</p>
 				<textarea
 					name="description"
-					value={$contact.description}
+					value={$contact?.description}
 					spellcheck="false"
 					rows="5"
 					on:keyup={groupProps.changeDescription}

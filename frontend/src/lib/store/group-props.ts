@@ -1,4 +1,4 @@
-import type { IGroup, IGroupProps, Member } from "$lib/types/global";
+import type { Contact, IGroupProps, Member } from "$lib/types/global";
 import { writable } from "svelte/store";
 import { addMember, banMember } from "$lib/services";
 
@@ -54,7 +54,7 @@ function setGroupProps(data: IGroupProps | null) {
 			
 			return props;
 		}),
-		setProps: ({ avatar, description, state }: IGroup) => set({
+		setProps: ({ avatar, description, state }: Contact) => set({
 			add: [],
 			ban: [],
 			block: [],

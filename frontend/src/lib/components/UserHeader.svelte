@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { RawUser } from '$lib/types/global';
   import { goto } from '$app/navigation';
 	import jsCookie from 'js-cookie';
   import { List } from "./index";
@@ -23,7 +22,7 @@
 		register.resetOptions();
 		contacts.resetContacts();
 		contact.resetContact();
-		user.setUser({ } as RawUser);
+		user.resetUser();
 		goto('/register');
 		setTimeout(() => register.setOption(Option.REGISTER), 3000);
 	}

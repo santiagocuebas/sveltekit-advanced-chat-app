@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { IForeign, IGroup } from "$lib/types/global";
-  import { getDate, joinRoom } from "$lib/services";
-	import { contact as user } from '$lib/store';
+  import { getDate } from "$lib/services";
+	import { options, contact as user } from '$lib/store';
 
   export let contact: IForeign | IGroup;
 
@@ -11,13 +11,18 @@
 		const [imgURL] = url.split('/').reverse();
 		return imgURL;
 	};
+
+	const joinRoom = (contact: IForeign | IGroup) => {
+		options.resetOptions();
+		user.setContact(contact as never);
+	};
 </script>
 
 <a href="/{type}s/{contactID}" on:click={() => joinRoom(contact)}>
-	<li class:selected={$user.contactID === contactID}>
+	<li class:selected={$user?.contactID === contactID}>
 		<span
 			class:green={logged === true}
-			class:blue={typeof logged === 'number'}
+			class:blue={logged instanceof Array}
 		>&#149;</span>
 		<picture>
 			<img src={avatar} alt={contactID}>

@@ -1,6 +1,6 @@
-import { IKeys } from './types/types';
+import { IKeys } from './types/types.js';
 
-export const ErrorMessage: IKeys<IKeys<string>> = {
+export const ErrorMessage: IKeys<{ error: string, message: string }> = {
 	connectRoom: {
 		error: 'Join Error',
 		message: 'An error occurred while trying to join'
@@ -45,4 +45,23 @@ export const ErrorMessage: IKeys<IKeys<string>> = {
 		message: 'An error occurred while trying to create the group'
 	},
 	socketError: { error: 'Socket Error', message: 'The socket emitted no exist' }
+};
+
+export const AvailableExts: IKeys<string> = {
+	'image/apng': '.apng',
+	'image/avif': '.avif',
+	'image/gif': '.gif',
+	'image/jpeg': '.jpg',
+	'image/png': '.png',
+	'image/svg+xml': '.svg',
+	'image/webp': '.webp',
+	'audio/aac': '.aac',
+	'audio/mpeg': '.mp3',
+	'audio/ogg': '.oga',
+	'audio/opus': '.opus',
+	'audio/webm': '.weba',
+	'video/mp4': '.mp4',
+	'video/mpeg': '.mpeg',
+	'video/ogg': '.ogv',
+	'video/webm': '.webm'
 };

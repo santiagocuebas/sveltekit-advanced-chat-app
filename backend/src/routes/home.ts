@@ -10,17 +10,17 @@ const router = Router();
 router.use(isValidToken);
 
 router.post(
-	'/group',
+	'/avatar',
 	upload.single('avatar'),
 	validate(arrayAvatar),
 	homeCtrl.postAvatar
 );
 
 router.post(
-	'/images',
-	upload.array('images'),
+	'/audiovisual',
+	upload.array('audiovisual'),
 	validate(arrayImages),
-	homeCtrl.postImages
+	homeCtrl.postAudiovisual
 );
 
 router.get('/search/:param', upload.none(), homeCtrl.getSearch);

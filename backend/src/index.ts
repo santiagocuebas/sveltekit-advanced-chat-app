@@ -1,6 +1,5 @@
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
-import { setupWorker } from '@socket.io/sticky';
 import { createAdapter } from '@socket.io/mongo-adapter';
 import server from './app.js';
 import { cloudinaryConfig } from './cloudinary.js';
@@ -9,8 +8,8 @@ import {
 	ORIGIN,
 	MONGO_URI,
 	MONGO_REPLIC,
-	SOCKETS_DB,
-	COLLECTION
+	MONGO_DB,
+	MONGO_COLLECTION
 } from './config.js';
 import { verifyToken, wrap } from './libs/index.js';
 import initSocket from './socket-io.js';
@@ -32,10 +31,8 @@ await mongoose
 	.then(() => console.log('MongoDB Database is Connected'))
 	.catch(err => console.error('An error has occurred with', err));
 
-console.log(`Worker ${process.pid} started`);
-
 // Connect Socket.io
-const mongoCollection = mongoClient.db(SOCKETS_DB).collection(COLLECTION);
+const mongoCollection = mongoClient.db(MONGO_DB).collection(MONGO_COLLECTION);
 
 const io = new Server(server, {
 	cors: {
@@ -47,8 +44,6 @@ const io = new Server(server, {
 	maxHttpBufferSize: 2e7,
 	adapter: createAdapter(mongoCollection)
 });
-
-setupWorker(io);
 
 // Connect worker
 io.use(wrap(cloudinaryConfig));

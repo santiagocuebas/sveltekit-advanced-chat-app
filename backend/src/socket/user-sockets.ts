@@ -4,7 +4,7 @@ import { actUser, deleteChats } from '../libs/update-user.js';
 
 export const userSockets: UserSockets = (socket, [userID, contactID, roomID], user) => {
 	socket.on('emitLeave', async () => {
-		socket.to(roomID).emit('leaveUser', userID, roomID, true);
+		socket.to(roomID).emit('leaveUser', userID, roomID);
 
 		// Remove user id to the contact
 		await User.updateOne({ _id: contactID }, { $pull: { users: { userID } } });
@@ -18,7 +18,7 @@ export const userSockets: UserSockets = (socket, [userID, contactID, roomID], us
 	});
 
 	socket.on('emitBlock', async () => {
-		socket.to(roomID).emit('leaveUser', userID, roomID, true);
+		socket.to(roomID).emit('leaveUser', userID, roomID);
 
 		// Remove user id to the contact
 		const foreignUser = await User.findOneAndUpdate(
@@ -38,7 +38,7 @@ export const userSockets: UserSockets = (socket, [userID, contactID, roomID], us
 	});
 
 	socket.on('emitDestroy', async () => {
-		socket.to(roomID).emit('leaveUser', userID, roomID, true);
+		socket.to(roomID).emit('leaveUser', userID, roomID);
 
 		// Remove user id to the contact
 		await User.updateOne({ _id: contactID }, { $pull: { users: { userID } } });
@@ -55,7 +55,7 @@ export const userSockets: UserSockets = (socket, [userID, contactID, roomID], us
 	});
 
 	socket.on('emitBlockDestroy', async () => {
-		socket.to(roomID).emit('leaveUser', userID, roomID, true);
+		socket.to(roomID).emit('leaveUser', userID, roomID);
 
 		// Remove user id to the contact
 		const foreignUser = await User.findOneAndUpdate(

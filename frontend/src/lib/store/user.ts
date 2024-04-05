@@ -1,31 +1,32 @@
 import type { Member, IUser, RawUser, IKeys } from "$lib/types/global";
 import { writable } from "svelte/store";
 
-function createUser() {
-	const { subscribe, update, set } = writable({ } as IUser);
+function createUser(data: IUser) {
+	const { subscribe, update, set } = writable(data);
 
 	return {
 		subscribe,
 		updateAvatar: (avatar: string) => update(user => {
 			return { ...user, avatar };
 		}),
-		updateUsername: (username: string) => update(user => {
+		updateUsername: (username?: string) => update(user => {
 			return { ...user, username };
 		}),
-		changeDescription: (description: string) => update(user => {
+		changeDescription: (description?: string) => update(user => {
 			return { ...user, description };
 		}),
 		unblockContact: ({ users, groups }: IKeys<string[]>) => update(user => {
-			return {
-				...user,
-				blocked: {
+			if (user.blocked) {
+				user.blocked = {
 					users: user.blocked.users.filter(({ id }) => !users.includes(id)),
 					groups: user.blocked.groups.filter(({ id }) => !groups.includes(id))
 				}
-			};
+			}
+
+			return user;
 		}),
 		blockContact: (value: Member, prop: string) => update(user => {
-			user.blocked[prop].push(value);
+			if (user.blocked) user.blocked[prop].push(value);
 
 			return user;
 		}),
@@ -44,8 +45,8 @@ function createUser() {
 
 			set(user);
 		},
-		resetUser: () => set({ } as IUser)
+		resetUser: () => set({ })
 	}
 }
 
-export const user = createUser();
+export const user = createUser({ });

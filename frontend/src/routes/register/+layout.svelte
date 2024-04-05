@@ -25,7 +25,7 @@
 				.catch(err => err.response ? err.response.data : visible = true);
 
 			if (data.user) {
-				connectSocket(data.user, data.token);
+				connectSocket(data.user, data.token, true);
 			} else if (data.errors) {
 				const { username, password } = data.errors;
 
@@ -52,7 +52,7 @@
 					return null;
 				});
 
-			if (data?.user) connectSocket(data.user, data.token);
+			if (data?.user) connectSocket(data.user, data.token, true);
 		}
 	});
 

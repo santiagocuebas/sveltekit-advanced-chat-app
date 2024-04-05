@@ -37,7 +37,10 @@ export const joinGroupRoom = ([contactID]: [string], { groupRooms }: IUser) => {
 export const createChat = async ([chat, tempID]: [string & string[], string]) => {
 	return (
 		isString(tempID) &&
-		((isString(chat) && isLength(chat, 0, 420)) || (isArray(chat) && isLength(chat, 0, 3) && await existsImage(chat)))
+		(
+			(isString(chat) && isLength(chat, 0, 420)) ||
+			(isArray(chat) && isLength(chat, 0, 4) && await existsImage(chat))
+		)
 	) ? true : ErrorMessage.createChat;
 };
 

@@ -3,6 +3,8 @@ import { v2 as cloudinary } from 'cloudinary';
 import { Chat } from '../models/index.js';
 import { getChats } from '../libs/get-data.js';
 
+const validImageExt = ['apng', 'avif', 'gif', 'jpg', 'png', 'svg', 'webp'];
+
 export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomID], type, username) => {
 	// Get chats from the contacts
 	const param = username === undefined ? userID : undefined;
@@ -34,13 +36,14 @@ export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomI
 		const chat = await Chat.findOneAndDelete({ _id: id, from: userID });
 
 		if (chat !== null && chat.content instanceof Array) {
-			for (const image of chat.content) {
+			for (const file of chat.content) {
 				// Unlink images if exists
-				const [imageFullURL] = image.split('/').reverse();
-				const [imageURL] = imageFullURL.split('.');
+				const [fileFullURL] = file.split('/').reverse();
+				const [fileURL, fileExt] = fileFullURL.split('.');
+				const resource_type = validImageExt.includes(fileExt) ? 'image' : 'video';
 				
 				await cloudinary.uploader
-					.destroy('advanced/public/' + imageURL)
+					.destroy('advanced/public/' + fileURL, { resource_type })
 					.catch(() => {
 						console.error('An error occurred while trying to delete the image');
 					});

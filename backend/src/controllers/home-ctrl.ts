@@ -70,7 +70,7 @@ export const getSearch: Direction = async (req, res) => {
 	return res.json({ contacts });
 };
 
-export const postImages: Direction = async (req, res) => {
+export const postAudiovisual: Direction = async (req, res) => {
 	const files = req.files instanceof Array ? req.files : [];
 	const filenames: string[] = [];
 
@@ -79,9 +79,13 @@ export const postImages: Direction = async (req, res) => {
 
 		if (file) {
 			const data = await cloudinary.uploader
-				.upload(file, { public_id: await getId(), folder: 'advanced/public/' })
+				.upload(file, {
+					public_id: await getId(),
+					folder: 'advanced/public/',
+					resource_type: 'auto'
+				})
 				.catch(() => {
-					console.log('An error occurred while trying to uploaded the image');
+					console.log('An error occurred while trying to uploaded the file');
 					return null;
 				});
 
@@ -95,41 +99,39 @@ export const postImages: Direction = async (req, res) => {
 export const postAvatar: Direction = async (req, res) => {
 	const group = await Group.findOne({ _id: req.body.id, admin: req.user.id });
 	
-	if (group !== null && req.file) {
-		const file = dataUri(req.file);
+	if (group === null || !req.file) return res.json(null);
+	
+	const file = dataUri(req.file);
 
-		if (file) {
-			const data = await cloudinary.uploader
-				.upload(file, {
-					public_id: await getId(TypeContact.GROUP),
-					folder: 'advanced/group-avatar/'
-				})
-				.catch(() => {
-					console.log('An error occurred while trying to uploaded the image');
-					return null;
-				});
+	if (!file) return res.json(null);
+	
+	const data = await cloudinary.uploader
+		.upload(file, {
+			public_id: await getId(TypeContact.GROUP),
+			folder: 'advanced/group-avatar/'
+		})
+		.catch(() => {
+			console.log('An error occurred while trying to uploaded the image');
+			return null;
+		});
 
-			if (data) {
-				// Unlink old avatar
-				if (!group.avatar.includes('avatar.jpeg')) {
-					const [avatarFullFilename] = group.avatar.split('/').reverse();
-					const [avatarFilename] = avatarFullFilename.split('.');
+	if (!data) return res.json(null);
+
+	// Unlink old avatar
+	if (!group.avatar.includes('avatar.png')) {
+		const [avatarFullFilename] = group.avatar.split('/').reverse();
+		const [avatarFilename] = avatarFullFilename.split('.');
 					
-					await cloudinary.uploader
-						.destroy('advanced/group-avatar/' + avatarFilename)
-						.catch(() => {
-							console.error('An error occurred while trying to delete the image');
-						});
-				}
-
-				// Update database with the new avatar
-				group.avatar = data.secure_url;
-				await group.save();
-
-				return res.json({ filename: data.secure_url });
-			}
-		}
+		await cloudinary.uploader
+			.destroy('advanced/group-avatar/' + avatarFilename)
+			.catch(() => {
+				console.error('An error occurred while trying to delete the image');
+			});
 	}
 
-	return res.json(null);
+	// Update database with the new avatar
+	group.avatar = data.secure_url;
+	await group.save();
+
+	return res.json({ filename: data.secure_url });
 };

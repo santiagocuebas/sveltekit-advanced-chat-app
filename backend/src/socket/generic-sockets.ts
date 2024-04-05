@@ -52,10 +52,10 @@ export const genericSockets: GenericSockets = (socket, userID, user) => {
 
 		// Find chats
 		const contact = await getContact(id, group, TypeContact.GROUP);
-		if (typeof contact.logged === 'number') contact.logged++;
+		if (typeof contact.logged !== 'boolean') contact.logged.push(userID);
 
 		socket.emit('updateContacts', contact);
-		socket.to(id).emit('countMembers', id, 1, member);
+		socket.to(id).emit('addMembers', id, [member], [userID]);
 		socket.join(id);
 	});
 
@@ -90,7 +90,7 @@ export const genericSockets: GenericSockets = (socket, userID, user) => {
 		await User.updateMany(
 			{ _id: contactsIDs },
 			{
-				$push: { groupRooms: [groupID] },
+				$push: { groupRooms: groupID },
 				$pull: { blockedGroups: { id: groupID } }
 			}
 		);

@@ -8,9 +8,6 @@ dependencies:
   '@socket.io/mongo-adapter':
     specifier: 0.3.2
     version: 0.3.2(socket.io-adapter@2.5.4)
-  '@socket.io/sticky':
-    specifier: 1.0.4
-    version: 1.0.4
   axios:
     specifier: 1.6.8
     version: 1.6.8
@@ -264,10 +261,6 @@ packages:
       - snappy
       - socks
       - supports-color
-    dev: false
-
-  /@socket.io/sticky@1.0.4:
-    resolution: {integrity: sha512-VuauT5CJLvzYtKIgouFSQ8rUaygseR+zRutnwh6ZA2QYcXx+8g52EoJ8V2SLxfo+Tfs3ELUDy08oEXxlWNrxaw==}
     dev: false
 
   /@tsconfig/node10@1.0.9:

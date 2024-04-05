@@ -2,6 +2,8 @@ import type { IGroup, Member } from '../types/global.js';
 import { v2 as cloudinary } from 'cloudinary';
 import { User } from '../models/index.js';
 
+const validImageExt = ['apng', 'avif', 'gif', 'jpg', 'png', 'svg', 'webp'];
+
 export const isString = (value: unknown): boolean => typeof value === 'string';
 
 export const isObject = (value: unknown): boolean => typeof value === 'object';
@@ -16,11 +18,12 @@ export const existsImage = async (values: string[]): Promise<boolean> => {
 	for (const value of values) {
 		if (!isString(value)) return false;
 
-		const [imageFilename] = value.split('/').reverse();
-		const [imageId] = imageFilename.split('.');
+		const [archiveFilename] = value.split('/').reverse();
+		const [archiveId, archiveExt] = archiveFilename.split('.');
+		const resource_type = validImageExt.includes(archiveExt) ? 'image' : 'video';
 
 		const data = await cloudinary.api
-			.resources_by_ids('advanced/public/' + imageId)
+			.resources_by_ids('advanced/public/' + archiveId, { resource_type })
 			.catch(err => {
 				console.error(err?.message);
 				return null;

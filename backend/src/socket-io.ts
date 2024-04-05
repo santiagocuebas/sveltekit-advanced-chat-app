@@ -39,7 +39,7 @@ export default async (socket: Socket) => {
 	socket.join([...socket.user.userRooms, ...socket.user.groupRooms]);
 	socket.emit('loadContacts', contacts);
 	socket.to(socket.user.userRooms).emit('loggedUser', userID, true);
-	socket.to(socket.user.groupRooms).emit('countMembers', userID, 1);
+	socket.to(socket.user.groupRooms).emit('countUser', userID);
 	
 	socket.use(async ([event, ...args], next) => {
 		console.log(event, args);
@@ -72,7 +72,7 @@ export default async (socket: Socket) => {
 
 		chatSockets(socket, IDs, TypeContact.GROUP, socket.user.username);
 		memberSockets(socket, IDs, socket.user);
-		modSockets(socket, contactID, socket.user);
+		modSockets(socket, contactID);
 		adminSockets(socket, IDs);
 	});
 
@@ -84,6 +84,7 @@ export default async (socket: Socket) => {
 
 	socket.on('disconnect', async () => {
 		console.log(socket.id, '==== disconnected');
+
 		// Disconnecting user
 		await User.updateOne({ _id: userID }, { logged: false, tempId: '' });
 
@@ -94,7 +95,7 @@ export default async (socket: Socket) => {
 		);
 
 		socket.to(socket.user.userRooms).emit('loggedUser', userID, false);
-		socket.to(socket.user.groupRooms).emit('countMembers', userID, -1);
+		socket.to(socket.user.groupRooms).emit('discountUser', userID);
 		socket.removeAllListeners();
 	});
 };

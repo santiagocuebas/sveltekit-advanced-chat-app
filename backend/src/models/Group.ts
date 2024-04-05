@@ -9,7 +9,7 @@ const groupSchema = new Schema<IGroup>({
 	mods: [Object],
 	members: [Object],
 	name: { type: String, allowNull: false, required: true },
-	avatar: { type: String, default: 'https://res.cloudinary.com/dnu1qjhqz/image/upload/v1707468293/advanced/group-avatar/avatar.jpg' },
+	avatar: { type: String, default: 'https://res.cloudinary.com/dnu1qjhqz/image/upload/v1711542879/advanced/group-avatar/avatar.png' },
 	description: { type: String, default: "It's just another description of a group" },
 	loggedUsers: [String],
 	state: { type: String, default: StateOption.PUBLIC },
@@ -26,13 +26,21 @@ const groupSchema = new Schema<IGroup>({
 groupSchema
 	.virtual('modIDs')
 	.get(function(this): string[] {
-		return this.mods?.map(mod => mod.id);
+		return this.mods?.map(mod => mod.id) ?? [];
 	});
 
 groupSchema
 	.virtual('memberIDs')
 	.get(function(this): string[] {
-		return this.members?.map(member => member.id);
+		return this.members?.map(member => member.id) ?? [];
+	});
+
+groupSchema
+	.virtual('allIDs')
+	.get(function(this): string[] {
+		const members = this.members?.map(member => member.id) ?? [];
+		const mods = this.mods?.map(mod => mod.id) ?? [];
+		return [this.admin, ...mods, ...members];
 	});
 
 groupSchema
@@ -43,8 +51,8 @@ groupSchema
 
 groupSchema
 	.virtual('logged')
-	.get(function(this): number {
-		return this.loggedUsers?.length;
+	.get(function(this): string[] {
+		return this.loggedUsers;
 	});
 
 groupSchema.plugin(MLV);

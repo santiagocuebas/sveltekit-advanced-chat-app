@@ -30,11 +30,12 @@ export const getContact: Contact = async (roomID, contact, type, id) => {
 		.findOne(search)
 		.sort({ createdAt: -1 });
 
-	const data = (typeof contact.logged === 'number')
+	const data = (typeof contact.logged !== 'boolean')
 		? {
 			admin: contact.admin,
 			members: contact.members,
 			mods: contact.mods,
+			allIDs: contact.allIDs,
 			blacklist: contact.blacklist,
 			state: contact.state
 		} : { blockedIDs: contact.blockedUsersIDs };

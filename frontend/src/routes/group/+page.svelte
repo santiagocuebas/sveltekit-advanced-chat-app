@@ -34,7 +34,6 @@
 	
 	afterNavigate(() => {
 		contact.resetContact();
-		contacts.resetList();
 		socket.emit('removeListeners');
 	});
 </script>

@@ -67,12 +67,13 @@ export interface IGroup {
 	modIDs: string[];
 	members: Member[];
 	memberIDs: string[];
+	allIDs: string[];
 	name: string;
 	state: string;
 	description: string;
 	avatar: string;
 	loggedUsers: string[];
-	logged: number;
+	logged: string[];
 	blacklist: Member[];
 	blockedIDs: string[];
 	createdAt: Date;

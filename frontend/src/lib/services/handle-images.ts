@@ -1,12 +1,12 @@
 import type { ResponseData } from "$lib/types/global";
+import { isValidImage, isValidAudio, isValidVideo } from "./index";
 import axios from "$lib/axios";
 import { groupProps } from "$lib/store";
-import { Formats, Method } from "$lib/types/enums";
+import { Method } from "$lib/types/enums";
 
 export const loadImage = (file: File): Promise<string> => {
   return new Promise((resolve) => {
     const reader = new FileReader();
-		const validFormats: string[] = Object.values(Formats);
 
 		reader.addEventListener('load', ({ target }) => {
 			const result = String(target?.result);
@@ -14,42 +14,36 @@ export const loadImage = (file: File): Promise<string> => {
 			groupProps.changeAvatar(file);
 		}, false);
 
-		if (file && file.size < 2e7 && validFormats.includes(file.type)) {
-			reader.readAsDataURL(file);
-		}
+		if (file && isValidImage(file)) reader.readAsDataURL(file);
   })
 };
 
-export const getImages = async (files: FileList | null) => {
-	let filenames: string[] | null = null;
+export const getAudiovisuals = async (files: FileList | null) => {
+	if (!files || files.length > 4) return null;
 
-	if (files && files.length < 4) {
-		const formData = new FormData();
-		const validFormat: string[] = Object.values(Formats);
-		let match = true;
+	const formData = new FormData();
 
-		for (const file of files) {
-			if (file.size > 1e7 * 2 && !validFormat.includes(file.type)) {
-				match = false;
-				break;
-			}
-
-			formData.append('images', file);
-		}
-
-		if (match) {
-			const data: ResponseData = await axios({
-				method: Method.POST,
-				url: '/home/images',
-				data: formData
-			}).then(res => res.data)
-				.catch(err => err.response?.data);
-
-			if (data && data.filenames) filenames = data.filenames;
-		}
+	for (const file of files) {
+		if (
+			!isValidImage(file) &&
+			!isValidAudio(file, files) &&
+			!isValidVideo(file, files)
+		) return null;
+		
+		formData.append('audiovisual', file);
 	}
 
-	return filenames;
+	const data: ResponseData = await axios({
+		method: Method.POST,
+		url: '/home/audiovisual',
+		data: formData
+	}).then(res => res.data)
+		.catch(err => {
+			console.error(err.message);
+			return null;
+		});
+
+	return (data && data.filenames) ? data.filenames : null;
 };
 
 export const sendAvatar = async (avatar: string, id: string) => {
@@ -60,10 +54,13 @@ export const sendAvatar = async (avatar: string, id: string) => {
 
 	const data: ResponseData = await axios({
 		method: Method.POST,
-		url: '/home/group',
+		url: '/home/avatar',
 		data: formData
 	}).then(res => res.data)
-		.catch(err => err.response?.data ?? { });
+		.catch(err => {
+			console.error(err.message);
+			return { };
+		});
 
 	return data.filename;
 };

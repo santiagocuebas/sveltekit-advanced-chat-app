@@ -5,9 +5,9 @@
 	import jsCookie from 'js-cookie';
 	import axios from '$lib/axios';
   import { Contacts, UserHeader, LoadingBox } from '$lib/components';
-	import { joinRoom } from '$lib/services';
+	import { connectSocket } from '$lib/services';
   import { socket } from '$lib/socket';
-  import { user, register, contacts } from '$lib/store';
+  import { user, register, contact, contacts, options } from '$lib/store';
   import { Option } from '$lib/types/enums';
 	import '../app.css';
 	
@@ -37,15 +37,8 @@
 				return err.response ? err.response.data : { error: err.message };
 			});
 
-		if (data?.user) {
-			user.setUser(data.user);
-
-			setTimeout(() => {
-				socket.auth = { sessionID: data.user.id, token };
-				socket.connect();
-				register.setOption(Option.USER);
-			}, 3000);
-		} else {
+		if (data?.user && token) connectSocket(data.user, token)
+		else {
 			console.log(data.error);
 			const token = jsCookie.get('authenticate');
 
@@ -56,7 +49,10 @@
 	
 	onMount(() => {
 		socket.on('loggedUser', contacts.loggedUser);
+		socket.on('countUser', contacts.countUser);
+		socket.on('discountUser', contacts.discountUser);
 		socket.on('countMembers', contacts.countMembers);
+		socket.on('discountMembers', contacts.discountMembers);
 		socket.on('editUser', contacts.editUsers);
 		socket.on('editGroup', contacts.editGroups);
 		socket.on('leaveUser', contacts.leaveUser);
@@ -100,19 +96,21 @@
 			typeof to.params.id === 'string'
 		) {
 			const indexContact = to.params.contact;
-			const contact = $contacts[indexContact].find(({ contactID }) => to.params?.id === contactID);
+			const foundContact = $contacts[indexContact].find(({ contactID }) => to.params?.id === contactID);
 			
-			if (contact) joinRoom(contact);
-			else goto('/');
+			if (foundContact) {
+				options.resetOptions();
+				contact.setContact(foundContact as never);
+			} else goto('/');
 		}
 	});
 </script>
 
 <svelte:document on:load={loadUser()} />
 
-<div class="main">
+<div class="main-container">
 	<div class="banner"></div>
-	<div class="container">
+	<div class="container-user">
 		{#if $register.user}
 			<UserHeader />
 			<Contacts />
@@ -168,19 +166,19 @@
 		@apply hidden;
 	}
 
-	.main {
-		@apply grid fixed items-start justify-items-center w-full min-w-[665px] h-screen py-[27.5px] px-[35px] bg-black;
+	.main-container {
+		@apply flex fixed justify-center w-full min-w-[665px] h-screen min-h-[570px] py-[27.5px] px-[35px] bg-black;
 	}
 
 	.banner {
-		@apply absolute w-full h-1/2 bg-[#3d7cf1];
+		@apply absolute w-full h-1/2 top-0 left-0 bg-[#3d7cf1];
 	}
 
-	.container {
-		grid-template-columns: minmax(300px, 30%) 1fr;
+	.container-user {
+		grid-template-columns: minmax(300px, 30%) minmax(299px, 1fr);
 		grid-auto-rows: min-content 1fr min-content;
-		box-shadow: 0 0 4px #999999;
-		@apply grid relative w-full min-w-[600px] max-h-[900px] h-full bg-[#999999] gap-x-px gap-y-px z-[25];
+		box-shadow: 0 0 2px #999999;
+		@apply grid relative w-full h-full min-h-[520px] bg-[#999999] gap-x-px gap-y-px z-[50];
 	}
 	
 	.error {

@@ -11,32 +11,32 @@ export const socketResult: ChoiceSocket = ({ contactID, name }) => {
 			return [name];
 		},
 		add: (members: Member[]) => {
-			contacts.addMembers(contactID, ...members);
+			contacts.addMembers(contactID, members);
 			
 			return [members, contactID];
 		},
 		ban: (banIDs: string[]) => {
-			contacts.banMembers(contactID, ...banIDs);
+			contacts.banMembers(contactID, banIDs);
 			
 			return [banIDs, contactID];
 		},
 		block: (blockUsers: Member[]) => {
-			contacts.blockMembers(contactID, ...blockUsers);
+			contacts.blockMembers(contactID, blockUsers);
 			
 			return [blockUsers, contactID];
 		},
 		unblock: (unblockIDs: string[]) => {
-			contacts.unblockMembers(contactID, ...unblockIDs);
+			contacts.unblockMembers(contactID, unblockIDs);
 			
 			return [unblockIDs, contactID]
 		},
 		addMod: (newMods: Member[]) => {
-			contacts.addMods(contactID, ...newMods);
+			contacts.addMods(contactID, newMods);
 
 			return [newMods, contactID];
 		},
 		removeMod: (removeMod: Member[]) => {
-			contacts.removeMods(contactID, ...removeMod);
+			contacts.removeMods(contactID, removeMod);
 
 			return [removeMod, contactID];
 		},

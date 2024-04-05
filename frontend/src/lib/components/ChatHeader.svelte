@@ -16,7 +16,7 @@
 	let visible = false;
 
 	function selectContact(value: string, key: string) {
-		if (key === Option.GROUP) groupProps.setProps($contact);
+		if (key === Option.GROUP && $contact) groupProps.setProps($contact);
 		visible = false;
 		option = value;
 		options.setOption(key);
@@ -25,45 +25,45 @@
 
 <div class="contact">
 	<picture>
-		<img src={$contact.avatar} alt={$contact.name}>
+		<img src={$contact?.avatar} alt={$contact?.name}>
 	</picture>
 	<div>
-		<h2>{$contact.name}</h2>
+		<h2>{$contact?.name}</h2>
 		<p>
 			<span
-				class:green={$contact.logged === true}
-				class:blue={typeof $contact.logged === 'number'}
+				class:green={$contact?.logged === true}
+				class:blue={$contact?.logged instanceof Array}
 			>&#11044;</span>
-			{#if typeof $contact.logged === 'boolean'}
-				{$contact.logged ? 'Connected' : 'Disconnected'}
+			{#if typeof $contact?.logged === 'boolean'}
+				{$contact?.logged ? 'Connected' : 'Disconnected'}
 			{:else}
-				{$contact.logged} Connected Users
+				{$contact?.logged.length} Connected Users
 			{/if}
 		</p>
 	</div>
 	<List bind:visible={visible}>
-		{#if $contact.type === Option.USER}
+		{#if $contact?.type === Option.USER}
 			{#each Object.values(UserOptions) as key}
 				<li on:click={() => selectContact(key, Option.USER)} role='none'>
 					{UserText[key]}
 				</li>
 			{/each}
 		{/if}
-		{#if isMember($contact.members, $user.id) || isMod($contact.mods, $user.id)}
+		{#if isMember($contact?.members, $user.id) || isMod($contact?.mods, $user.id)}
 			{#each Object.values(MemberOptions) as key}
 				<li on:click={() => selectContact(key, Option.GROUP)} role='none'>
 					{GroupText[key]}
 				</li>
 			{/each}
 		{/if}
-		{#if isMod($contact.mods, $user.id) || $user.id === $contact.admin}
+		{#if isMod($contact?.mods, $user.id) || $user.id === $contact?.admin}
 			{#each Object.values(ModOptions) as key}
 				<li on:click={() => selectContact(key, Option.GROUP)} role='none'>
 					{GroupText[key]}
 				</li>
 			{/each}
 		{/if}
-		{#if $user.id === $contact.admin}
+		{#if $user.id === $contact?.admin}
 			{#each Object.values(AdminOptions) as key}
 				<li on:click={() => selectContact(key, Option.GROUP)} role='none'>
 					{GroupText[key]}

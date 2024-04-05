@@ -1,28 +1,28 @@
 <script lang="ts">
-	import type { ResponseData } from '$lib/types/global';
+	import type { PageData } from '../$types';
+	import type { IForeign, IGroup, IList } from '$lib/types/global';
 	import { afterNavigate } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import axios from '$lib/axios';
   import { selectCreate } from "$lib/dictionary";
   import { socket } from "$lib/socket";
 	import { contact, contacts } from '$lib/store';
+	import { Option } from '$lib/types/enums';
 
-	function createRoom(id: string, type: string) {
-		socket.emit(selectCreate[type], id);
-	}
+	export let data: PageData & { contacts: IList[] };
 
-	onMount(async () => {
-		const queryString = location.search;
-		const urlParams = new URLSearchParams(queryString);
-		const searchParam = urlParams.get('q');
+	const updateContacts = (user: IForeign & IGroup, emit: boolean) => {
+		if (user.type === Option.USER) contacts.addContact(user);
+		else contacts.addGroup(user);
 
-		if (!$contacts.list.length && searchParam) {
-			const data: ResponseData = await axios({ url: '/home/search/' + searchParam })
-				.then(res => res.data)
-				.catch(err => err.response?.data ?? { });
+		data.contacts = data.contacts.filter(item => item.contactID !== user.contactID)
+		
+		if (emit) socket.emit('joinUpdate', user);
+	};
 
-			if (data.contacts) contacts.setLists(data.contacts);
-		}
+	onMount(() => {
+		socket.on('updateContacts', updateContacts);
+
+		return () => socket.off('updateContacts', updateContacts);
 	});
 	
 	afterNavigate(() => {
@@ -32,8 +32,8 @@
 </script>
 
 <ul>
-	{#if $contacts.list.length}
-		{#each $contacts.list as item (item.contactID+item.type)}
+	{#if data.contacts.length}
+		{#each data.contacts as item (item.contactID+item.type)}
 			<li class="item">
 				<picture>
 					<img src={item.avatar} alt={item.contactID}>
@@ -43,9 +43,9 @@
 					<p class="content">{item.description}</p>
 				{/if}
 				<div>
-					<button on:click={() => createRoom(item.contactID, item.type)}>
-						Join
-					</button>
+					<button
+						on:click={() => socket.emit(selectCreate[item.type], item.contactID)}
+					>Join	</button>
 				</div>
 			</li>
 		{/each}

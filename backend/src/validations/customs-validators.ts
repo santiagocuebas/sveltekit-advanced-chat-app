@@ -1,8 +1,16 @@
 import { CustomValidator } from 'express-validator';
-import { extname } from 'path';
 import { matchPassword } from '../libs/index.js';
 import { User } from '../models/index.js';
-import { Ext, TypeUser } from '../types/enums.js';
+import {
+	ImageFormats,
+	AudioFormats,
+	VideoFormats,
+	TypeUser
+} from '../types/enums.js';
+
+const validImageFormat: string[] = Object.values(ImageFormats);
+const validAudioFormat: string[] = Object.values(AudioFormats);
+const validVideoFormat: string[] = Object.values(VideoFormats);
 
 export const existsUser: CustomValidator = async username => {
 	const user = await User.findOne({ username });
@@ -32,12 +40,8 @@ export const isUndefinedImage: CustomValidator = (_value, { req }) => {
 	return req.file !== undefined;
 };
 
-export const isValidExtension: CustomValidator = (_value, { req }) => {
-	console.log(req.file);
-	const ext: string = extname(req.file.originalname).toLowerCase();
-	const values: string[] = Object.values(Ext);
-
-	return values.includes(ext);
+export const isValidFormat: CustomValidator = (_value, { req }) => {
+	return validImageFormat.includes(req.file?.mimetype ?? '');
 };
 
 export const isValidSize: CustomValidator = (_value, { req }) => {
@@ -97,12 +101,18 @@ export const isUndefinedImages: CustomValidator = (_value, { req }) => {
 };
 
 export const isValidSizesAndFormat: CustomValidator = (_value, { req }) => {
-	const values: string[] = Object.values(Ext);
-
 	for (const file of req.files) {
-		const ext: string = extname(file.originalname).toLowerCase();
-
-		if (file.size > 2e7 || !values.includes(ext)) return false;
+		if (
+			!(file.size < 2e7 && validImageFormat.includes(file.mimetype)) &&
+			!(
+				req.files.length === 1 &&
+				file.size < 2.5e7 &&
+				(
+					validAudioFormat.includes(file.mimetype) ||
+					validVideoFormat.includes(file.mimetype)
+				)
+			)
+		) return false;
 	}
 
 	return true;

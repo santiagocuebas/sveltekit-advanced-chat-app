@@ -1,4 +1,6 @@
 import type { Socket } from 'socket.io';
+import type { IKeys } from './types/types.js';
+import { ErrorMessage } from './dictionary.js';
 import { getContacts } from './libs/index.js';
 import { User, Group } from './models/index.js';
 import {
@@ -19,9 +21,13 @@ export default async (socket: Socket) => {
 		'emitChat', 'emitDelete', 'emitLeave', 'emitBlock', 'emitDestroy', 'emitBlockDestroy', 'emitLeaveGroup', 'emitBlockGroup', 'emitAddMember', 'emitBanMember', 'emitBlockMember', 'emitUnblockMember', 'emitAddMod', 'emitRemoveMod', 'emitChangeAvatar', 'emitChangeDescription', 'emitChangeState', 'emitDestroyGroup'
 	];
 	const userID = socket.user.id;
+	socket.user.logged = true;
 
 	// Connecting user
-	await User.updateOne({ _id: userID }, { logged: true, tempId: socket.id });
+	await User.updateOne(
+		{ _id: userID },
+		{ logged: true, tempId: socket.user.tempId, $addToSet: { socketIds: socket.id } }
+	);
 
 	// Connecting user to the group
 	await Group.updateMany(
@@ -32,24 +38,25 @@ export default async (socket: Socket) => {
 	// Get data of the contacts
 	const contacts = await getContacts(userID, socket.user);
 
-	socket.join([...socket.user.userRooms, ...socket.user.groupRooms]);
+	socket.join([
+		socket.user.tempId, ...socket.user.userRooms, ...socket.user.groupRooms]);
 	socket.emit('loadContacts', contacts);
 	socket.to(socket.user.userRooms).emit('loggedUser', userID, true);
-	socket.to(socket.user.groupRooms).emit('countMembers', userID, 1);
+	socket.to(socket.user.groupRooms).emit('countUser', userID);
 	
 	socket.use(async ([event, ...args], next) => {
 		console.log(event, args);
+		const selectedFunction = socketIndex[event];
+		let match: IKeys<string> | boolean = ErrorMessage.socketError;
 
-		if (typeof event === 'string' && socketIndex[event] !== undefined) {
+		if (typeof event === 'string' && selectedFunction !== undefined) {
 			// Check if the event and arguments are valid
-			const match = await socketIndex[event](args as never, socket.user);
+			match = await selectedFunction(args as never, socket.user);
 
 			if (match === true) return next();
-
-			socket.emit('socketError', match);
-		} else {
-			socket.emit('socketError', { error: 'Socket Error', message: 'The socket emitted no exist' });
 		}
+		
+		socket.emit('socketError', match);
 	});
 
 	socket.on('joinUserRoom', async (contactID: string, roomID: string) => {
@@ -68,25 +75,42 @@ export default async (socket: Socket) => {
 
 		chatSockets(socket, IDs, TypeContact.GROUP, socket.user.username);
 		memberSockets(socket, IDs, socket.user);
-		modSockets(socket, contactID, socket.user);
+		modSockets(socket, contactID);
 		adminSockets(socket, IDs);
+	});
+
+	socket.on('removeListeners', () => {
+		emitArray.forEach(emitString => socket.removeAllListeners(emitString));
 	});
 
 	genericSockets(socket, userID, socket.user);
 
 	socket.on('disconnect', async () => {
 		console.log(socket.id, '==== disconnected');
-		// Disconnecting user
-		await User.updateOne({ _id: userID }, { logged: false });
 
-		// Disconnecting user from the group
-		await Group.updateMany(
-			{ _id: socket.user.groupRooms },
-			{ $pull: { loggedUsers: userID } }
+		const user = await User.findOne({ _id: userID });
+
+		if (user && user.socketIds.length === 1) {
+			// Disconnecting user
+			user.logged = false;
+			user.tempId = '';
+			user.socketIds = [];
+
+			await user.save();
+
+			// Disconnecting user from the group
+			await Group.updateMany(
+				{ _id: socket.user.groupRooms },
+				{ $pull: { loggedUsers: userID } }
+			);
+
+			socket.to(socket.user.userRooms).emit('loggedUser', userID, false);
+			socket.to(socket.user.groupRooms).emit('discountUser', userID);
+		} else await User.updateOne(
+			{ _id: userID },
+			{ $pull: { socketIds: socket.id } }
 		);
 
-		socket.to(socket.user.userRooms).emit('loggedUser', userID, false);
-		socket.to(socket.user.groupRooms).emit('countMembers', userID, -1);
 		socket.removeAllListeners();
 	});
 };

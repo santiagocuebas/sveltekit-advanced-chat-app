@@ -30,6 +30,7 @@ export const options = createSwitch({
 	group: false,
 	chat: false,
 	image: false,
+	upload: false,
 	settings: false
 });
 

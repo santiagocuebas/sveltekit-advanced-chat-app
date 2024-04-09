@@ -22,9 +22,8 @@ export const postAvatar: Direction = async (req, res) => {
 	await User.updateOne({ _id: id }, { avatar: avatarURL });
 
 	return res.json({
-		success: true,
-		filename: avatarURL,
-		message: 'Your avatar has been successfully updated'
+		success: false,
+		message: { log: 'An error occurred while trying to update your avatar' }
 	});
 };
 
@@ -52,10 +51,14 @@ export const postDescription: Direction = async (req, res) => {
 };
 
 export const postPassword: Direction = async (req, res) => {
-	const password = await encryptPassword(req.body.password);
+	const password = await encryptPassword(req.body.newPassword)
+		.catch(err => {
+			console.error(err?.message);
+			return null;
+		});
 
 	// Change password
-	await User.updateOne({ _id: req.user.id }, { password });
+	if (password) await User.updateOne({ _id: req.user.id }, { password });
 
 	return res.json({
 		success: true,

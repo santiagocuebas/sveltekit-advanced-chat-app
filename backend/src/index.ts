@@ -1,6 +1,5 @@
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
-import { setupWorker } from '@socket.io/sticky';
 import { createAdapter } from '@socket.io/mongo-adapter';
 import server from './app.js';
 import {
@@ -8,11 +7,12 @@ import {
 	ORIGIN,
 	MONGO_URI,
 	MONGO_REPLIC,
-	SOCKETS_DB,
-	COLLECTION
+	MONGO_DB,
+	MONGO_COLLECTION
 } from './config.js';
-import { verifyToken } from './libs/index.js';
 import initSocket from './socket-io.js';
+import { verifyToken } from './libs/index.js';
+import { Group, User } from './models/index.js';
 
 // Create Server
 const { MongoClient } = mongoose.mongo;
@@ -25,8 +25,8 @@ await mongoClient
 	.catch(err => console.error('An error has occurred with', err));
 
 await mongoClient
-	.db(SOCKETS_DB)
-	.createCollection(COLLECTION, { capped: true, size: 1e6 })
+	.db(MONGO_DB)
+	.createCollection(MONGO_COLLECTION, { capped: true, size: 1e6 })
 	.then(() => console.log('The collection has been created successfully'))
 	.catch(() => console.error('The collection exists'));
 
@@ -37,10 +37,11 @@ await mongoose
 	.then(() => console.log('MongoDB Database is Connected'))
 	.catch(err => console.error('An error has occurred with', err));
 
-console.log(`Worker ${process.pid} started`);
+await User.updateMany({ }, { logged: false, tempId: '', socketIds: [] });
+await Group.updateMany({ }, { loggedUsers: [] });
 
 // Connect Socket.io
-const mongoCollection = mongoClient.db(SOCKETS_DB).collection(COLLECTION);
+const mongoCollection = mongoClient.db(MONGO_DB).collection(MONGO_COLLECTION);
 
 const io = new Server(server, {
 	cors: {
@@ -52,10 +53,7 @@ const io = new Server(server, {
 	maxHttpBufferSize: 2e7,
 	adapter: createAdapter(mongoCollection)
 });
-
-setupWorker(io);
-
-// Connect worker		
+		
 io.use(async (socket, next) => {
 	const { sessionID, token } = socket.handshake.auth;
 	const user = await verifyToken(token)
@@ -64,6 +62,8 @@ io.use(async (socket, next) => {
 	if (!user || user.id !== sessionID) return(new Error('Unauthorized'));
 
 	socket.user = user;
+	socket.user.tempId = token;
+	
 	return next();
 });
 

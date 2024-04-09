@@ -1,11 +1,10 @@
 <script lang="ts">
 	import type { Member } from '$lib/types/global';
-	import { goto } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
   import { Messages } from '$lib/dictionary';
+  import { isMember, isMod, changeName } from '$lib/services';
   import { socket } from "$lib/socket";
-  import { users } from '$lib/store';
-  import { isMember, isMod } from '$lib/services/chat-libs';
-  import { changeName } from '$lib/services/libs';
+  import { contact, contacts } from '$lib/store';
 	import { StateOption } from '$lib/types/enums';
 
 	let name = '';
@@ -32,13 +31,20 @@
 		members = [];
 		state = StateOption.PUBLIC;
 	}
+	
+	afterNavigate(() => {
+		contact.resetContact();
+		socket.emit('removeListeners');
+	});
 </script>
 
 <div class="container-box">
 	<button class="close" on:click={() => goto('/')}>
 		<i class="fa-solid fa-xmark"></i>
 	</button>
-	<h1>Create Group</h1>
+	<h1>
+		Create Group
+	</h1>
 	<form on:submit|preventDefault={handleSubmit}>
 		<div class:error={(name.length > 0 && name.length < 3) || name.length > 40}>
 			Choice name:
@@ -53,7 +59,7 @@
 		<div>
 			Select moderators:
 			<ul>
-				{#each $users as { contactID, name } (contactID)}
+				{#each $contacts.users as { contactID, name } (contactID)}
 					<li
 						class:selected={isMod(mods, contactID)}
 						class:disabled={isMember(members, contactID)}
@@ -66,7 +72,7 @@
 		<div>
 			Select members:
 			<ul>
-				{#each $users as { contactID, name } (contactID)}
+				{#each $contacts.users as { contactID, name } (contactID)}
 					<li
 						class:selected={isMember(members, contactID)}
 						class:disabled={isMod(mods, contactID)}
@@ -90,7 +96,9 @@
 						{changeName(option)}
 					</label>
 				{/each}
-				<span>{Messages[state]}</span>
+				<span>
+					{Messages[state]}
+				</span>
 			</span>
 		</div>
 		<div>
@@ -103,21 +111,21 @@
 
 <style lang="postcss">
 	h1 {
-		@apply text-[40px];
+		@apply font-medium text-[40px];
 	}
 
 	form {
 		@apply flex flex-wrap h-full content-between justify-center gap-y-10;
 
 		& div {
-			@apply grid w-3/5 min-w-[280px] gap-2;
+			@apply grid relative w-3/5 min-w-[280px] gap-2 font-semibold;
 
 			&.error input {
 				box-shadow: 0 0 0 2px #db3333;
 			}
 
 			&.error p {
-				@apply px-2.5 font-bold text-[#db3333] leading-none;
+				@apply self-end absolute -mb-5 px-2.5 font-bold text-[#db3333] leading-none;
 			}
 		}
 
@@ -127,11 +135,11 @@
 		}
 
 		& ul {
-			@apply h-[120px] p-2.5;
+			@apply h-[120px] py-2;
 		}
 
 		& li {
-			@apply block w-full font-medium leading-tight cursor-pointer select-none;
+			@apply block w-full px-1 font-medium leading-tight cursor-pointer select-none;
 			
 			&.selected {
 				@apply bg-[#3d7cf1] text-white;
@@ -150,7 +158,7 @@
 
 		& span {
 			grid-column: 1 / span 3;
-			@apply text-center;
+			@apply flex items-center justify-center w-full h-12 text-center;
 		}
 	}
 

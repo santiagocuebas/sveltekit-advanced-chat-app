@@ -27,10 +27,7 @@ export const validate = (validations: ValidationChain[]) => {
 			const errors = getErrorMessages(result.array());
 
 			if (req.baseUrl.includes('settings')) {
-				return res.status(401).json({
-					errors: true,
-					message: errors
-				});
+				return res.status(401).json({ success: false, message: errors });
 			}
 
 			return res.status(401).json({ errors });

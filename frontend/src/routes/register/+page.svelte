@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { afterUpdate } from 'svelte';
+	import { changeName } from '$lib/services';
   import { emailInput, passInput } from '$lib/store';
-	import { changeName } from '$lib/services/libs';
 
 	const arrayOfInputs = ['email', 'password'];
 

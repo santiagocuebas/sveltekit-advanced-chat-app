@@ -3,14 +3,13 @@
   import { afterUpdate, beforeUpdate, onMount } from "svelte";
 	import validator from 'validator';
   import { DIR } from "$lib/config";
+  import { getDate, isAudio, isVideo } from "$lib/services";
   import { socket } from "$lib/socket";
   import { user, options } from "$lib/store";
-  import { getDate } from "$lib/services/libs";
   import { Option } from "$lib/types/enums";
 
   export let id: string;
 	export let visibleChats: IChat[];
-  export let handleImage: (this: HTMLImageElement) => void;
 
 	const	observer = new IntersectionObserver(showMoreChats, {
 		root: null,
@@ -22,6 +21,14 @@
 	let chatID: string | undefined;
 	let counter = 0;
 	let chats: IChat[] = [];
+	let img: string;
+	let alt: string;
+
+	function handleImage(this: HTMLImageElement) {
+		img = this.src;
+		alt = this.alt;
+		options.setOption(Option.IMAGE);
+	}
 
 	function handleDelete(chatID: string, from: string) {
 		if ($user.id === from) {
@@ -31,7 +38,7 @@
 	}
 
 	function showMoreChats([entry]: IntersectionObserverEntry[]) {
-		if (entry?.isIntersecting) showChats(counter+10);
+		if (entry?.isIntersecting) showChats(counter+50);
 	}
 
 	function showChats(num: number) {
@@ -47,8 +54,7 @@
 		div.scrollTo(0, div.scrollHeight);
 		counter = 0;
 		chats = messages.reverse();
-		visibleChats = [];
-		showChats(10);
+		showChats(50);
 	};
 	
 	const loadChatID = (id: string, tempID: string) => {
@@ -82,72 +88,150 @@
 	});
 </script>
 
-<div class="chats" bind:this={div}>
-	{#each visibleChats as chat (chat._id)}
-		<div
-			id={chat._id}
-			class:me={$user.id === chat.from}
-			on:dblclick={() => handleDelete(chat._id, chat.from)}
-			role='none'
-		>
-			{#if chat.username}
-				<h3>
-					{chat.username}
-				</h3>
-			{/if}
-			{#if (chat.content instanceof Array)}
-				{#each chat.content as image (image)}
-					<img
-						src={DIR + '/' + image}
-						alt={chat._id}
-						on:click={handleImage}
-						role='none'
-					>
-				{/each}
-			{:else if validator.isURL(chat.content)}
-				<a href='{chat.content}' target="_blank">
-					{chat.content}
-				</a>
-			{:else}
-				<p>
-					{@html chat.content}
+{#if $options.image}
+	<div class="box-image">
+		<button on:click={() => options.resetOptions()}>
+			<i class="fa-solid fa-xmark"></i>
+		</button>
+		<picture>
+			<img src={img} alt={alt}>
+		</picture>
+	</div>
+{/if}
+
+<div class="container-chats">
+	<div class="box-chats" bind:this={div}>
+		{#each visibleChats as { _id, content, createdAt, from, username } (_id)}
+			<div
+				class="chat"
+				class:me={$user.id === from}
+				role='none'
+				on:dblclick={() => handleDelete(_id, from)}
+			>
+				{#if username}
+					<h3>
+						{username}
+					</h3>
+				{/if}
+				{#if (content instanceof Array)}
+					{#if content.length > 1}
+						<div>
+							{#each content as image (image)}
+								<picture>
+									<img
+										src={DIR + '/' + image}
+										alt={_id}
+										role='none'
+										on:click={handleImage}
+									>
+								</picture>
+							{/each}
+						</div>
+					{:else}
+						{#if isVideo(content[0])}
+							<video controls src={DIR + '/' + content[0]}>
+								<track kind="captions"/>
+							</video>
+						{:else if isAudio(content[0])}
+							<audio controls src={DIR + '/' + content[0]}></audio>
+						{:else}
+							<picture>
+								<img
+									src={DIR + '/' + content[0]}
+									alt={_id}
+									role='none'
+									on:click={handleImage}
+								>
+							</picture>
+						{/if}
+					{/if}
+				{:else if validator.isURL(content)}
+					<a href='{content}' target="_blank">
+						{content}
+					</a>
+				{:else}
+					<p>
+						{@html content}
+					</p>
+				{/if}
+				<p class="left">
+					{getDate(createdAt)}
 				</p>
-			{/if}
-			<p class="left">
-				{getDate(chat.createdAt)}
-			</p>
-		</div>
-	{/each}
+			</div>
+		{/each}
+	</div>
 </div>
 
 <style lang="postcss">
-  .chats {
+	.box-image {
 		grid-column: 2 / span 1;
-		grid-row: 2 / span 1;
-		grid-auto-rows: min-content;
-		background-image: url('/smiley.jpg');
-		scrollbar-width: none;
-		@apply grid w-full p-4 bg-no-repeat bg-cover overflow-y-auto gap-y-3;
+		grid-row: 2 / span 2;
+		@apply flex relative items-center justify-center w-full h-full bg-black z-[200];
 
-		& div {
-			box-shadow: 0 0 3px #777777;
-			@apply flex flex-wrap justify-around w-fit min-w-[260px] max-w-[60%] p-2.5 bg-white rounded-lg gap-0.5 select-none [&.me]:ml-auto [&_.left]:text-right;
+		& picture {
+			@apply w-full h-full;
+
+			& img {
+				@apply w-full h-full object-scale-down;
+			}
+		}
+
+		& button {
+			@apply flex absolute items-center justify-center w-9 h-9 top-5 right-5  bg-transparent font-bold leading-none;
+
+			& i {
+				@apply text-[36px] font-bold text-white;
+			}
 		}
 	}
-	
-	img {
-		@apply w-60 h-60 object-cover object-top cursor-pointer;
+
+	.container-chats {
+		grid-column: 2 / span 1;
+		grid-row: 2 / span 1;
+		background-image: url('/smiley.jpg');
+		@apply flex flex-col w-full bg-no-repeat bg-cover overflow-hidden;
 	}
 
-	h3 {
-		@apply font-semibold;
+  .box-chats {
+		container-type: inline-size;
+		scrollbar-width: none;
+		@apply flex flex-col w-[100%-16px] h-[100%-16px] m-2 p-2 overflow-y-auto gap-y-3;
 	}
 
-	h3, p, a {
-		@apply w-full overflow-hidden leading-tight break-words;
-	}
+	.chat {
+		box-shadow: 0 0 2px #888888;
+		@apply flex flex-col justify-around w-fit min-w-[252px] max-w-[60%] p-1.5 bg-white rounded-sm gap-y-0.5 select-none [&.me]:ml-auto [&_h3]:font-semibold;
 
-	a {
-		@apply w-min mr-auto text-[#346eb1] hover:text-[#7b24a3];
+		& div {
+			@apply flex flex-wrap items-start justify-start w-[480px];
+
+			& picture {
+				@apply flex-none w-60 h-60;
+			}
+
+			@container (width < 820px) {
+				@apply w-60;
+			}
+		}
+
+		& picture {
+			@apply flex min-w-60 max-w-[360px];
+
+			& img {
+				@apply w-full h-full object-cover object-top cursor-pointer;
+			}
+		}
+
+		& h3, p, a {
+			@apply w-full overflow-hidden leading-tight break-words;
+		}
+
+		& p {
+			@apply px-1 [&.left]:text-right;
+		}
+
+		a {
+			@apply w-min mr-auto text-[#346eb1] hover:text-[#7b24a3];
+		}
 	}
 </style>

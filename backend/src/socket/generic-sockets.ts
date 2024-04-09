@@ -23,11 +23,10 @@ export const genericSockets: GenericSockets = (socket, userID, user) => {
 
 		// Find chats
 		const contact = await getContact(roomID, foreignUser, TypeContact.USER, userID);
-		const userContact = await getContact(roomID, user, TypeContact.USER, id);
 	
 		if (foreignUser.logged) {
-			socket.to(foreignUser.tempId).emit('updateContacts', userContact, true);
-			socket.to(foreignUser.tempId).emit('loggedUser', userID, true);
+			const contact = await getContact(roomID, user, TypeContact.USER, id);
+			socket.to(foreignUser.tempId).emit('updateContacts', contact, true);
 		}
 
 		socket.emit('updateContacts', contact);
@@ -39,10 +38,12 @@ export const genericSockets: GenericSockets = (socket, userID, user) => {
 		const member = { id: userID, name: user.username };
 		
 		// Add contact id
-		const group = await Group.findOneAndUpdate(
-			{ _id: id },
-			{ $push: { members: member, connectedUsers: [id] } }
-		) as IGroup;
+		const group = await Group
+			.findOneAndUpdate(
+				{ _id: id },
+				{ $push: { members: member, loggedUsers: [userID] } }
+			)
+			.lean({ virtuals: true }) as IGroup;
 
 		group.members.push(member);
 		
@@ -51,13 +52,22 @@ export const genericSockets: GenericSockets = (socket, userID, user) => {
 
 		// Find chats
 		const contact = await getContact(id, group, TypeContact.GROUP);
+		if (typeof contact.logged !== 'boolean') contact.logged.push(userID);
 
 		socket.emit('updateContacts', contact);
-		socket.to(id).emit('countMembers', id, 1, member);
+		socket.to(id).emit('addMembers', id, [member], [userID]);
 		socket.join(id);
 	});
 
 	socket.on('createGroup', async ({ name, mods, members, state }: GroupInit) => {
+		const contactsIDs = [...mods, ...members].map(user => user.id);
+		
+		const users = contactsIDs.length
+			? await User.find({ id: contactsIDs, logged: true })
+			: [];
+		
+		contactsIDs.push(userID);
+		
 		// Create a new group
 		const group = await Group.create({
 			admin: userID,
@@ -65,44 +75,34 @@ export const genericSockets: GenericSockets = (socket, userID, user) => {
 			members,
 			name,
 			state,
-			loggedUser: [userID]
+			loggedUsers: [userID, ...users.map(user => user.id)]
 		});
 
 		const groupID = String(group._id);
-		const contactsIDs = [...mods, ...members].map(user => user.id);
 		user.groupRooms.push(groupID);
 
 		if (user.blockedGroupsIDs.includes(groupID)) {
 			user.blockedGroups = user.blockedGroups.filter(group => group.id !== groupID);
-			user.blockedGroupsIDs = user.blockedGroupsIDs.filter(groupID => groupID !== groupID);
+			user.blockedGroupsIDs = user.blockedGroupsIDs.filter(id => id !== groupID);
 		}
 
 		// Add group id
-		await User.updateOne(
-			{ _id: userID },
-			{ groupRooms: user.groupRooms, blockedGroups: user.blockedGroups }
-		);
-
-		const contact = await getContact(groupID, group.toJSON(), TypeContact.GROUP);
-
 		await User.updateMany(
 			{ _id: contactsIDs },
 			{
-				$push: { groupRooms: [groupID] },
+				$push: { groupRooms: groupID },
 				$pull: { blockedGroups: { id: groupID } }
 			}
 		);
 
-		// Get roomIDs
-		const roomIDs: string[] = [];
-
-		for (const { userID, roomID } of user.users) {
-			if (contactsIDs.includes(userID)) roomIDs.push(roomID);
-		}
+		const contact = await getContact(groupID, group.toJSON(), TypeContact.GROUP);
 
 		socket.join(groupID);
 		socket.emit('updateContacts', contact);
-		socket.to(roomIDs).emit('updateContacts', contact, true);
+		
+		if (users.length) {
+			socket.to(users.map(user => user.tempId)).emit('updateContacts', contact, true);
+		}
 	});
 
 	socket.on('emitUnblock', ({ users, groups }: IKeys<string[]>) => {

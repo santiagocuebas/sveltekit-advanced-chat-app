@@ -35,11 +35,12 @@ export interface IContact {
 	name: string;
 	avatar: string;
 	description: string;
-	logged: boolean | number;
+	logged: boolean | string[];
 	type: TypeContact;
 	admin?: string;
 	members?: Member[];
 	mods?: Member[];
+	allIDs?: string[];
 	blacklist?: Member[];
 	blockedIDs?: string[];
 	state?: string;

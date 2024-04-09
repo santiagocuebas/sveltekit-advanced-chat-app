@@ -37,6 +37,7 @@ export interface IUser {
 	_id: string;
 	id: string;
 	tempId: string;
+	socketIds: string[];
 	githubId: number;
 	email: string;
 	username: string;
@@ -57,7 +58,7 @@ export interface IUser {
 	createdAt: Date;
 }
 
-export type IPartialUser = Pick<IUser, 'id' | 'username' | 'avatar' | 'description' | 'blockedUsers' | 'blockedGroups'>;
+export type IPartialUser = Pick<IUser, 'id' | 'username' | 'type' | 'avatar' | 'description' | 'blockedUsers' | 'blockedGroups'>;
 
 export interface IGroup {
 	_id: string;
@@ -67,12 +68,13 @@ export interface IGroup {
 	modIDs: string[];
 	members: Member[];
 	memberIDs: string[];
+	allIDs: string[];
 	name: string;
 	state: string;
 	description: string;
 	avatar: string;
 	loggedUsers: string[];
-	logged: number;
+	logged: string[];
 	blacklist: Member[];
 	blockedIDs: string[];
 	createdAt: Date;

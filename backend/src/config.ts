@@ -16,6 +16,6 @@ export const MONGO_URI = process.env.MONGO_URI as string;
 
 export const MONGO_REPLIC = process.env.MONGO_REPLIC as string;
 
-export const SOCKETS_DB = process.env.SOCKETS_DB;
+export const MONGO_DB = process.env.MONGO_DB;
 
-export const COLLECTION = process.env.COLLECTION as string;
+export const MONGO_COLLECTION = process.env.MONGO_COLLECTION as string;

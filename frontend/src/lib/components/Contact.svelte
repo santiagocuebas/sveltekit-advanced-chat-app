@@ -1,10 +1,8 @@
 <script lang="ts">
   import type { IForeign, IGroup } from "$lib/types/global";
 	import { DIR } from "$lib/config";
-  import { selectJoin } from "$lib/dictionary";
-	import { socket } from "$lib/socket";
+  import { getDate, getUrl } from "$lib/services";
 	import { options, contact as user } from '$lib/store';
-  import { getDate, getUrl } from "$lib/services/libs";
 
   export let contact: IForeign | IGroup;
 
@@ -13,15 +11,14 @@
 	const joinRoom = (contact: IForeign | IGroup) => {
 		options.resetOptions();
 		user.setContact(contact as never);
-		socket.emit(selectJoin[contact.type], contact.contactID, contact.roomID);
 	};
 </script>
 
 <a href="/{type}s/{contactID}" on:click={() => joinRoom(contact)}>
-	<li class:selected={$user.contactID === contactID}>
+	<li class:selected={$user?.contactID === contactID}>
 		<span
 			class:green={logged === true}
-			class:blue={typeof logged === 'number'}
+			class:blue={logged instanceof Array}
 		>&#149;</span>
 		<picture>
 			<img src={DIR + '/' + avatar} alt={contactID}>

@@ -13,6 +13,7 @@ export const getUser = (user: IUser): IPartialUser => {
 	return {
 		id: user.id,
 		username: user.username,
+		type: user.type,
 		avatar: user.avatar,
 		description: user.description,
 		blockedUsers: user.blockedUsers,
@@ -29,11 +30,12 @@ export const getContact: Contact = async (roomID, contact, type, id) => {
 		.findOne(search)
 		.sort({ createdAt: -1 });
 
-	const data = (typeof contact.logged === 'number')
+	const data = (typeof contact.logged !== 'boolean')
 		? {
 			admin: contact.admin,
 			members: contact.members,
 			mods: contact.mods,
+			allIDs: contact.allIDs,
 			blacklist: contact.blacklist,
 			state: contact.state
 		} : { blockedIDs: contact.blockedUsersIDs };
@@ -53,18 +55,13 @@ export const getContact: Contact = async (roomID, contact, type, id) => {
 };
 
 export const matchId = (group: IGroup, userIDs: string[]) => {
-	let match = false;
-
 	if (group.state === StateOption.PROTECTED) {
 		for (const id of [group.admin, ...group.modIDs, ...group.memberIDs]) {
-			if (userIDs.includes(id)) {
-				match = true;
-				break;
-			}
+			if (userIDs.includes(id)) return true;
 		}
 	}
 
-	return match;
+	return false;
 };
 
 export const getId = async (type?: string): Promise<string> => {

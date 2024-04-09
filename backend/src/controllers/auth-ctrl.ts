@@ -2,8 +2,9 @@ import type { Direction, IKeys } from '../types/types';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { GITHUB_ID, GITHUB_SECRET, SECRET } from '../config.js';
-import { encryptPassword, getUser } from '../libs/index.js';
-import { User } from '../models/User.js';
+import { encryptPassword, getUser, matchPassword } from '../libs/index.js';
+import { User } from '../models/index.js';
+import { TypeUser } from '../types/enums.js';
 
 export const getData: Direction = async (req, res) => {
 	const user = getUser(req.user);
@@ -11,12 +12,27 @@ export const getData: Direction = async (req, res) => {
 	return res.json({ user });
 };
 
-export const getAccessToken: Direction = async (req, res) => {
-	const params = `?client_id=${GITHUB_ID}&client_secret=${GITHUB_SECRET}&code=${req.query.code}`;
+export const postPassword: Direction = async (req, res) => {
+	const { password } = req.body;
+
+	// Check if is correct password
+	const match = typeof password === 'string' &&
+		req.user.type === TypeUser.EMAIL &&
+		await matchPassword(password, req.user.password)
+			.catch(err => {
+				console.log(err?.message);
+				return false;
+			});
+
+	return res.json(match);
+};
+
+export const postGithubToken: Direction = async (req, res) => {
+	const params = `client_id=${GITHUB_ID}&client_secret=${GITHUB_SECRET}&code=${req.query.code}`;
 
 	const data: IKeys<string> | null = await axios({
 		method: 'POST',
-		url: 'https://github.com/login/oauth/access_token' + params,
+		url: 'https://github.com/login/oauth/access_token?' + params,
 		headers: { accept: 'application/json' }
 	}).then(res => res.data)
 		.catch(err => {
@@ -47,7 +63,7 @@ export const getAccessToken: Direction = async (req, res) => {
 			.create({
 				githubId: githubUserData.id,
 				username: githubUserData.login,
-				type: 'Github'
+				type: TypeUser.GITHUB
 			});
 	}
 
@@ -76,7 +92,8 @@ export const postRegister: Direction = async (req, res) => {
 			.create({
 				username,
 				email,
-				password: await encryptPassword(password)
+				password: await encryptPassword(password),
+				type: TypeUser.EMAIL
 			});
 	}
 

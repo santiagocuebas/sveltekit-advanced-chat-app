@@ -1,40 +1,40 @@
 <script lang="ts">
-	import type { IList, ResponseData } from '$lib/types/global';
-	import { onDestroy, onMount } from 'svelte';
-	import axios from '$lib/axios';
+	import type { PageData } from '../$types';
+	import type { IForeign, IGroup, IList } from '$lib/types/global';
+	import { afterNavigate } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import { DIR } from '$lib/config';
   import { selectCreate } from "$lib/dictionary";
   import { socket } from "$lib/socket";
-	import { list } from '$lib/store';
-	
-	let listValues: IList[];
+	import { contact, contacts } from '$lib/store';
+	import { Option } from '$lib/types/enums';
 
-	const unsubList = list.subscribe(value => listValues = value as IList[]);
+	export let data: PageData & { contacts: IList[] };
 
-	function createRoom(id: string, type: string) {
-		socket.emit(selectCreate[type], id);
-	}
+	const updateContacts = (user: IForeign & IGroup, emit: boolean) => {
+		if (user.type === Option.USER) contacts.addContact(user);
+		else contacts.addGroup(user);
 
-	onMount(async () => {
-		const queryString = location.search;
-		const urlParams = new URLSearchParams(queryString);
-		const searchParam = urlParams.get('q');
+		data.contacts = data.contacts.filter(item => item.contactID !== user.contactID)
+		
+		if (emit) socket.emit('joinUpdate', user);
+	};
 
-		if (!listValues.length && searchParam) {
-			const data: ResponseData = await axios({ url: '/home/search/' + searchParam })
-				.then(res => res.data)
-				.catch(err => err.response?.data);
+	onMount(() => {
+		socket.on('updateContacts', updateContacts);
 
-			if (data.contacts) list.setLists(data.contacts);
-		}
+		return () => socket.off('updateContacts', updateContacts);
 	});
-
-	onDestroy(unsubList);
+	
+	afterNavigate(() => {
+		contact.resetContact();
+		socket.emit('removeListeners');
+	});
 </script>
 
 <ul>
-	{#if listValues.length}
-		{#each listValues as item (item.contactID+item.type)}
+	{#if data.contacts.length}
+		{#each data.contacts as item (item.contactID+item.type)}
 			<li class="item">
 				<picture>
 					<img src={DIR + '/' + item.avatar} alt={item.contactID}>
@@ -44,9 +44,9 @@
 					<p class="content">{item.description}</p>
 				{/if}
 				<div>
-					<button on:click={() => createRoom(item.contactID, item.type)}>
-						Join
-					</button>
+					<button
+						on:click={() => socket.emit(selectCreate[item.type], item.contactID)}
+					>Join	</button>
 				</div>
 			</li>
 		{/each}

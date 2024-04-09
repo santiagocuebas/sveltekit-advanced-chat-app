@@ -11,7 +11,9 @@ router.use(upload.none());
 
 router.get('/', isValidToken, authCtrl.getData);
 
-router.get('/getAccessToken', isNotValidToken, authCtrl.getAccessToken);
+router.post('/password', isValidToken, authCtrl.postPassword);
+
+router.post('/registerGithub', isNotValidToken, authCtrl.postGithubToken);
 
 router.post(
 	'/register',

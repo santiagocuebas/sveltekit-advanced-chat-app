@@ -14,13 +14,8 @@ export const isLength = (value: string | string[] | Member[], min: number, max: 
 };
 
 export const existsImage = async (values: string[]): Promise<boolean> => {
-	let match = true;
-
 	for (const value of values) {
-		if (!isString(value)) {
-			match = false;
-			break;
-		}
+		if (!isString(value)) return false;
 
 		const path = resolve(value);
 
@@ -31,13 +26,10 @@ export const existsImage = async (values: string[]): Promise<boolean> => {
 				return null;
 			});
 
-		if (!stringBuffer) {
-			match = false;
-			break;
-		}
+		if (!stringBuffer) return false;
 	}
 
-	return match;
+	return true;
 };
 
 export const isValidUser = async (
@@ -65,21 +57,15 @@ export const groupList = ({ admin, memberIDs, modIDs, blockedIDs }: IGroup) => {
 
 export const isValidKey = (values: string[]) => {
 	const arrayValues = ['name', 'mods', 'members', 'state'];
-	let match = true;
 
 	for (const key of values) {
-		if (typeof key !== 'string' || !arrayValues.includes(key)) {
-			match = false;
-			break;
-		}
+		if (typeof key !== 'string' || !arrayValues.includes(key)) return false;
 	}
 
-	return match;
+	return true;
 };
 
 export const isValidUsers = async (members: Member[], userIDs: string[]) => {
-	let match = true;
-
 	for (const member of members) {
 		if (
 			!isObject(member) ||
@@ -87,11 +73,8 @@ export const isValidUsers = async (members: Member[], userIDs: string[]) => {
 			!isString(member.name) ||
 			!userIDs.includes(member.id) ||
 			!(await User.findOne({ _id: member.id, username: member.name }))
-		) {
-			match = false;
-			break;
-		}
+		) return false;
 	}
 
-	return match;
+	return true;
 };

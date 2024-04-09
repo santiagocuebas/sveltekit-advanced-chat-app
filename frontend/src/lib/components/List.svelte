@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { clickOutside } from "$lib/services/out-click";
+  import { clickOutside } from "$lib/services";
 
 	export let visible: boolean;
 </script>
@@ -23,7 +23,7 @@
 	}
 
 	ul {
-		box-shadow: 0 0 10px #aaaaaa;
-		@apply absolute self-start min-w-[150px] right-0 mt-11 py-2 bg-white rounded z-[1000];
+		box-shadow: 0 0 2px #aaaaaa;
+		@apply absolute self-start min-w-[150px] right-0 mt-11 py-2 bg-white rounded cursor-default z-[1000];
 	}
 </style>

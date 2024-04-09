@@ -10,23 +10,19 @@ const router = Router();
 router.use(isValidToken);
 
 router.post(
-	'/group',
+	'/avatar',
 	upload.single('avatar'),
 	validate(arrayAvatar),
 	homeCtrl.postAvatar
 );
 
 router.post(
-	'/images',
-	upload.array('images'),
+	'/audiovisual',
+	upload.array('audiovisual'),
 	validate(arrayImages),
-	homeCtrl.postImages
+	homeCtrl.postAudiovisual
 );
 
-router.use(upload.none());
-
-router.get('/search/:param', homeCtrl.getSearch);
-
-router.post('/password', homeCtrl.postPassword);
+router.get('/search/:param', upload.none(), homeCtrl.getSearch);
 
 export default router;

@@ -1,19 +1,18 @@
-import type {
-	ISettingsProps,
-	Member,
-	RawUser,
-	ResponseData
-} from "$lib/types/global";
+import type { Member, RawUser } from "$lib/types/global";
 import { goto } from '$app/navigation';
 import jsCookie from 'js-cookie';
 import axios from "$lib/axios";
 import { socket } from '$lib/socket';
 import { user, register } from '$lib/store';
-import { Formats, Method, Option } from "$lib/types/enums";
+import { Option } from "$lib/types/enums";
 
-export const connectSocket = (rawUser: RawUser, token: string) => {
+export const connectSocket = (
+	rawUser: RawUser,
+	token: string,
+	isRedirect?: boolean
+) => {
 	user.setUser(rawUser);
-				
+
 	jsCookie.set('authenticate', token, {
 		expires: 15,
 		path: '/',
@@ -21,9 +20,11 @@ export const connectSocket = (rawUser: RawUser, token: string) => {
 		secure: location.protocol === 'https'
 	});
 
-	axios.defaults.headers.common['Authorization'] = token;
-	register.resetOptions();
-	goto('/');
+	if (isRedirect) {
+		axios.defaults.headers.common['Authorization'] = token;
+		register.resetOptions();
+		goto('/');
+	}
 
 	setTimeout(() => {
 		socket.auth = { sessionID: rawUser.id, token };
@@ -34,7 +35,16 @@ export const connectSocket = (rawUser: RawUser, token: string) => {
 
 export const changeName = (value: string) => {
 	const firstLetter = value.at(0) as string;
-	return value.replace(value.at(0) as string, firstLetter.toUpperCase());
+	return value.replace(firstLetter, firstLetter.toUpperCase());
+};
+
+export const getUrl = (url: string) => {
+	const [imgURL] = url.split('/').reverse();
+	return imgURL;
+};
+
+export const addId = ({ id }: Member, list: string[]) => {
+	return !list.includes(id) ? [id, ...list] : list.filter(item => item !== id);
 };
 
 export const getId = () => {
@@ -64,100 +74,4 @@ export const getDate = (createdAt: string) => {
 	}
 	
 	return months[date.getMonth()] + ' ' + date.getFullYear();
-};
-
-export const getUrl = (url: string) => {
-	const [imgURL] = url.split('/').reverse();
-	return imgURL;
-};
-
-export const getImages = async (files: FileList | null) => {
-	let filenames: string[] | null = null;
-
-	if (files && files.length < 4) {
-		const formData = new FormData();
-		const validFormat: string[] = Object.values(Formats);
-		let match = true;
-
-		for (const file of files) {
-			if (file.size > 1e7 * 2 && !validFormat.includes(file.type)) {
-				match = false;
-				break;
-			}
-
-			formData.append('images', file);
-		}
-
-		if (match) {
-			const data: ResponseData = await axios({
-				method: Method.POST,
-				url: '/home/images',
-				data: formData
-			}).then(res => res.data)
-				.catch(err => err.response?.data);
-
-			if (data && data.filenames) filenames = data.filenames;
-		}
-	}
-
-	return filenames;
-};
-
-export const sendAvatar = async (file: File, id: string) => {
-	const formData = new FormData()
-	formData.append('avatar', file);
-	formData.append('id', id);
-
-	const data: ResponseData = await axios({
-		method: Method.POST,
-		url: '/home/group',
-		data: formData
-	}).then(res => res.data)
-		.catch(err => err.response?.data);
-
-	return data.filename;
-};
-
-export const setSettingsProps = (avatar: string, description: string): ISettingsProps => {
-	return {
-		avatar,
-		username: '',
-		description,
-		password: {
-			match: false,
-			new: false,
-			confirm: false
-		},
-		unblock: { users: [], groups: [] }
-	}
-};
-
-export const addId = ({ id }: Member, list: string[]) => {
-	return !list.includes(id) ? [id, ...list] : list.filter(item => item !== id);
-};
-
-export const getData = ([actPass, newPass, confirmPass]: (() => void)[]) => {
-	return [
-		{ name: 'actPassword', text: 'Enter the actual password', key: actPass },
-		{ name: 'newPassword', text: 'Enter the new password', key: newPass },
-		{ name: 'confirmPassword', text: 'Confirm the password', key: confirmPass }
-	];
-};
-
-export const isDisabled = (avatar: string, description: string) => {
-	return {
-		avatar: (props: ISettingsProps) => {
-			return props.avatar !== avatar;
-		},
-		username: (props: ISettingsProps) => {
-			return props.username.length > 3  && props.username.length <= 40;
-		},
-		description: (props: ISettingsProps) => props.description !== description,
-		password: (props: ISettingsProps) => {
-			return props.password.match && props.password.new && props.password.confirm;
-		},
-		unblock: (props: ISettingsProps) => {
-			return props.unblock.users.length || props.unblock.groups.length;
-		}
-	};
 };

@@ -1,4 +1,6 @@
-export type Contact = IForeign & IGroup;
+export type Contact = IPartialForeign & IPartialGroup & {
+	logged: boolean | string[]
+};
 
 export type Member = { id: string, name: string };
 
@@ -6,10 +8,19 @@ export type Check = (value: string) => string | undefined;
 
 export type GroupProps = { id: string, name: string, type: TypeContact };
 
-export type ChoiceSocket = (contact: Contact) => IKeys<(value: any) => any>;
+export type ChoiceSocket = (contact: Contact) => IChoiseResult;
+
+export type SetSettingsProps = (user: IUser) => ISettingsProps;
+
+export type IsDisabledButton = (user: IUser) => IDisabledButton;
 
 export interface IKeys<Type> {
 	[index: string]: Type;
+}
+
+export interface IErrorsProps {
+	success: boolean;
+	message: string | IKeys<string>;
 }
 
 export interface RegisterInput {
@@ -23,6 +34,7 @@ export interface RegisterInput {
 export interface RawUser {
 	id: string;
 	username: string;
+	type: string;
 	avatar: string;
 	description: string;
 	blockedUsers: Member[];
@@ -30,12 +42,13 @@ export interface RawUser {
 }
 
 export interface IUser {
-	[index: string]: string | IKeys<Member[]>;
-	id: string;
-	username: string;
-	avatar: string;
-	description: string;
-	blocked: IKeys<Member[]>;
+	[index: string]: string | IKeys<Member[]> | undefined;
+	id?: string;
+	username?: string;
+	type?: string;
+	avatar?: string;
+	description?: string;
+	blocked?: IKeys<Member[]>;
 }
 
 interface IContact {
@@ -43,23 +56,31 @@ interface IContact {
 	roomID: string;
 	name: string;
 	avatar: string;
-	logged: boolean | number;
 	type: string;
 	content?: string | string[];
 	createdAt?: string;
 }
 
-export interface IForeign extends IContact {
+interface IPartialForeign extends IContact {
 	blockedIDs: string[];
 }
 
-export interface IGroup extends IContact {
+export interface IForeign extends IPartialForeign {
+	logged: boolean;
+}
+
+interface IPartialGroup extends IContact {
 	admin: string;
 	mods: Member[];
 	members: Member[];
 	blacklist: Member[];
+	allIDs: string[];
 	description: string;
 	state: string;
+}
+
+export interface IGroup extends IPartialGroup {
+	logged: string[];
 }
 
 export interface IList {
@@ -76,6 +97,11 @@ export interface Contacts {
 	groups: IGroup[];
 };
 
+export interface IContacts {
+	users: IForeign[];
+	groups: IGroup[];
+}
+
 export interface IChat {
 	_id: string;
 	from: string;
@@ -85,30 +111,57 @@ export interface IChat {
 	createdAt: string;
 }
 
+export interface IChoiseResult {
+	[index: string]: ((value?) => never[]) | ((value?) => string[]) | ((value: string) => string[]) | ((avatar: string) => Promise<string[]>) | ((members: Member[]) => [Member[], string]) | ((banIDs: string[]) => [string[], string]);
+	leave: () => never[];
+	blockGroup: () => string[];
+	add: (members: any) => [Member[], string];
+	ban: (banIDs: any) => [string[], string];
+	block: (blockUsers: any) => [Member[], string];
+	unblock: (unblockIDs: any) => [string[], string];
+	addMod: (newMods: any) => [Member[], string];
+	removeMod: (removeMod: any) => [Member[], string];
+	avatar: (avatar: any) => Promise<string[]>;
+	description: (description: any) => string[];
+	state: (state: any) => string[];
+	destroy: () => never[];
+}
+
 export interface IGroupProps {
-	[index: string]: Member[] | string[] | string | ((key: string) => void) | undefined;
+	[index: string]: string | File | string[] | Member[] | undefined;
 	add: Member[];
 	ban: string[];
 	block: Member[];
 	unblock: string[];
 	addMod: Member[];
 	removeMod: Member[];
+	avatar: string | File;
 	description: string;
 	state: string;
 	destroy?;
 }
 
 export interface ISettingsProps {
-	[index: string]: string | IKeys<boolean> | IKeys<string[]> | ((key: string) => void);
-	avatar: string;
+	[index: string]: string | IKeys<boolean> | IKeys<string[]> | undefined;
+	avatar?: string;
   username: string;
-	description: string;
-	password: IKeys<boolean>;
+	description?: string;
+	password: IKeys<boolean>,
   unblock: IKeys<string[]>;
 }
 
+export interface IDisabledButton {
+	[index: string]: ((value: string) => boolean) | ((pass: IKeys<boolean>) => boolean) | ((list: IKeys<string[]>) => boolean);
+	avatar: (value: any) => boolean;
+  username: (value: any) => boolean;
+	description: (value: any) => boolean;
+	password: (pass: any) => boolean;
+  unblock: (list: any) => boolean;
+	delete: () => boolean;
+}
+
 export interface ResponseData {
-	[index: string]: string | string[] | boolean | IKeys<string> | IList[] | IUser;
+	[index: string]: string | string[] | boolean | IKeys<string> | IList[] | RawUser;
 	user: RawUser;
 	token: string;
 	errors: IKeys<string>;
@@ -120,10 +173,8 @@ export interface ResponseData {
 }
 
 export interface SettingsData {
-	[index: string]: string | IKeys<string>;
-	errors: boolean;
+	[index: string]: string | boolean | IKeys<string>;
 	success: boolean;
 	filename: string;
 	message: string | IKeys<string>;
-	error: IKeys<string>;
 }

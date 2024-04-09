@@ -1,5 +1,13 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation';
+  import { socket } from '$lib/socket';
+  import { contact } from '$lib/store';
   import { PathIcon } from '$lib/types/enums';
+
+	afterNavigate(() => {
+		contact.resetContact();
+		socket.emit('removeListeners');
+	});
 </script>
 
 <div class="logo">
@@ -56,10 +64,11 @@
 	.logo {
 		grid-column: 2 / span 1;
 		grid-row: 1 / span 3;
+		container-type: size;
 		@apply flex flex-col relative items-center justify-center w-full h-full bg-[#f0f3f3] overflow-hidden gap-2.5 z-[50];
 
 		& picture {
-			@apply flex-none w-1/2 min-w-[295px] max-w-[480px] min-h-[295px] max-h-[480px];
+			@apply flex-none w-[480px] h-[480px];
 		}
 
 		& img {
@@ -67,7 +76,7 @@
 		}
 
 		& h2 {
-			@apply w-full min-h-min text-center text-6xl leading-none;
+			@apply w-full min-h-min text-center font-medium text-6xl leading-none;
 		}
 
 		& ul {
@@ -103,6 +112,12 @@
 
 			&:nth-child(6) {
 				@apply bg-[#3448c5];
+			}
+		}
+
+		@container (width < 500px) or (height < 700px) {
+			& picture {
+				@apply w-[295px] h-[295px];
 			}
 		}
 	}

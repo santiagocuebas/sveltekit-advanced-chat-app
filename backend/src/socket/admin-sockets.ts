@@ -16,7 +16,7 @@ export const adminSockets: AdminSockets = (socket, [userID, contactID]) => {
 			}
 		);
 		
-		socket.to(contactID).emit('addMods', contactID, ...mods);
+		socket.to(contactID).emit('addMods', contactID, mods);
 	});
 
 	socket.on('emitRemoveMod', async (members: Member[]) => {
@@ -29,7 +29,7 @@ export const adminSockets: AdminSockets = (socket, [userID, contactID]) => {
 			}
 		);
 		
-		socket.to(contactID).emit('removeMods', contactID, ...members);
+		socket.to(contactID).emit('removeMods', contactID, members);
 	});
 
 	socket.on('emitChangeAvatar', async (filename: string) => {

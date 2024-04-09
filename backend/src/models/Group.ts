@@ -19,19 +19,28 @@ const groupSchema = new Schema<IGroup>({
 		createdAt: true,
 		updatedAt: false
 	},
-	toJSON: { virtuals: true }
+	toJSON: { virtuals: true },
+	virtuals: true
 });
 
 groupSchema
 	.virtual('modIDs')
 	.get(function(this): string[] {
-		return this.mods?.map(mod => mod.id);
+		return this.mods?.map(mod => mod.id) ?? [];
 	});
 
 groupSchema
 	.virtual('memberIDs')
 	.get(function(this): string[] {
-		return this.members?.map(member => member.id);
+		return this.members?.map(member => member.id) ?? [];
+	});
+
+groupSchema
+	.virtual('allIDs')
+	.get(function(this): string[] {
+		const members = this.members?.map(member => member.id) ?? [];
+		const mods = this.mods?.map(mod => mod.id) ?? [];
+		return [this.admin, ...mods, ...members];
 	});
 
 groupSchema
@@ -42,8 +51,8 @@ groupSchema
 
 groupSchema
 	.virtual('logged')
-	.get(function(this): number {
-		return this.loggedUsers?.length;
+	.get(function(this): string[] {
+		return this.loggedUsers;
 	});
 
 groupSchema.plugin(MLV);

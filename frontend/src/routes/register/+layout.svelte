@@ -5,8 +5,8 @@
 	import jsCookie from 'js-cookie';
 	import axios from '$lib/axios';
   import { GITHUB_ACCESS } from '$lib/config';
+	import { changeName, connectSocket } from '$lib/services';
   import { emailInput, passInput, register } from '$lib/store';
-	import { changeName, connectSocket } from '$lib/services/libs';
   import { Method, Option, PathIcon } from '$lib/types/enums';
 
 	let visible = false;
@@ -25,7 +25,7 @@
 				.catch(err => err.response ? err.response.data : visible = true);
 
 			if (data.user) {
-				connectSocket(data.user, data.token);
+				connectSocket(data.user, data.token, true);
 			} else if (data.errors) {
 				const { username, password } = data.errors;
 
@@ -43,14 +43,16 @@
 
 		if (codeParam && !token) {
 			register.resetOptions();
-			const data: ResponseData = await axios({ url: '/auth/getAccessToken?code=' + codeParam })
-				.then(res => res.data)
+			const data: ResponseData = await axios({
+				method: Method.POST,
+				url: '/auth/registerGithub?code=' + codeParam
+			}).then(res => res.data)
 				.catch(err => {
 					console.error(err?.message);
 					return null;
 				});
 
-			if (data?.user) connectSocket(data.user, data.token);
+			if (data?.user) connectSocket(data.user, data.token, true);
 		}
 	});
 
@@ -93,12 +95,16 @@
 		grid-auto-rows: min-content;
 		grid-column: 1 / span 2;
 		grid-row: 1 / span 3;
-		@apply grid relative justify-items-center content-center w-full py-5 bg-white gap-5 [&_h1]:text-[56px];
+		@apply grid relative justify-items-center content-center w-full py-5 bg-white gap-5;
 
 		& div {
 			box-shadow: 0 0 0 2px #928a1a;
 			@apply w-max p-[18px] bg-[#f2f8a1] rounded text-center font-bold text-[#727010];
 		}
+	}
+
+	h1 {
+		@apply font-medium text-[56px];
 	}
 
 	form {

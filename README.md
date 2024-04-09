@@ -1,26 +1,26 @@
 # SvChat
-SvChat is a web application to chatting.
+SvChat es una aplicación web, vagamente basada en WhatsApp, con las que puedes enviar mensajes, imagenes, audios, videos y crear grupos.
 ![image](/docs/screenshot1.png)
 ![image](/docs/screenshot2.png)
 
-## Enviroment Variables
-### Client
-* `PUBLIC_DIR`, the http server port.
-* `PUBLIC_GITHUB_ID`, the github oauth client id.
-### Server
-* `PORT`, the http server port.
-* `SECRET`, the JWT secret.
-* `ORIGIN`, the http client port.
-* `GITHUB_ID`, the github oauth client id.
-* `GITHUB_SECRET`, the github oauth client secret.
-* `MONGO_URI`, the mongodb database uri.
-* `MONGO_REPLIC`, the mongodb database replic set uri.
-* `SOCKETS_DB`, database name of replic set.
-* `COLLECTION`, collection name of replic set.
+## Variables de Ambiente
+### Cliente
+* `PUBLIC_DIR`, la dirección http del servidor.
+* `PUBLIC_GITHUB_ID`, el id del cliente github oauth.
+### Servidor
+* `PORT`, el puerto del servidor.
+* `SECRET`, la clave JWT secreta.
+* `ORIGIN`, la dirección http del cliente.
+* `GITHUB_ID`, el id del cliente github oauth.
+* `GITHUB_SECRET`, la clave secreta del cliente github oauth.
+* `MONGO_URI`, el URI de la base de datos de mongodb.
+* `MONGO_REPLIC`, el URI de la base de datos de mongodb replica set.
+* `MONGO_DB`, el nombre de la base de datos del replica set.
+* `MONGO_COLLECTION`, el nombre de la colección del replica set.
 
-## Installation
+## Instalación Manual
 ```
-git clone -b svchat-with-fs --single-branch https://github.com/santiagocuebas/sveltekit-advanced-chat-app
+git clone -b svchat-with-fs --single-branch https://github.com/santiagocuebas/sveltekit-advanced-chat-app //
 cd sveltekit-advanced-chat-app
 cd backend
 pnpm run todo
@@ -28,7 +28,7 @@ cd frontend
 pnpm run todo
 ```
 
-## Resources
+## Recursos
 * Node.js
 * Express
 * MongoDB
@@ -37,5 +37,6 @@ pnpm run todo
 * SvelteKit
 * Tailwind.css
 
-## Future Improvements
-- [ ] Update syntax a Svelte 5
+## Mejoras a Futuro
+- [ ] Actualizar sintaxis a Svelte 5.
+- [ ] Actualizar a Web Mobile.

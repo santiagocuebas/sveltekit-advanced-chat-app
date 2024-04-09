@@ -1,7 +1,8 @@
 import type { Direction, IKeys } from '../types/types.js';
 import fs from 'fs/promises';
-import { extname, resolve } from 'path';
-import { getId, matchId, matchPassword } from '../libs/index.js';
+import { resolve } from 'path';
+import { AvailableExts } from '../dictionary.js';
+import { getId, matchId } from '../libs/index.js';
 import { Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
 
@@ -71,25 +72,12 @@ export const getSearch: Direction = async (req, res) => {
 	return res.json({ contacts });
 };
 
-export const postPassword: Direction = async (req, res) => {
-	const { password } = req.body;
-	let match = false;
-
-	if (typeof password === 'string') {
-		// Check if is correct password
-		match = await matchPassword(password, req.user.password);
-	}
-
-	return res.json({ match });
-};
-
-export const postImages: Direction = async (req, res) => {
-	const files = req.files as Express.Multer.File[];
+export const postAudiovisual: Direction = async (req, res) => {
+	const files = req.files instanceof Array ? req.files : [];
 	const filenames: string[] = [];
 
 	for (const file of files) {
-		const ext = extname(file.originalname).toLowerCase();
-		const avatarURL = await getId() + ext;
+		const avatarURL = await getId() + AvailableExts[file.mimetype];
 		const targetPath = resolve(avatarURL);
  
 		// Set avatar location
@@ -105,8 +93,8 @@ export const postAvatar: Direction = async (req, res) => {
 	const group = await Group.findOne({ _id: req.body.id, admin: req.user.id });
 	
 	if (group !== null && req.file) {
-		const ext = extname(req.file?.originalname as string).toLowerCase();
-		const avatarURL = await getId(TypeContact.GROUP) + ext;
+		const avatarURL = await getId(TypeContact.GROUP) +
+			AvailableExts[req.file.mimetype];
 		const oldPath = resolve(group.avatar);
 		const targetPath = resolve(avatarURL);
 

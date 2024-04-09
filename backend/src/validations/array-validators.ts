@@ -2,7 +2,7 @@ import { body, type ValidationChain } from 'express-validator';
 import {
 	isValidPassword,
 	isUndefinedImage,
-	isValidExtension,
+	isValidFormat,
 	isValidSize,
 	isCorrectPassword,
 	existsUsers,
@@ -27,7 +27,7 @@ export const arrayRegister: ValidationChain[] = [
 ];
 
 export const arrayImages: ValidationChain[] = [
-	body('images', 'Enter a valid image archive')
+	body('audiovisual', 'Enter a valid image archive')
 		.custom(isArrayImages).bail()
 		.custom(isValidLengthImages).bail()
 		.custom(isUndefinedImages).bail()
@@ -37,7 +37,7 @@ export const arrayImages: ValidationChain[] = [
 export const arrayAvatar: ValidationChain[] = [
 	body('avatar', 'Enter a valid image archive')
 		.custom(isUndefinedImage).bail()
-		.custom(isValidExtension).bail()
+		.custom(isValidFormat).bail()
 		.custom(isValidSize)
 ];
 

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type { Member } from '$lib/types/global';
-	import { afterNavigate, goto } from '$app/navigation';
+	import { goto } from '$app/navigation';
   import { Messages } from '$lib/dictionary';
   import { isMember, isMod, changeName } from '$lib/services';
   import { socket } from "$lib/socket";
-  import { contact, contacts } from '$lib/store';
+  import { contacts } from '$lib/store';
 	import { StateOption } from '$lib/types/enums';
 
 	let name = '';
@@ -31,11 +31,6 @@
 		members = [];
 		state = StateOption.PUBLIC;
 	}
-	
-	afterNavigate(() => {
-		contact.resetContact();
-		socket.emit('removeListeners');
-	});
 </script>
 
 <div class="container-box">

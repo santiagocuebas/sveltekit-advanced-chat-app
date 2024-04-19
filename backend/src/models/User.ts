@@ -5,13 +5,14 @@ import MLV from 'mongoose-lean-virtuals';
 import { TypeUser } from '../types/enums.js';
 
 const userSchema = new Schema<IUser>({
-	username: { type: String },
+	username: String,
 	email: { type: String, unique: true },
 	githubId: { type: Number, unique: true },
-	password: { type: String },
+	password: String,
 	type: { type: String, default: TypeUser.EMAIL },
 	logged: { type: Boolean, default: false },
-	tempId: { type: String },
+	tempId: String,
+	socketIds: [String],
 	avatar: { type: String, default: 'https://res.cloudinary.com/dnu1qjhqz/image/upload/v1707468289/advanced/avatar/avatar.png' },
 	description: { type: String, default: "It's just another description of a user" },
 	users: [Object],

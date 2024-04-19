@@ -1,7 +1,7 @@
 import type { Member } from '../types/global.js';
 import type { AdminSockets } from '../types/sockets.js';
 import { v2 as cloudinary } from 'cloudinary';
-import { getChats } from '../libs/get-data.js';
+import { getChats } from '../libs/index.js';
 import { User, Group } from '../models/index.js';
 
 export const adminSockets: AdminSockets = (socket, [userID, contactID]) => {

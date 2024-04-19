@@ -98,6 +98,7 @@ export interface Contacts {
 };
 
 export interface IContacts {
+	[index: string]: IForeign[] | IGroup[];
 	users: IForeign[];
 	groups: IGroup[];
 }
@@ -106,9 +107,10 @@ export interface IChat {
 	_id: string;
 	from: string;
 	to: string;
+	type: string;
 	username?: string;
-	content: string | string[];
-	createdAt: string;
+	content?: string | string[];
+	createdAt?: string;
 }
 
 export interface IChoiseResult {
@@ -161,15 +163,18 @@ export interface IDisabledButton {
 }
 
 export interface ResponseData {
-	[index: string]: string | string[] | boolean | IKeys<string> | IList[] | RawUser;
+	[index: string]: string | string[] | boolean | IKeys<string> | IList[];
+	filename: string;
+	filenames: string[];
+	logout: boolean;
+	error: IKeys<string>;
+}
+
+export interface RegisterData {
+	[index: string]: string | Contacts | RawUser | IKeys<string>;
 	user: RawUser;
 	token: string;
 	errors: IKeys<string>;
-	filename: string;
-	filenames: string[];
-	contacts: IList[];
-	logout: boolean;
-	error: IKeys<string>;
 }
 
 export interface SettingsData {

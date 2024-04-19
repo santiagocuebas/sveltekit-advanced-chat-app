@@ -8,6 +8,7 @@ import type {
 } from "$lib/types/global";
 import { writable } from "svelte/store";
 import { contact, options } from "./index";
+import { getUrl } from "$lib/services";
 import { socket } from "$lib/socket";
 import { Option } from "$lib/types/enums";
 
@@ -72,10 +73,10 @@ function createContacts(contacts: IContacts) {
 			contact.updateUser();
 			return contacts;
 		}),
-		editUsers: (room: string, { content, createdAt }: IChat) => update(contacts => {
+		editUsers: ({ from, content, createdAt }: IChat) => update(contacts => {
 			contacts.users = contacts.users.map(user => {
-				if (user.roomID === room) {
-					user.content = content instanceof Array ? content[0] : content;
+				if (user.contactID === from) {
+					user.content = content instanceof Array ? getUrl(content[0]) : content;
 					user.createdAt = createdAt;
 				}
 		
@@ -84,10 +85,10 @@ function createContacts(contacts: IContacts) {
 		
 			return contacts;
 		}),
-		editGroups: (room: string, { content, createdAt }: IChat) => update(contacts => {
+		editGroups: ({ to, content, createdAt }: IChat) => update(contacts => {
 			contacts.groups = contacts.groups.map(group => {
-				if (group.roomID === room) {
-					group.content = content instanceof Array ? content[0] : content;
+				if (group.contactID === to) {
+					group.content = content instanceof Array ? getUrl(content[0]) : content;
 					group.createdAt = createdAt;
 				}
 		
@@ -245,15 +246,13 @@ function createContacts(contacts: IContacts) {
 			contact.destroyIfAdmin(id);
 			return contacts;
 		}),
-		setContacts: ({ users, groups }: Contacts) => update(contacts => {
-			return { ...contacts, users, groups };
-		}),
 		addContact: (contact: IForeign) => update(contacts => {
 			return { ...contacts, users: [contact, ...contacts.users] };
 		}),
 		addGroup: (contact: IGroup) => update(contacts => {
 			return { ...contacts, groups: [contact, ...contacts.groups] };
 		}),
+		setContacts: (contacts: Contacts) => set(contacts),
 		resetContacts: () => set({ users: [], groups: [] })
 	}
 }

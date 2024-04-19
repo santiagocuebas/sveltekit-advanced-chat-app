@@ -1,16 +1,17 @@
 <script lang='ts'>
-	import type { IKeys, ResponseData } from '$lib/types/global';
+	import type { LayoutServerData } from './$types';
+	import type { IKeys, RawUser } from '$lib/types/global';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import jsCookie from 'js-cookie';
-	import axios from '$lib/axios';
-  import { Contacts, UserHeader, LoadingBox } from '$lib/components';
+  import { Contacts as BoxContacts, UserHeader, LoadingBox } from '$lib/components';
 	import { connectSocket } from '$lib/services';
   import { socket } from '$lib/socket';
   import { user, register, contact, contacts, options } from '$lib/store';
   import { Option } from '$lib/types/enums';
 	import '../app.css';
-	
+
+	export let data: LayoutServerData & { user: RawUser, token: string };
+
 	let errorMessage: IKeys<string> | null = null;
 
 	const socketError = (err: IKeys<string>) => {
@@ -27,25 +28,10 @@
 		}
 	};
 
-	async function loadUser() {
-		const token = jsCookie.get('authenticate');
-		axios.defaults.headers.common['Authorization'] = token;
-		
-		const data: ResponseData = await axios({ url: '/auth' })
-			.then(res => res.data)
-			.catch(err => {
-				return err.response ? err.response.data : { error: err.message };
-			});
-
-		if (data?.user && token) connectSocket(data.user, token)
-		else {
-			console.log(data.error);
-			const token = jsCookie.get('authenticate');
-
-			if (token) jsCookie.remove('authenticate');
-			setTimeout(() => register.setOption(Option.REGISTER), 3000);
-		}
-	}
+	onMount(() => {
+		if (data.user) connectSocket(data.user, data.token);
+		else register.setOption(Option.REGISTER);
+	});
 	
 	onMount(() => {
 		socket.on('loggedUser', contacts.loggedUser);
@@ -70,7 +56,10 @@
 
 		return () => {
 			socket.off('loggedUser', contacts.loggedUser);
+			socket.off('countUser', contacts.countUser);
+			socket.off('discountUser', contacts.discountUser);
 			socket.off('countMembers', contacts.countMembers);
+			socket.off('discountMembers', contacts.discountMembers);
 			socket.off('editUsers', contacts.editUsers);
 			socket.off('editGroups', contacts.editGroups);
 			socket.off('leaveUser', contacts.leaveUser);
@@ -89,14 +78,22 @@
 	});
 
 	beforeNavigate(({ to, delta }) => {
+		if (delta === undefined) return;
+
+		if (!to?.params) {
+			contact.resetContact();
+			socket.emit('removeListeners');
+			return;
+		}
+
 		if (
-			delta !== undefined &&
-			to?.params &&
 			(to.params.contact === Option.USERS || to.params.contact === Option.GROUPS) &&
 			typeof to.params.id === 'string'
 		) {
 			const indexContact = to.params.contact;
-			const foundContact = $contacts[indexContact].find(({ contactID }) => to.params?.id === contactID);
+			const foundContact = $contacts[indexContact].find(({ contactID }) => {
+				return to.params?.id === contactID;
+			});
 			
 			if (foundContact) {
 				options.resetOptions();
@@ -106,14 +103,12 @@
 	});
 </script>
 
-<svelte:document on:load={loadUser()} />
-
 <div class="main-container">
 	<div class="banner"></div>
 	<div class="container-user">
 		{#if $register.user}
 			<UserHeader />
-			<Contacts />
+			<BoxContacts />
 			<slot />
 			{#if errorMessage}
 				<div class="error">

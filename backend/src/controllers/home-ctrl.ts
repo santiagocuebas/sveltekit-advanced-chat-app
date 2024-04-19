@@ -1,8 +1,52 @@
-import type { Direction, IKeys } from '../types/types.js';
+import type { Direction, IContact, IKeys } from '../types/types.js';
 import { v2 as cloudinary } from 'cloudinary';
-import { getId, matchId, dataUri } from '../libs/index.js';
+import { getId, matchId, dataUri, getChats, getContact } from '../libs/index.js';
 import { Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
+import { Users } from '../types/global.js';
+
+export const getAllContacts: Direction = async (req, res) => {
+	const{ id, users, userIDs, groupRooms } = req.user;
+
+	// Get data of the contacts
+	const contactList: IKeys<IContact[]> = { users: [], groups: [] };
+
+	const contacts = await User
+		.find({ _id: userIDs })
+		.select('username avatar users blockedGroups logged')
+		.lean({ virtuals: true });
+
+	for (const contact of contacts) {
+		const { roomID } = users.find(user => user.userID === contact.id) as Users;
+
+		const data = await getContact(roomID, contact, TypeContact.USER, id);
+
+		contactList.users.push(data);
+	}
+
+	const groups = await Group
+		.find({ _id: groupRooms })
+		.lean({ virtuals: true });
+
+	for (const group of groups) {
+		const data = await getContact(group.id, group, TypeContact.GROUP);
+
+		contactList.groups.push(data);
+	}
+
+	return res.json(contactList);
+};
+
+export const getContactChats: Direction = async (req, res) => {
+	const userID = req.query.type === 'users' ? req.user.id : undefined;
+	const contactID = String(req.query.id);
+	const skip = Number(req.query.skip);
+
+	// Get chats from the contacts
+	const chats = await getChats(contactID, userID, skip, 50);
+
+	return res.json(chats);
+};
 
 export const getSearch: Direction = async (req, res) => {
 	const { param } = req.params;

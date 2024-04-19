@@ -1,39 +1,39 @@
 <script lang="ts">
-  import type { Contact, Contacts } from '$lib/types/global';
-  import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
+	import type { Contact, IContacts } from '$lib/types/global';
+	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
   import { Contact as Box } from './index';
-  import { selectJoin } from '$lib/dictionary';
+  import axios from '$lib/axios';
+	import { selectJoin } from "$lib/dictionary";
 	import { socket } from '$lib/socket';
-  import { contacts, contact as user } from '$lib/store';
+  import { contact, contacts } from '$lib/store';
 	import { Option } from '$lib/types/enums';
 	
-	let selected: string;
+	let selected = Option.CHATS;
 
-	export const loadContacts = (lists: Contacts) => {
+	onMount(async () => {
+		const loadContacts: IContacts = await axios({ url: '/home/contacts' })
+			.then(res => res.data)
+			.catch(() => {
+				console.error('Network or Logged Error');
+				return { users: [], groups: [] };
+			});
+
+		contacts.setContacts(loadContacts);
+
 		const pathname = location.pathname;
 
-		if (pathname.includes('/users') || pathname.includes('/groups')) {
+		if (pathname.includes(Option.USERS) || pathname.includes(Option.GROUPS)) {
 			const [id, name] = pathname.split('/').reverse();
-			const contact = lists[name]?.find(contact => contact.contactID === id);
+			const foundContact = loadContacts[name]?.find(contact => {
+				return contact.contactID === id;
+			});
 
-			if (contact) {
-				user.setContact(contact as Contact);
-				socket.emit(selectJoin[name], contact.contactID, contact.roomID);
+			if (foundContact) {
+				contact.setContact(foundContact as Contact);
+				socket.emit(selectJoin[name], foundContact.contactID, foundContact.roomID);
 			} else goto('/');
 		}
-
-		contacts.setContacts(lists);
-
-		if (lists.users.length) selected = Option.CHATS;
-		else if (lists.groups.length) selected = Option.ROOMS
-		else selected = Option.CHATS;
-	};
-
-	onMount(() => {
-		socket.on('loadContacts', loadContacts);
-
-		return () => socket.off('loadContacts', loadContacts);
 	});
 </script>
 

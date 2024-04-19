@@ -20,8 +20,9 @@ export const connectSocket = (
 		secure: location.protocol === 'https'
 	});
 
+	axios.defaults.headers.common['Authorization'] = token;
+
 	if (isRedirect) {
-		axios.defaults.headers.common['Authorization'] = token;
 		register.resetOptions();
 		goto('/');
 	}
@@ -36,6 +37,11 @@ export const connectSocket = (
 export const changeName = (value: string) => {
 	const firstLetter = value.at(0) as string;
 	return value.replace(firstLetter, firstLetter.toUpperCase());
+};
+
+export const getUrl = (url: string) => {
+	const [imgURL] = url.split('/').reverse();
+	return imgURL;
 };
 
 export const addId = ({ id }: Member, list: string[]) => {

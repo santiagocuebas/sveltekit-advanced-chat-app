@@ -1,12 +1,20 @@
 <script lang="ts">
-	import type { ResponseData } from '$lib/types/global';
-  import { beforeNavigate } from '$app/navigation';
+	import type { RegisterData } from '$lib/types/global';
+  import { afterNavigate, beforeNavigate } from '$app/navigation';
   import { onMount } from 'svelte';
 	import jsCookie from 'js-cookie';
 	import axios from '$lib/axios';
   import { GITHUB_ACCESS } from '$lib/config';
 	import { changeName, connectSocket } from '$lib/services';
-  import { emailInput, passInput, register } from '$lib/store';
+  import { socket } from '$lib/socket';
+  import {
+		contact,
+		contacts,
+		emailInput,
+		passInput,
+		register,
+		user
+	} from '$lib/store';
   import { Method, Option, PathIcon } from '$lib/types/enums';
 
 	let visible = false;
@@ -17,16 +25,15 @@
 		if (
 			!$emailInput.check($emailInput.value) && !$passInput.check($passInput.value)
 		) {
-			const data: ResponseData = await axios({
+			const data: RegisterData = await axios({
 				method: this.method,
 				url: this.action.replace(location.origin, ''),
 				data: this
 			}).then(res => res.data)
 				.catch(err => err.response ? err.response.data : visible = true);
 
-			if (data.user) {
-				connectSocket(data.user, data.token, true);
-			} else if (data.errors) {
+			if (data.user) connectSocket(data.user, data.token, true);
+			else if (data.errors) {
 				const { username, password } = data.errors;
 
 				if (username) emailInput.updateError(username);
@@ -43,7 +50,7 @@
 
 		if (codeParam && !token) {
 			register.resetOptions();
-			const data: ResponseData = await axios({
+			const data: RegisterData = await axios({
 				method: Method.POST,
 				url: '/auth/registerGithub?code=' + codeParam
 			}).then(res => res.data)
@@ -59,6 +66,17 @@
 	beforeNavigate(() => {
 		emailInput.resetInput();
 		passInput.resetInput();
+	});
+	
+	afterNavigate(() => {
+		if (socket.connected) {
+			axios.defaults.headers.common['Authorization'] = '';
+			register.setOption(Option.REGISTER);
+			socket.disconnect();
+			contacts.resetContacts();
+			contact.resetContact();
+			user.resetUser();
+		}
 	});
 </script>
 

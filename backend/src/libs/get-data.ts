@@ -37,7 +37,7 @@ export const getContact: Contact = async (roomID, contact, type, id) => {
 			mods: contact.mods,
 			allIDs: contact.allIDs,
 			blacklist: contact.blacklist,
-			state: contact.state
+			state: contact.state,
 		} : { blockedIDs: contact.blockedUsersIDs };
 
 	return {
@@ -87,7 +87,7 @@ export const getId = async (type?: string): Promise<string> => {
 	return id;
 };
 
-export const getChats: Chats = async (contactID, userID) => {
+export const getChats: Chats = async (contactID, userID, skip = 0, limit = Infinity) => {
 	const findQuery = (userID !== undefined)
 		? {
 			$or: [
@@ -98,5 +98,7 @@ export const getChats: Chats = async (contactID, userID) => {
 
 	return await Chat
 		.find(findQuery)
-		.sort({ createdAt: 1 });
+		.skip(skip)
+		.limit(limit)
+		.sort({ createdAt: -1 });
 };

@@ -11,8 +11,9 @@ import {
 	MONGO_DB,
 	MONGO_COLLECTION
 } from './config.js';
-import { verifyToken, wrap } from './libs/index.js';
 import initSocket from './socket-io.js';
+import { verifyToken, wrap } from './libs/index.js';
+import { Group, User } from './models/index.js';
 
 // Create Server
 const { MongoClient } = mongoose.mongo;
@@ -45,6 +46,9 @@ const io = new Server(server, {
 	adapter: createAdapter(mongoCollection)
 });
 
+await User.updateMany({ }, { logged: false, tempId: '', socketIds: [] });
+await Group.updateMany({ }, { loggedUsers: [] });
+
 // Connect worker
 io.use(wrap(cloudinaryConfig));
 		
@@ -56,6 +60,8 @@ io.use(async (socket, next) => {
 	if (!user || user.id !== sessionID) return(new Error('Unauthorized'));
 
 	socket.user = user;
+	socket.user.tempId = token;
+
 	return next();
 });
 

@@ -1,6 +1,6 @@
 import type { ActUser } from '../types/types.js';
 import { v2 as cloudinary } from 'cloudinary';
-import { getChats } from './get-data.js';
+import { getChats } from './index.js';
 
 export const actUser: ActUser = (contactID, roomID, user, name) => {
 	user.users = user.users.filter(user => user.userID !== contactID);

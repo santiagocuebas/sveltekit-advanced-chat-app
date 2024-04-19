@@ -25,4 +25,8 @@ router.post(
 
 router.get('/search/:param', upload.none(), homeCtrl.getSearch);
 
+router.get('/contacts', upload.none(), homeCtrl.getAllContacts);
+
+router.get('/chats', upload.none(), homeCtrl.getContactChats);
+
 export default router;

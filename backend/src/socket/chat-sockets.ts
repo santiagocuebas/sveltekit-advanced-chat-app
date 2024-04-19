@@ -1,18 +1,10 @@
 import type { ChatSockets } from '../types/sockets.js';
 import { v2 as cloudinary } from 'cloudinary';
 import { Chat } from '../models/index.js';
-import { getChats } from '../libs/get-data.js';
 
 const validImageExt = ['apng', 'avif', 'gif', 'jpg', 'png', 'svg', 'webp'];
 
 export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomID], type, username) => {
-	// Get chats from the contacts
-	const param = username === undefined ? userID : undefined;
-
-	const messages = await getChats(contactID, param);
-
-	socket.emit('loadChats', messages);
-
 	socket.on('emitChat', async (message: string | string[], tempID: string) => {
 		// Create a new chat
 		const chat = await Chat.create({
@@ -28,7 +20,7 @@ export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomI
 		socket.to(roomID).emit('loadChat', chat, roomID);
 
 		const emitString = username ? 'editGroup' : 'editUser';
-		socket.to(roomID).emit(emitString, roomID, chat);
+		socket.to(roomID).emit(emitString, chat);
 	});
 
 	socket.on('emitDelete', async (id: string) => {
@@ -50,6 +42,6 @@ export const chatSockets: ChatSockets = async (socket, [userID, contactID, roomI
 			}
 		}
 
-		socket.to(roomID).emit('deleteChat', id);
+		socket.to(roomID).emit('deleteChat', chat);
 	});
 };

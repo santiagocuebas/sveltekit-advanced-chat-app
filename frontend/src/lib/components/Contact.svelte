@@ -1,24 +1,19 @@
 <script lang="ts">
   import type { IForeign, IGroup } from "$lib/types/global";
-  import { getDate } from "$lib/services";
+  import { getDate, getUrl } from "$lib/services";
 	import { options, contact as user } from '$lib/store';
 
   export let contact: IForeign | IGroup;
 
 	$: ({ contactID, type, logged, avatar, name, content, createdAt } = contact);
 
-	const getUrl = (url: string) => {
-		const [imgURL] = url.split('/').reverse();
-		return imgURL;
-	};
-
-	const joinRoom = (contact: IForeign | IGroup) => {
+	const joinRoom = () => {
 		options.resetOptions();
 		user.setContact(contact as never);
 	};
 </script>
 
-<a href="/{type}s/{contactID}" on:click={() => joinRoom(contact)}>
+<a href="/{type}s/{contactID}" on:click={joinRoom}>
 	<li class:selected={$user?.contactID === contactID}>
 		<span
 			class:green={logged === true}

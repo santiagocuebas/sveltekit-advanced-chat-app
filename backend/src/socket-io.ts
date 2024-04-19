@@ -1,7 +1,6 @@
 import type { Socket } from 'socket.io';
 import type { IKeys } from './types/types.js';
 import { ErrorMessage } from './dictionary.js';
-import { getContacts } from './libs/index.js';
 import { User, Group } from './models/index.js';
 import {
 	adminSockets,
@@ -22,10 +21,12 @@ export default async (socket: Socket) => {
 	];
 	const userID = socket.user.id;
 	socket.user.logged = true;
-	socket.user.tempId = socket.id;
 
 	// Connecting user
-	await User.updateOne({ _id: userID }, { logged: true, tempId: socket.id });
+	await User.updateOne(
+		{ _id: userID },
+		{ logged: true, tempId: socket.user.tempId, $addToSet: { socketIds: socket.id } }
+	);
 
 	// Connecting user to the group
 	await Group.updateMany(
@@ -33,11 +34,7 @@ export default async (socket: Socket) => {
 		{ $addToSet: { loggedUsers: userID } }
 	);
 
-	// Get data of the contacts
-	const contacts = await getContacts(userID, socket.user);
-
 	socket.join([...socket.user.userRooms, ...socket.user.groupRooms]);
-	socket.emit('loadContacts', contacts);
 	socket.to(socket.user.userRooms).emit('loggedUser', userID, true);
 	socket.to(socket.user.groupRooms).emit('countUser', userID);
 	
@@ -85,17 +82,25 @@ export default async (socket: Socket) => {
 	socket.on('disconnect', async () => {
 		console.log(socket.id, '==== disconnected');
 
-		// Disconnecting user
-		await User.updateOne({ _id: userID }, { logged: false, tempId: '' });
-
-		// Disconnecting user from the group
-		await Group.updateMany(
-			{ _id: socket.user.groupRooms },
-			{ $pull: { loggedUsers: userID } }
+		const user = await User.findOneAndUpdate(
+			{ _id: userID },
+			{ $pull: { socketIds: socket.id } }
 		);
 
-		socket.to(socket.user.userRooms).emit('loggedUser', userID, false);
-		socket.to(socket.user.groupRooms).emit('discountUser', userID);
+		if (user && user.socketIds.length <= 1) {
+			// Disconnecting user
+			await User.updateOne({ _id: userID }, { logged: false, tempId: '' });
+
+			// Disconnecting user from the group
+			await Group.updateMany(
+				{ _id: socket.user.groupRooms },
+				{ $pull: { loggedUsers: userID } }
+			);
+
+			socket.to(socket.user.userRooms).emit('loggedUser', userID, false);
+			socket.to(socket.user.groupRooms).emit('discountUser', userID);
+		}
+
 		socket.removeAllListeners();
 	});
 };

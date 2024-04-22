@@ -5,10 +5,10 @@ import MLV from 'mongoose-lean-virtuals';
 import { TypeUser } from '../types/enums.js';
 
 const userSchema = new Schema<IUser>({
-	username: { type: String },
+	username: String,
 	email: { type: String, unique: true },
 	githubId: { type: Number, unique: true },
-	password: { type: String },
+	password: String,
 	type: { type: String, default: TypeUser.EMAIL },
 	logged: { type: Boolean, default: false },
 	tempId: String,

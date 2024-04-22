@@ -53,6 +53,9 @@ const io = new Server(server, {
 	maxHttpBufferSize: 2e7,
 	adapter: createAdapter(mongoCollection)
 });
+
+await User.updateMany({ }, { logged: false, tempId: '', socketIds: [] });
+await Group.updateMany({ }, { loggedUsers: [] });
 		
 io.use(async (socket, next) => {
 	const { sessionID, token } = socket.handshake.auth;
@@ -63,7 +66,6 @@ io.use(async (socket, next) => {
 
 	socket.user = user;
 	socket.user.tempId = token;
-	
 	return next();
 });
 

@@ -9,6 +9,12 @@
 
 	let visible = false;
 
+	const handleLink = () => {
+		visible = false;
+		contact.resetContact();
+		socket.emit('removeListeners');
+	};
+
 	async function handleLogout() {
 		visible = false;
 
@@ -34,13 +40,13 @@
 	</picture>
 	<p title={$user.username}>{$user.username}</p>
 	<List bind:visible={visible}>
-		<a href="/group" on:click={() => visible = false}>
+		<a href="/group" on:click={handleLink}>
 			<li>
 				<i class="fa-solid fa-circle-stop"></i>
 				Create Group
 			</li>
 		</a>
-		<a href="/settings" on:click={() => visible = false}>
+		<a href="/settings" on:click={handleLink}>
 			<li>
 				<i class="fa-solid fa-gear"></i>
 				Settings

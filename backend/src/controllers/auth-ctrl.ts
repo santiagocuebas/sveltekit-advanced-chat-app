@@ -8,8 +8,9 @@ import { TypeUser } from '../types/enums.js';
 
 export const getData: Direction = async (req, res) => {
 	const user = getUser(req.user);
+	const token = req.headers.authorization;
 
-	return res.json({ user });
+	return res.json({ user, token });
 };
 
 export const postPassword: Direction = async (req, res) => {

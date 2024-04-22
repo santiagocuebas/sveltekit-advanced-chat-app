@@ -1,28 +1,34 @@
 <script lang="ts">
-  import type { IChat } from "$lib/types/global";
-  import { afterUpdate, beforeUpdate, onMount } from "svelte";
+	import type { IChat } from "$lib/types/global";
+	import { afterUpdate, onMount } from "svelte";
 	import validator from 'validator';
+	import { EditChat } from "./index";
+	import axios from "$lib/axios";
   import { DIR } from "$lib/config";
   import { getDate, isAudio, isVideo } from "$lib/services";
   import { socket } from "$lib/socket";
-  import { user, options } from "$lib/store";
+  import { user, options, contact, contacts } from "$lib/store";
   import { Option } from "$lib/types/enums";
 
-  export let id: string;
-	export let visibleChats: IChat[];
+	export let chats: IChat[];
 
-	const	observer = new IntersectionObserver(showMoreChats, {
-		root: null,
-		rootMargin: '0px',
-	});
-	let div: HTMLElement;
-	let autoscroll: boolean;
-	let boxElement: HTMLElement | null;
-	let chatID: string | undefined;
-	let counter = 0;
-	let chats: IChat[] = [];
+	const observerOptions = { root: null, rootMargin: '0px' };
+	const	observer = new IntersectionObserver(showMoreChats, observerOptions);
+	let chat: IChat | null = null;
+	let boxElement: HTMLElement | null = null;
+	let chatID = !(chats.length < 50) ? chats.at(-1)?._id : undefined;
 	let img: string;
 	let alt: string;
+
+	function showMoreChats([entry]: IntersectionObserverEntry[]) {
+		if (entry?.isIntersecting) showChats();
+	}
+
+	function emitDelete() {
+		socket.emit('emitDelete', chat?._id);
+		if (chat) deleteChat(chat);
+		options.resetOptions();
+	}
 
 	function handleImage(this: HTMLImageElement) {
 		img = this.src;
@@ -30,57 +36,65 @@
 		options.setOption(Option.IMAGE);
 	}
 
-	function handleDelete(chatID: string, from: string) {
-		if ($user.id === from) {
-			id = chatID;
+	function handleDelete(selecedChat: IChat) {
+		if ($user.id === selecedChat.from) {
+			chat = selecedChat;
 			options.setOption(Option.CHAT);
 		}
 	}
 
-	function showMoreChats([entry]: IntersectionObserverEntry[]) {
-		if (entry?.isIntersecting) showChats(counter+50);
-	}
+	const showChats = async () => {
+		const chatsLength = chats.length;
+		const type = location.pathname.includes(Option.USERS)
+			? Option.USERS
+			: Option.GROUPS;
 
-	function showChats(num: number) {
-		for (counter; (counter < num && counter < chats.length); counter++) {
-			visibleChats = [chats[counter], ...visibleChats];
+		const loadChats = await axios({
+			url: `/home/chats?id=${$contact?.contactID}&skip=${chatsLength}&type=${type}`
+		}).then(res => res.data)
+			.catch(() => {
+				console.error('Network or Logged Error');
+				return [];
+			});
+
+		for (const chat of loadChats) {
+			chats = [...chats, chat];
 		}
 
-		if (boxElement) observer.unobserve(boxElement);
-		chatID = visibleChats.at(-1)?._id;
-	}
-
-	const loadChats = (messages: IChat[]) => {
-		div.scrollTo(0, div.scrollHeight);
-		counter = 0;
-		chats = messages.reverse();
-		showChats(50);
+		chatID = !(chats.length < chatsLength + 50) ? chats.at(-1)?._id : undefined;
 	};
 	
 	const loadChatID = (id: string, tempID: string) => {
-		visibleChats = visibleChats.map(chat => {
+		chats = chats.map(chat => {
 			if (chat._id === tempID) chat._id = id;
 			return chat;
 		});
 	};
 
-  onMount(() => {
-		socket.on('loadChats', loadChats);
+	const deleteChat = (chat: IChat) => {
+		chats = chats.filter(visibleChat => visibleChat._id !== chat._id);
+		const foundChat = chats.find(visibleChat => visibleChat.to === chat.to);
+
+		if (foundChat) return foundChat.type === Option.GROUP
+			? contacts.editGroups(foundChat)
+			: contacts.editUsers(foundChat);
+
+		chat.type === Option.GROUP 
+			? contacts.editGroups({ ...chat, content: undefined, createdAt: undefined })
+			: contacts.editUsers({ ...chat, content: undefined, createdAt: undefined });
+	}
+
+	onMount(() => {
 		socket.on('loadChatID', loadChatID);
+		socket.on('deleteChat', deleteChat);
 
 		return () => {
-			socket.off('loadChats', loadChats);
 			socket.off('loadChatID', loadChatID);
+			socket.off('deleteChat', deleteChat);
 		};
 	});
 
-	beforeUpdate(() => {
-		autoscroll = div && div.offsetHeight + div.scrollTop > div.scrollHeight - 50;
-	});
-
 	afterUpdate(() => {
-		if (autoscroll) div.scrollTo(0, div.scrollHeight);
-
 		if (chatID) {
 			boxElement = document.getElementById(chatID);
 			if (boxElement) observer.observe(boxElement);
@@ -99,28 +113,37 @@
 	</div>
 {/if}
 
+{#if $options.chat}
+	<EditChat on:click={emitDelete}>
+		<h2 class="title">
+			Are you sure you want delete this message?
+		</h2>
+	</EditChat>
+{/if}
+
 <div class="container-chats">
-	<div class="box-chats" bind:this={div}>
-		{#each visibleChats as { _id, content, createdAt, from, username } (_id)}
+	<div class="box-chats">
+		{#each chats as chat (chat._id)}
 			<div
+				id={chat._id}
 				class="chat"
-				class:me={$user.id === from}
+				class:me={$user.id === chat.from}
 				role='none'
-				on:dblclick={() => handleDelete(_id, from)}
+				on:dblclick={() => handleDelete(chat)}
 			>
-				{#if username}
+				{#if chat.username}
 					<h3>
-						{username}
+						{chat.username}
 					</h3>
 				{/if}
-				{#if (content instanceof Array)}
-					{#if content.length > 1}
+				{#if (chat.content instanceof Array)}
+					{#if chat.content.length > 1}
 						<div>
-							{#each content as image (image)}
+							{#each chat.content as image (image)}
 								<picture>
 									<img
 										src={DIR + '/' + image}
-										alt={_id}
+										alt={chat._id}
 										role='none'
 										on:click={handleImage}
 									>
@@ -128,34 +151,34 @@
 							{/each}
 						</div>
 					{:else}
-						{#if isVideo(content[0])}
-							<video controls src={DIR + '/' + content[0]}>
+						{#if isVideo(chat.content[0])}
+							<video controls src={DIR + '/' + chat.content[0]}>
 								<track kind="captions"/>
 							</video>
-						{:else if isAudio(content[0])}
-							<audio controls src={DIR + '/' + content[0]}></audio>
+						{:else if isAudio(chat.content[0])}
+							<audio controls src={DIR + '/' + chat.content[0]}></audio>
 						{:else}
 							<picture>
 								<img
-									src={DIR + '/' + content[0]}
-									alt={_id}
+									src={DIR + '/' + chat.content[0]}
+									alt={chat._id}
 									role='none'
 									on:click={handleImage}
 								>
 							</picture>
 						{/if}
 					{/if}
-				{:else if validator.isURL(content)}
-					<a href='{content}' target="_blank">
-						{content}
+				{:else if validator.isURL(chat.content ?? '')}
+					<a href='{chat.content}' target="_blank">
+						{chat.content}
 					</a>
 				{:else}
 					<p>
-						{@html content}
+						{@html chat.content}
 					</p>
 				{/if}
 				<p class="left">
-					{getDate(createdAt)}
+					{getDate(chat.createdAt ?? '')}
 				</p>
 			</div>
 		{/each}
@@ -189,18 +212,18 @@
 		grid-column: 2 / span 1;
 		grid-row: 2 / span 1;
 		background-image: url('/smiley.jpg');
-		@apply flex flex-col w-full bg-no-repeat bg-cover overflow-hidden;
+		@apply flex bg-no-repeat bg-cover overflow-hidden;
 	}
 
-  .box-chats {
+	.box-chats {
 		container-type: inline-size;
 		scrollbar-width: none;
-		@apply flex flex-col w-[100%-16px] h-[100%-16px] m-2 p-2 overflow-y-auto gap-y-3;
+		@apply flex flex-col-reverse w-full h-min max-h-[calc(100%-16px)] my-2 mx-[2.68%] p-2 overflow-y-auto gap-y-3;
 	}
 
 	.chat {
 		box-shadow: 0 0 2px #888888;
-		@apply flex flex-col justify-around w-fit min-w-[252px] max-w-[60%] p-1.5 bg-white rounded-sm gap-y-0.5 select-none [&.me]:ml-auto [&_h3]:font-semibold;
+		@apply flex flex-col content-end w-fit min-w-[252px] max-w-[60%] h-max p-1.5 bg-white rounded-sm gap-y-0.5 select-none [&.me]:ml-auto [&_h3]:font-semibold;
 
 		& div {
 			@apply flex flex-wrap items-start justify-start w-[480px];
@@ -218,7 +241,7 @@
 			@apply flex min-w-60 max-w-[360px];
 
 			& img {
-				@apply w-full h-full object-cover object-top cursor-pointer;
+				@apply flex w-full h-full object-cover object-top cursor-pointer;
 			}
 		}
 

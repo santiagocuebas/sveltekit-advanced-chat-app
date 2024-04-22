@@ -12,6 +12,7 @@ export const getChat = (
 		from: user.id ?? '',
 		to: contact.contactID,
 		username: contact.type === Option.GROUP ? user.username : undefined,
+		type: contact.type,
 		content: message,
 		createdAt: Date()
 	}

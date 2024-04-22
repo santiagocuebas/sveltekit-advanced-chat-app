@@ -73,9 +73,9 @@ function createContacts(contacts: IContacts) {
 			contact.updateUser();
 			return contacts;
 		}),
-		editUsers: (room: string, { to, content, createdAt }: IChat) => update(contacts => {
+		editUsers: ({ from, content, createdAt }: IChat) => update(contacts => {
 			contacts.users = contacts.users.map(user => {
-				if (user.contactID !== to && user.roomID === room) {
+				if (user.contactID === from) {
 					user.content = content instanceof Array ? getUrl(content[0]) : content;
 					user.createdAt = createdAt;
 				}
@@ -85,9 +85,9 @@ function createContacts(contacts: IContacts) {
 		
 			return contacts;
 		}),
-		editGroups: (room: string, { content, createdAt }: IChat) => update(contacts => {
+		editGroups: ({ to, content, createdAt }: IChat) => update(contacts => {
 			contacts.groups = contacts.groups.map(group => {
-				if (group.roomID === room) {
+				if (group.contactID === to) {
 					group.content = content instanceof Array ? getUrl(content[0]) : content;
 					group.createdAt = createdAt;
 				}
@@ -246,15 +246,13 @@ function createContacts(contacts: IContacts) {
 			contact.destroyIfAdmin(id);
 			return contacts;
 		}),
-		setContacts: ({ users, groups }: Contacts) => update(contacts => {
-			return { ...contacts, users, groups };
-		}),
 		addContact: (contact: IForeign) => update(contacts => {
 			return { ...contacts, users: [contact, ...contacts.users] };
 		}),
 		addGroup: (contact: IGroup) => update(contacts => {
 			return { ...contacts, groups: [contact, ...contacts.groups] };
 		}),
+		setContacts: (contacts: Contacts) => set(contacts),
 		resetContacts: () => set({ users: [], groups: [] })
 	}
 }

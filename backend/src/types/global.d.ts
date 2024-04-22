@@ -20,7 +20,9 @@ export type Member = { id: string, name: string };
 
 export type Chats = (
 	room: string,
-	id?: string
+	id?: string,
+	skip?: number,
+	limit?: number
 ) => Promise<(Document<unknown, object, IChat> & IChat)[]>
 
 export interface IChat {

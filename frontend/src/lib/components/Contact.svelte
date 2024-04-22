@@ -8,13 +8,15 @@
 
 	$: ({ contactID, type, logged, avatar, name, content, createdAt } = contact);
 
-	const joinRoom = (contact: IForeign | IGroup) => {
+	const joinRoom = (e: Event) => {
+		if ($user?.contactID === contactID) return e.preventDefault();
+
 		options.resetOptions();
 		user.setContact(contact as never);
 	};
 </script>
 
-<a href="/{type}s/{contactID}" on:click={() => joinRoom(contact)}>
+<a href="/{type}s/{contactID}" on:click={joinRoom}>
 	<li class:selected={$user?.contactID === contactID}>
 		<span
 			class:green={logged === true}

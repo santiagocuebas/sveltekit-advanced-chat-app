@@ -14,7 +14,7 @@ export {
   isValidAudio,
   isValidVideo
 } from './is-valid-file';
-export { addId, getUrl, changeName, connectSocket, getDate, getId } from './libs';
+export { addId, changeName, connectSocket, getDate, getId, getUrl } from './libs';
 export { clickOutside } from './out-click';
 export { isDisabledButton, setSettingsProps } from './settings-functions';
 export { socketResult } from './socket-result';

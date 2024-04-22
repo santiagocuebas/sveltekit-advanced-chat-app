@@ -11,6 +11,7 @@ export const connectSocket = (
 	token: string,
 	isRedirect?: boolean
 ) => {
+	axios.defaults.headers.common['Authorization'] = token;
 	user.setUser(rawUser);
 
 	jsCookie.set('authenticate', token, {
@@ -21,16 +22,14 @@ export const connectSocket = (
 	});
 
 	if (isRedirect) {
-		axios.defaults.headers.common['Authorization'] = token;
 		register.resetOptions();
 		goto('/');
 	}
 
-	setTimeout(() => {
-		socket.auth = { sessionID: rawUser.id, token };
-		socket.connect();
-		register.setOption(Option.USER);
-	}, 3000);
+	socket.auth = { sessionID: rawUser.id, token };
+	socket.connect();
+
+	setTimeout(() => register.setOption(Option.USER), 3000);
 };
 
 export const changeName = (value: string) => {

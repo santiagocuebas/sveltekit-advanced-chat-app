@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { IErrorsProps, IKeys, SettingsData } from "$lib/types/global";
-	import { afterNavigate, goto } from "$app/navigation";
+	import { goto } from "$app/navigation";
 	import jsCookie from 'js-cookie';
 	import validator from 'validator';
   import axios from "$lib/axios";
@@ -14,7 +14,7 @@
 		setSettingsProps
 	} from "$lib/services";
   import { socket } from "$lib/socket";
-	import { user, options, register, contacts, contact } from '$lib/store';
+	import { user, options, register, contacts } from '$lib/store';
 	import { Method, Option, Settings } from "$lib/types/enums";
 
 	let settingsProps = setSettingsProps($user);
@@ -43,16 +43,6 @@
 
 	function checkConfirmPassword() {
 		settingsProps.password.confirm = passwordValue.confirm === passwordValue.new;
-	}
-	
-	async function handleDrop2(e: DragEvent) {
-		if (e.dataTransfer) {
-			console.log(e.dataTransfer.items);
-			console.log(e.dataTransfer.files);
-			e.dataTransfer.items.clear();
-			console.log(e.dataTransfer.items);
-			console.log(e.dataTransfer.files);
-		}
 	}
 	
 	async function handleDrop(e: DragEvent) {
@@ -129,11 +119,6 @@
 		visible = true;
 		setTimeout(() => visible = false, 5000);
 	}
-	
-	afterNavigate(() => {
-		contact.resetContact();
-		socket.emit('removeListeners');
-	});
 </script>
 
 {#if $options.settings}

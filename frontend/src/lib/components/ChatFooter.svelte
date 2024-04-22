@@ -1,13 +1,18 @@
 <script lang="ts">
   import type { IChat } from "$lib/types/global";
+	import { onMount } from "svelte";
   import { getAudiovisuals, getChat } from "$lib/services";
 	import { socket } from "$lib/socket";
   import { contact, contacts, options, user } from "$lib/store";
   import { Option, PathIcon } from "$lib/types/enums";
 
-	export let loadChat: (chat: IChat, id: string) => void;
+	export let chats: IChat[];
 	let message: string;
 	let visible = false;
+
+	function loadChat(message: IChat, roomID: string) {
+		if (roomID === $contact?.roomID) chats = [message, ...chats];
+	}
 
 	function handleChat(data: string | string[]) {
 		if ($contact) {
@@ -15,7 +20,7 @@
 			loadChat(chat, $contact.roomID);
 			socket.emit('emitChat', data, chat._id);
 
-			if ($contact.type === Option.GROUP) contacts.editGroups($contact.roomID, chat);
+			if ($contact.type === Option.GROUP) contacts.editGroups(chat);
 		}
 
 		return '';
@@ -45,6 +50,14 @@
 
 		visible = false;
 	}
+	
+	onMount(() => {
+		socket.on('loadChat', loadChat);
+
+		return () => {
+			socket.off('loadChat', loadChat);
+		}
+	});
 </script>
 
 {#if $options.upload}

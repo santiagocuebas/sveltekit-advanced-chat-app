@@ -1,7 +1,6 @@
 import type { Socket } from 'socket.io';
 import type { IKeys } from './types/types.js';
 import { ErrorMessage } from './dictionary.js';
-import { getContacts } from './libs/index.js';
 import { User, Group } from './models/index.js';
 import {
 	adminSockets,
@@ -35,12 +34,8 @@ export default async (socket: Socket) => {
 		{ $addToSet: { loggedUsers: userID } }
 	);
 
-	// Get data of the contacts
-	const contacts = await getContacts(userID, socket.user);
-
 	socket.join([
 		socket.user.tempId, ...socket.user.userRooms, ...socket.user.groupRooms]);
-	socket.emit('loadContacts', contacts);
 	socket.to(socket.user.userRooms).emit('loggedUser', userID, true);
 	socket.to(socket.user.groupRooms).emit('countUser', userID);
 	
@@ -88,15 +83,14 @@ export default async (socket: Socket) => {
 	socket.on('disconnect', async () => {
 		console.log(socket.id, '==== disconnected');
 
-		const user = await User.findOne({ _id: userID });
+		const user = await User.findOneAndUpdate(
+			{ _id: userID },
+			{ $pull: { socketIds: socket.id } }
+		);
 
-		if (user && user.socketIds.length === 1) {
+		if (user && user.socketIds.length <= 1) {
 			// Disconnecting user
-			user.logged = false;
-			user.tempId = '';
-			user.socketIds = [];
-
-			await user.save();
+			await User.updateOne({ _id: userID }, { logged: false, tempId: '' });
 
 			// Disconnecting user from the group
 			await Group.updateMany(
@@ -106,10 +100,7 @@ export default async (socket: Socket) => {
 
 			socket.to(socket.user.userRooms).emit('loggedUser', userID, false);
 			socket.to(socket.user.groupRooms).emit('discountUser', userID);
-		} else await User.updateOne(
-			{ _id: userID },
-			{ $pull: { socketIds: socket.id } }
-		);
+		}
 
 		socket.removeAllListeners();
 	});

@@ -1,14 +1,15 @@
 <script lang="ts">
   import type { IForeign, IGroup } from "$lib/types/global";
   import { getDate, getUrl } from "$lib/services";
-	import { options, contact as user } from '$lib/store';
+	import { contact as user } from '$lib/store';
 
   export let contact: IForeign | IGroup;
 
 	$: ({ contactID, type, logged, avatar, name, content, createdAt } = contact);
 
-	const joinRoom = () => {
-		options.resetOptions();
+	const joinRoom = (e: Event) => {
+		if (contactID === $user?.contactID) return e.preventDefault();
+		
 		user.setContact(contact as never);
 	};
 </script>

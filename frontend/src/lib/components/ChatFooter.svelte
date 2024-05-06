@@ -14,11 +14,17 @@
 		if (roomID === $contact?.roomID) chats = [message, ...chats];
 	}
 
-	function handleChat(data: string | string[]) {
+	function handleChat(data: string | IChat) {
 		if ($contact) {
-			const chat = getChat($user, $contact, data);
+			const chat = typeof data === 'string'
+				? getChat($user, $contact, data)
+				: data;
+			
 			loadChat(chat, $contact.roomID);
-			socket.emit('emitChat', data, chat._id);
+
+			typeof data === 'string'
+				? socket.emit('emitChat', data, chat._id)
+				: socket.emit('emitFindChat', chat._id);
 
 			if ($contact.type === Option.GROUP) contacts.editGroups(chat);
 		}
@@ -31,10 +37,10 @@
 		options.resetOptions();
 
 		if (e.dataTransfer) {
-			const filenames = await getAudiovisuals(e.dataTransfer.files);
+			const chat = await getAudiovisuals(e.dataTransfer.files, $contact);
 			e.dataTransfer.items.clear();
 
-			if (filenames !== null) handleChat(filenames);
+			if (chat !== null) handleChat(chat);
 		}
 
 		visible = false;
@@ -44,9 +50,9 @@
 		visible = true;
 		options.resetOptions();
 
-		const filenames = await getAudiovisuals(this.files);
+		const chat = await getAudiovisuals(this.files, $contact);
 
-		if (filenames !== null) handleChat(filenames);
+		if (chat !== null) handleChat(chat);
 
 		visible = false;
 	}
@@ -54,9 +60,7 @@
 	onMount(() => {
 		socket.on('loadChat', loadChat);
 
-		return () => {
-			socket.off('loadChat', loadChat);
-		}
+		return () => socket.off('loadChat', loadChat);
 	});
 </script>
 

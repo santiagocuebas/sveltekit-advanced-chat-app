@@ -1,13 +1,9 @@
 <script lang="ts">
-  import { afterNavigate } from '$app/navigation';
-  import { socket } from '$lib/socket';
+	import { onMount } from 'svelte';
   import { contact } from '$lib/store';
   import { PathIcon } from '$lib/types/enums';
 
-	afterNavigate(() => {
-		contact.resetContact();
-		socket.emit('removeListeners');
-	});
+	onMount(contact.resetContact);
 </script>
 
 <div class="logo">

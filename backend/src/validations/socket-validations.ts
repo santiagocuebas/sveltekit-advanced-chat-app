@@ -1,19 +1,21 @@
 import type { IUser, Member } from '../types/global.js';
 import type { GroupInit, IContact, IKeys } from '../types/types.js';
 import {
-	existsImage,
-	groupList,
 	isArray,
 	isLength,
-	isObject,
+	isMember,
 	isString,
 	isValidKey,
 	isValidUsers,
-	isValidUser
+	isValidUser,
+	checkVariablesAndFindGroup
 } from './socket-custom.js';
 import { ErrorMessage } from '../dictionary.js';
 import { Chat, Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
+
+const validStates: string[] = Object.values(StateOption);
+const typeContacts: string[] = Object.values(TypeContact);
 
 export const joinUserRoom = (
 	[contactID, roomID]: [string, string],
@@ -29,29 +31,25 @@ export const joinUserRoom = (
 };
 
 export const joinGroupRoom = ([contactID]: [string], { groupRooms }: IUser) => {
-	return (isString(contactID) && groupRooms.includes(contactID))
+	return isString(contactID) && groupRooms.includes(contactID)
 		? true
 		: ErrorMessage.connectRoom;
 };
 
-export const createChat = async ([chat, tempID]: [string & string[], string]) => {
-	return (
-		isString(tempID) &&
-		(
-			(isString(chat) && isLength(chat, 0, 420)) ||
-			(isArray(chat) && isLength(chat, 0, 4) && await existsImage(chat))
-		)
-	) ? true : ErrorMessage.createChat;
+export const createChat = async ([chat, tempID]: [string, string]) => {
+	return isString(chat) && isString(tempID) && isLength(chat, 0, 420)
+		? true
+		: ErrorMessage.createChat;
 };
 
-export const deleteChat = async ([id]: [string]) => {
+export const existChat = async ([id]: [string]) => {
 	if (isString(id)) {
 		const chat = await Chat.findOne({ _id: id });
 
 		if (chat !== null) return true;
 	}
 
-	return ErrorMessage.deleteChat;
+	return ErrorMessage.existChat;
 };
 
 export const blockGroup = ([name]: [string]) => {
@@ -62,191 +60,117 @@ export const addMembers = async (
 	[members, groupID]: [Member[], string],
 	{ id, groupRooms }: IUser
 ) => {
-	if (
-		isString(groupID) &&
-		groupRooms.includes(groupID) &&
-		isArray(members) &&
-		isLength(members, 0, 2^10)
-	) {
-		const group = await Group.findOne({ _id: groupID });
+	const group = await checkVariablesAndFindGroup(groupID, groupRooms, members);
 
-		if (group !== null) {
-			const { allIDs, validIDs } = groupList(group);
+	if (group === null) return ErrorMessage.connectRoom;
 
-			for (const member of members) {
-				if (
-					!isObject(member) ||
-					!isString(member.id) ||
-					!isString(member.name) ||
-					allIDs.includes(member.id) ||
-					!validIDs.includes(id) ||
-					await isValidUser(groupID, member)
-				) return ErrorMessage.addMembers;
-			}
-
-			return true;
-		}
+	for (const member of members) {
+		if (
+			!isMember(member) ||
+			group.allIDs.includes(member.id) ||
+			!group.validIDs.includes(id) ||
+			await isValidUser(groupID, member)
+		) return ErrorMessage.addMembers;
 	}
 
-	return ErrorMessage.connectRoom;
+	return true;
 };
 
 export const banMembers = async (
 	[userIDs, groupID]: [string[], string],
 	{ id, groupRooms }: IUser
 ) => {
-	if (
-		isString(groupID) &&
-		groupRooms.includes(groupID) &&
-		isArray(userIDs) &&
-		isLength(userIDs, 0, 2^10)
-	) {
-		const group = await Group.findOne({ _id: groupID });
+	const group = await checkVariablesAndFindGroup(groupID, groupRooms, userIDs);
 
-		if (group !== null) {
-			const { memberIDs, blockedIDs, validIDs } = groupList(group);
+	if (group === null) return ErrorMessage.connectRoom;
 
-			for (const userID of userIDs) {
-				if (
-					!isString(userID) ||
-					!memberIDs.includes(userID) ||
-					!validIDs.includes(id) ||
-					blockedIDs.includes(userID)
-				) return ErrorMessage.banMembers;
-			}
-
-			return true;
-		}
+	for (const userID of userIDs) {
+		if (
+			!isString(userID) ||
+			!group.memberIDs.includes(userID) ||
+			!group.validIDs.includes(id) ||
+			group.blockedIDs.includes(userID)
+		) return ErrorMessage.banMembers;
 	}
 
-	return ErrorMessage.connectRoom;
+	return true;
 };
 
 export const blockMembers = async (
 	[members, groupID]: [Member[], string],
 	{ id, groupRooms }: IUser
 ) => {
-	if (
-		isString(groupID) &&
-		groupRooms.includes(groupID) &&
-		isArray(members) &&
-		isLength(members, 0, 2^10)
-	) {
-		const group = await Group.findOne({ _id: groupID });
+	const group = await checkVariablesAndFindGroup(groupID, groupRooms, members);
 
-		if (group !== null) {
-			const { memberIDs, blockedIDs, validIDs } = groupList(group);
+	if (group === null) return ErrorMessage.connectRoom;
 
-			for (const member of members) {
-				if (
-					!isObject(member) ||
-					!isString(member.id) ||
-					!isString(member.name) ||
-					!memberIDs.includes(member.id) ||
-					!validIDs.includes(id) ||
-					blockedIDs.includes(member.id)
-				) return ErrorMessage.blockMembers;
-			}
-
-			return true;
-		}
+	for (const member of members) {
+		if (
+			!isMember(member) ||
+			!group.memberIDs.includes(member.id) ||
+			!group.validIDs.includes(id) ||
+			group.blockedIDs.includes(member.id)
+		) return ErrorMessage.blockMembers;
 	}
 
-	return ErrorMessage.connectRoom;
+	return true;
 };
 
 export const unblockMembers = async (
 	[userIDs, groupID]: [string[], string],
 	{ id, groupRooms }: IUser
 ) => {
-	if (
-		isString(groupID) &&
-		groupRooms.includes(groupID) &&
-		isArray(userIDs) &&
-		isLength(userIDs, 0, 2^10)
-	) {
-		const group = await Group.findOne({ _id: groupID });
+	const group = await checkVariablesAndFindGroup(groupID, groupRooms, userIDs);
 
-		if (group !== null) {
-			const { blockedIDs, validIDs } = groupList(group);
+	if (group === null) return ErrorMessage.connectRoom;
 
-			for (const userID of userIDs) {
-				if (
-					!isString(userID) ||
-					!validIDs.includes(id) ||
-					!blockedIDs.includes(userID)
-				) return ErrorMessage.unblockMembers;
-			}
-
-			return true;
-		}
+	for (const userID of userIDs) {
+		if (
+			!isString(userID) ||
+			!group.validIDs.includes(id) ||
+			!group.blockedIDs.includes(userID)
+		) return ErrorMessage.unblockMembers;
 	}
 
-	return ErrorMessage.connectRoom;
+	return true;
 };
 
 export const addMods = async (
 	[members, groupID]: [Member[], string],
 	{ id, groupRooms }: IUser
 ) => {
-	if (
-		isString(groupID) &&
-		groupRooms.includes(groupID) &&
-		isArray(members) &&
-		isLength(members, 0, 2^10)
-	) {
-		const group = await Group.findOne({ _id: groupID });
+	const group = await checkVariablesAndFindGroup(groupID, groupRooms, members);
 
-		if (group !== null) {
-			const { memberIDs, adminID } = groupList(group);
+	if (group === null) return ErrorMessage.connectRoom;
 
-			for (const member of members) {
-				if (
-					!isObject(member) || 
-					!isString(member.id) ||
-					!isString(member.name) ||
-					id !== adminID ||
-					!memberIDs.includes(member.id)
-				) return ErrorMessage.addMods;
-			}
-
-			return true;
-		}
+	for (const member of members) {
+		if (
+			!isMember(member) ||
+			id !== group.adminID ||
+			!group.memberIDs.includes(member.id)
+		) return ErrorMessage.addMods;
 	}
 
-	return ErrorMessage.connectRoom;
+	return true;
 };
 
 export const removeMods = async (
 	[members, groupID]: [Member[], string],
 	{ id, groupRooms }: IUser
 ) => {
-	if (
-		isString(groupID) &&
-		groupRooms.includes(groupID) &&
-		isArray(members) &&
-		isLength(members, 0, 2^10)
-	) {
-		const group = await Group.findOne({ _id: groupID });
+	const group = await checkVariablesAndFindGroup(groupID, groupRooms, members);
 
-		if (group !== null) {
-			const { modIDs, adminID } = groupList(group);
+	if (group === null) return ErrorMessage.connectRoom;
 
-			for (const member of members) {
-				if (
-					!isObject(member) ||
-					!isString(member.id) ||
-					!isString(member.name) ||
-					id !== adminID ||
-					!modIDs.includes(member.id)
-				) return ErrorMessage.removeMods;
-			}
-
-			return true;
-		}
+	for (const member of members) {
+		if (
+			!isMember(member) ||
+			id !== group.adminID ||
+			!group.modIDs.includes(member.id)
+		) return ErrorMessage.removeMods;
 	}
 
-	return ErrorMessage.connectRoom;
+	return true;
 };
 
 export const avatar = async ([avatar]: [string]) => {
@@ -266,8 +190,6 @@ export const description = ([description]: [string]) => {
 };
 
 export const state = ([state]: [string]) => {
-	const validStates: string[] = Object.values(StateOption);
-
 	return (validStates.includes(state)) ? true : ErrorMessage.state;
 };
 
@@ -294,16 +216,18 @@ export const joinRoom = async (
 	if (
 		isString(contactID) &&
 		isString(roomID) &&
-		(
-			(type === TypeContact.USER && !userIDs.includes(contactID) && !userRooms.includes(roomID)) ||
-			(type === TypeContact.GROUP && !groupRooms.includes(roomID))
-		)
+		((type === TypeContact.GROUP && !groupRooms.includes(roomID)) ||
+			(type === TypeContact.USER && !userIDs.includes(contactID) && !userRooms.includes(roomID)))
 	) {
-		const match = (type === TypeContact.USER) 
+		const match = type === TypeContact.USER
 			? await User.findOne({
 				_id: id,
-				users: { $elemMatch: { userID: contactID, roomID } }
-			}) : await Group.findOne({ _id: roomID, members: { $elemMatch: { id } } });
+				users: { $elemMatch: { userID: contactID, roomID } } })
+			: await Group.findOne({
+				$or: [
+					{ _id: roomID, members: { $elemMatch: { id } } },
+					{ _id: roomID, mods: { $elemMatch: { id } } }
+				] });
 
 		if (match !== null) return true;
 	}
@@ -315,8 +239,6 @@ export const removeRoom = async (
 	[id, type]: [string, TypeContact],
 	{ userRooms, groupRooms }: IUser
 ) => {
-	const typeContacts = Object.values(TypeContact);
-
 	return (
 		isString(id) &&
 		(userRooms.includes(id) || groupRooms.includes(id)) &&
@@ -363,10 +285,8 @@ export const joinGroup = async (
 };
 
 export const groupInit = async ([group]: [GroupInit], { userIDs }: IUser) => {
-	const validStates: string[] = Object.values(StateOption);
-
 	return (
-		isObject(group) &&
+		typeof group === 'object' &&
 		isValidKey(Object.keys(group)) &&
 		isString(group.name) &&
 		validStates.includes(group.state) &&

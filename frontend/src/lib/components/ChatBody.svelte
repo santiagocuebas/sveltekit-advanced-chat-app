@@ -4,6 +4,7 @@
 	import validator from 'validator';
 	import { EditChat } from "./index";
 	import axios from "$lib/axios";
+	import { selectJoin } from "$lib/dictionary";
 	import { getDate, isAudio, isVideo } from "$lib/services";
 	import { socket } from "$lib/socket";
 	import { user, options, contact, contacts } from "$lib/store";
@@ -84,6 +85,10 @@
 	}
 
 	onMount(() => {
+		if ($contact) {
+			socket.emit(selectJoin[$contact.type], $contact.contactID, $contact.roomID);
+		}
+
 		socket.on('loadChatID', loadChatID);
 		socket.on('deleteChat', deleteChat);
 

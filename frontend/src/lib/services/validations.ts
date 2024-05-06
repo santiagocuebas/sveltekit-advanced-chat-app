@@ -3,7 +3,7 @@ import validator from 'validator';
 
 export const checkEmail: Check = (input) => {
 	if (input.length && !validator.isEmail(input)) {
-		return 'The username must have between 3 and 40 characters';
+		return 'Enter a valid email';
 	} else if (!validator.isLength(input, { max: 60 })) {
 		return 'The email must not have more than 60 characters';
 	}

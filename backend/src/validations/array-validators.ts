@@ -1,17 +1,16 @@
-import { body, type ValidationChain } from 'express-validator';
+import { body, query, type ValidationChain } from 'express-validator';
 import {
 	isValidPassword,
-	isUndefinedImage,
 	isValidFormat,
-	isValidSize,
 	isCorrectPassword,
 	existsUsers,
 	existsGroups,
-	isArrayImages,
 	isUndefinedImages,
-	isValidLengthImages,
-	isValidSizesAndFormat
+	isValidSizesAndFormat,
+	isValidContact,
+	isValidReceiver
 } from './customs-validators.js';
+import { QueryType, TypeContact } from '../types/enums.js';
 
 export const arrayRegister: ValidationChain[] = [
 	body('email', 'Invalid email')
@@ -27,18 +26,28 @@ export const arrayRegister: ValidationChain[] = [
 ];
 
 export const arrayImages: ValidationChain[] = [
+	query('type', 'Invalid type')
+		.isString().bail()
+		.custom(value => value === TypeContact.USER || value === TypeContact.GROUP),
+	query('roomID', 'Invalid room')
+		.isString().bail()
+		.custom((value, { req }) => req.user.userRooms.includes(value) ||
+			req.user.groupsRooms.includes(value)),
+	query('id', 'Invalid id')
+		.isString().bail()
+		.custom(isValidReceiver),
 	body('audiovisual', 'Enter a valid image archive')
-		.custom(isArrayImages).bail()
-		.custom(isValidLengthImages).bail()
+		.custom((_value, { req }) => req.files instanceof Array).bail()
+		.custom((_value, { req }) =>req.files.length <= 4).bail()
 		.custom(isUndefinedImages).bail()
 		.custom(isValidSizesAndFormat)
 ];
 
 export const arrayAvatar: ValidationChain[] = [
 	body('avatar', 'Enter a valid image archive')
-		.custom(isUndefinedImage).bail()
+		.custom((_value, { req }) => req.file !== undefined).bail()
 		.custom(isValidFormat).bail()
-		.custom(isValidSize)
+		.custom((_value, { req }) => req.file.size < 1e6)
 ];
 
 export const arrayUsername: ValidationChain[] = [
@@ -73,4 +82,12 @@ export const arrayUnblock: ValidationChain[] = [
 		.custom(existsUsers),
 	body('unblockGroups', 'Unblock error')
 		.custom(existsGroups)
+];
+
+export const arrayChats: ValidationChain[] = [
+	query('type', 'Invalid type')
+		.custom(value => value === QueryType.USERS || value === QueryType.GROUPS),
+	query('id', 'Invalid id')
+		.isString().bail()
+		.custom(isValidContact)
 ];

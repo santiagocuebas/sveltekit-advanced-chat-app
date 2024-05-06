@@ -4,12 +4,10 @@
 	import { onMount } from 'svelte';
   import { Contact as Box } from './index';
   import axios from '$lib/axios';
-	import { selectJoin } from "$lib/dictionary";
-	import { socket } from '$lib/socket';
   import { contact, contacts } from '$lib/store';
 	import { Option } from '$lib/types/enums';
 	
-	let selected = Option.CHATS;
+	let selected: string;
 
 	onMount(async () => {
 		const loadContacts: IContacts = await axios({ url: '/home/contacts' })
@@ -21,6 +19,10 @@
 
 		contacts.setContacts(loadContacts);
 
+		if (loadContacts.users.length) selected = Option.CHATS;
+		else if (loadContacts.groups.length) selected = Option.ROOMS;
+		else selected = Option.CHATS;
+
 		const pathname = location.pathname;
 
 		if (pathname.includes(Option.USERS) || pathname.includes(Option.GROUPS)) {
@@ -29,10 +31,8 @@
 				return contact.contactID === id;
 			});
 
-			if (foundContact) {
-				contact.setContact(foundContact as Contact);
-				socket.emit(selectJoin[name], foundContact.contactID, foundContact.roomID);
-			} else goto('/');
+			if (foundContact) contact.setContact(foundContact as Contact);
+			else goto('/');
 		}
 	});
 </script>

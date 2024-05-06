@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { IErrorsProps, IKeys, SettingsData } from "$lib/types/global";
 	import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
 	import jsCookie from 'js-cookie';
 	import validator from 'validator';
   import axios from "$lib/axios";
@@ -14,14 +15,13 @@
 		setSettingsProps
 	} from "$lib/services";
   import { socket } from "$lib/socket";
-	import { user, options, register, contacts } from '$lib/store';
+	import { user, options, register, contacts, contact } from '$lib/store';
 	import { Method, Option, Settings } from "$lib/types/enums";
 
 	let settingsProps = setSettingsProps($user);
 	let disabledButton = isDisabledButton($user);
 	let passwordValue: IKeys<string> = { old: '', new: '', confirm: '' };
-	let errorsProps: IErrorsProps = { success: false, message: '' };
-	let visible = false;
+	let errorsProps: IErrorsProps = { message: '' };
 
 	async function checkOldPassword() {
 		const options = {
@@ -59,18 +59,17 @@
 	async function handleDelete() {
 		socket.emit('emitDestroyUser');
 		
-		const data: { delete: false } = await axios({
+		const data: SettingsData = await axios({
 			method: Method.DELETE,
 			url: '/settings/deleteUser'
 		}).then(res => res.data)
 			.catch(err => {
-				console.log(err?.message);
-				return { delete: false };
+				return err.response?.data ?? { delete: false };
 			});
 
 		options.setOption(Option.SETTINGS);
 
-		if (data.delete) {
+		if (data.success) {
 			axios.defaults.headers.common['Authorization'] = '';
 			
 			jsCookie.remove('authenticate');
@@ -80,6 +79,9 @@
 			contacts.resetContacts();
 			goto('/register');
 			setTimeout(() => register.setOption(Option.REGISTER), 3000);
+		} else {
+			errorsProps = data;
+			setTimeout(() => errorsProps.success = undefined, 5000);
 		}
 	}
 
@@ -89,13 +91,12 @@
 			url: this.action.replace(location.origin, ''),
 			data: this
 		}).then(res => res.data)
-			.catch(err => err.response?.data ?? { success: false, message: 'Network Error' });
-
-		if (!data.success) errorsProps = data;
+			.catch(err => {
+				return err.response?.data ?? { success: false, message: 'Network Error' };
+			});
 
 		if (data.success) {
 			passwordValue = { old: '', new: '', confirm: '' };
-			errorsProps = data;
 
 			if (this.id === Settings.AVATAR) user.updateAvatar(data.filename);
 
@@ -116,9 +117,11 @@
 			}
 		}
 
-		visible = true;
-		setTimeout(() => visible = false, 5000);
+		errorsProps = data;
+		setTimeout(() => errorsProps.success = undefined, 5000);
 	}
+	
+	onMount(contact.resetContact);
 </script>
 
 {#if $options.settings}
@@ -129,7 +132,7 @@
 	</EditChat>
 {/if}
 
-{#if visible}
+{#if errorsProps.success !== undefined}
 	<ErrorBox success={errorsProps.success} message={errorsProps.message} />
 {/if}
 
@@ -171,32 +174,32 @@
 			{:else if key === Settings.DESCRIPTION}
 				<textarea
 					name="description"
-					bind:value={settingsProps.description}
 					spellcheck="false"
 					rows="5"
+					bind:value={settingsProps.description}
 				></textarea>
 			{:else if key === Settings.PASSWORD}
 				<input
 					type="password"
 					name="actPassword"
 					placeholder="Enter the actual password"
-					bind:value={passwordValue.old}
 					on:keyup={checkOldPassword}
+					bind:value={passwordValue.old}
 				>
 				<input
 					type="password"
 					name="newPassword"
 					placeholder="Enter the new password"
-					bind:value={passwordValue.new}
 					on:keyup={checkNewPassword}
+					bind:value={passwordValue.new}
 				>
 				{#if settingsProps.password.new}
 					<input
 						type="password"
 						name="confirmPassword"
 						placeholder="Confirm the password"
-						bind:value={passwordValue.confirm}
 						on:keyup={checkConfirmPassword}
+						bind:value={passwordValue.confirm}
 					>
 				{/if}
 			{:else if key === Settings.UNBLOCK}

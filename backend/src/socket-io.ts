@@ -17,24 +17,55 @@ export default async (socket: Socket) => {
 	console.log(socket.id, '==== connected');
 
 	const emitArray = [
-		'emitChat', 'emitDelete', 'emitLeave', 'emitBlock', 'emitDestroy', 'emitBlockDestroy', 'emitLeaveGroup', 'emitBlockGroup', 'emitAddMember', 'emitBanMember', 'emitBlockMember', 'emitUnblockMember', 'emitAddMod', 'emitRemoveMod', 'emitChangeAvatar', 'emitChangeDescription', 'emitChangeState', 'emitDestroyGroup'
+		'emitChat', 'emitFindChat', 'emitDelete', 'emitLeave', 'emitBlock', 'emitDestroy', 'emitBlockDestroy', 'emitLeaveGroup', 'emitBlockGroup', 'emitAddMember', 'emitBanMember', 'emitBlockMember', 'emitUnblockMember', 'emitAddMod', 'emitRemoveMod', 'emitChangeAvatar', 'emitChangeDescription', 'emitChangeState', 'emitDestroyGroup'
 	];
 	const userID = socket.user.id;
 	socket.user.logged = true;
 
-	// Connecting user
-	await User.updateOne(
-		{ _id: userID },
-		{ logged: true, tempId: socket.user.tempId, $addToSet: { socketIds: socket.id } }
-	);
+	if (socket.user.socketIds.length) {
+		const socketIds = socket.user.socketIds;
 
-	// Connecting user to the group
-	await Group.updateMany(
-		{ _id: socket.user.groupRooms },
-		{ $addToSet: { loggedUsers: userID } }
-	);
+		socket.to(socketIds).timeout(1000).emit('checkId', async (err: unknown, socketsID: string[]) => {
+			const replaceIds: string[] = [];
 
-	socket.join([...socket.user.userRooms, ...socket.user.groupRooms]);
+			if (!err) {
+				for (const id of socketsID) {
+					if (typeof id === 'string' && socketIds.includes(id)) {
+						replaceIds.push(id);
+					}
+				}
+			}
+
+			if (replaceIds.length === 0 || socketIds.length > replaceIds.length) {
+				await User
+					.updateOne(
+						{ _id: userID },
+						{ socketIds: [...replaceIds, socket.id] })
+					.catch(() => console.error('Database Error'));
+			}
+		});
+	}
+
+	try {
+		// Connecting user
+		await User.updateOne(
+			{ _id: userID },
+			{
+				logged: true,
+				tempId: socket.user.tempId,
+				$addToSet: { socketIds: socket.id }
+			});
+
+		// Connecting user to the group
+		await Group.updateMany(
+			{ _id: socket.user.groupRooms },
+			{ $addToSet: { loggedUsers: userID } });
+	} catch {
+		socket.emit('socketError', ErrorMessage.failureDatabase);
+	}
+
+	socket.join([
+		socket.user.tempId, ...socket.user.userRooms, ...socket.user.groupRooms]);
 	socket.to(socket.user.userRooms).emit('loggedUser', userID, true);
 	socket.to(socket.user.groupRooms).emit('countUser', userID);
 	
@@ -45,7 +76,12 @@ export default async (socket: Socket) => {
 
 		if (typeof event === 'string' && selectedFunction !== undefined) {
 			// Check if the event and arguments are valid
-			match = await selectedFunction(args as never, socket.user);
+			try {
+				match = await selectedFunction(args as never, socket.user);
+			} catch (err) {
+				console.error(err);
+				match = ErrorMessage.failureDatabase;
+			}
 
 			if (match === true) return next();
 		}
@@ -82,20 +118,22 @@ export default async (socket: Socket) => {
 	socket.on('disconnect', async () => {
 		console.log(socket.id, '==== disconnected');
 
-		const user = await User.findOneAndUpdate(
-			{ _id: userID },
-			{ $pull: { socketIds: socket.id } }
-		);
+		const user = await User
+			.findOneAndUpdate({ _id: userID }, { $pull: { socketIds: socket.id } })
+			.catch(() => null);
 
 		if (user && user.socketIds.length <= 1) {
-			// Disconnecting user
-			await User.updateOne({ _id: userID }, { logged: false, tempId: '' });
-
-			// Disconnecting user from the group
-			await Group.updateMany(
-				{ _id: socket.user.groupRooms },
-				{ $pull: { loggedUsers: userID } }
-			);
+			try {
+				// Disconnecting user
+				await User.updateOne({ _id: userID }, { logged: false, tempId: '' });
+	
+				// Disconnecting user from the group
+				await Group.updateMany(
+					{ _id: socket.user.groupRooms },
+					{ $pull: { loggedUsers: userID } });
+			} catch  {
+				console.log('An error occurred while trying update the user or the group');
+			}
 
 			socket.to(socket.user.userRooms).emit('loggedUser', userID, false);
 			socket.to(socket.user.groupRooms).emit('discountUser', userID);

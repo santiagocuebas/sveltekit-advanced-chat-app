@@ -1,34 +1,41 @@
 import type { Member } from '../types/global.js';
 import type { AdminSockets } from '../types/sockets.js';
-import { v2 as cloudinary } from 'cloudinary';
-import { getChats } from '../libs/index.js';
+import { ErrorMessage } from '../dictionary.js';
+import { deleteChats, deleteFile } from '../libs/index.js';
 import { User, Group } from '../models/index.js';
+import { Folder, QueryOption } from '../types/enums.js';
 
 export const adminSockets: AdminSockets = (socket, [userID, contactID]) => {
 	socket.on('emitAddMod', async (mods: Member[]) => {
-		// Add mods to the group
-		await Group.updateOne(
-			{ _id: contactID, admin: userID },
-			{
-				$push: { mods: { $each: mods } },
-				$pull: { members: { id: { $in: mods.map(mods => mods.id) } } }
-			}
-		);
-		
-		socket.to(contactID).emit('addMods', contactID, mods);
+		try {
+			// Add mods to the group
+			await Group.updateOne(
+				{ _id: contactID, admin: userID },
+				{
+					$push: { mods: { $each: mods } },
+					$pull: { members: { id: { $in: mods.map(mods => mods.id) } } }
+				});
+	
+			socket.to(contactID).emit('addMods', contactID, mods);
+		} catch {
+			socket.emit('socketError', ErrorMessage.failureDatabase);
+		}
 	});
 
 	socket.on('emitRemoveMod', async (members: Member[]) => {
-		// Remove mods from the group
-		await Group.updateOne(
-			{ _id: contactID, admin: userID },
-			{
-				$push: { members: { $each: members } },
-				$pull: { mods: { id: { $in: members.map(member => member.id) } } }
-			}
-		);
-		
-		socket.to(contactID).emit('removeMods', contactID, members);
+		try {
+			// Remove mods from the group
+			await Group.updateOne(
+				{ _id: contactID, admin: userID },
+				{
+					$push: { members: { $each: members } },
+					$pull: { mods: { id: { $in: members.map(member => member.id) } } }
+				});
+			
+			socket.to(contactID).emit('removeMods', contactID, members);
+		} catch {
+			socket.emit('socketError', ErrorMessage.failureDatabase);
+		}
 	});
 
 	socket.on('emitChangeAvatar', async (filename: string) => {
@@ -37,63 +44,49 @@ export const adminSockets: AdminSockets = (socket, [userID, contactID]) => {
 
 	socket.on('emitChangeDescription', async (description: string) => {
 		// Update group description
-		await Group.updateOne({ _id: contactID, admin: userID }, { description });
+		const result = await Group
+			.updateOne({ _id: contactID, admin: userID }, { description })
+			.catch(() => null);
+
+		if (result === null) socket.emit('socketError', ErrorMessage.failureDatabase);
 	});
 
 	socket.on('emitChangeState', async (state: string) => {
 		// Update group state
-		await Group.updateOne({ _id: contactID, admin: userID }, { state });
+		const result = await Group
+			.updateOne({ _id: contactID, admin: userID }, { state })
+			.catch(() => null);
+
+		if (result === null) socket.emit('socketError', ErrorMessage.failureDatabase);
 	});
 
 	socket.on('emitDestroyGroup', async () => {
-		socket.to(contactID).emit('leaveGroup', userID, contactID);
-
-		// Delete a group
-		const group = await Group
-			.findOneAndDelete({ _id: contactID, admin: userID })
-			.lean({ virtuals: true });
-
-		if (group !== null) {
-			// Remove group id from the contacts
-			[userID, ...group.modIDs, ...group.memberIDs].forEach(async id => {
-				await User.updateOne({ _id: id }, { $pull: { groupRooms: contactID } });
-			});
-
+		try {
 			// Find and delete chats
-			const chats = await getChats(contactID);
+			await deleteChats([contactID], QueryOption.GROUP);
 
-			for (const chat of chats) {
-				if (chat.content instanceof Array) {
-					for (const image of chat.content) {
-						const [imageFullURL] = image.split('/').reverse();
-						const [imageURL] = imageFullURL.split('.');
-						
-						await cloudinary.uploader
-							.destroy('advanced/public/' + imageURL)
-							.catch(() => {
-								console.error('An error occurred while trying to delete the image');
-							});
-					}
-				}
+			// Delete a group
+			const group = await Group.findOne({ _id: contactID, admin: userID });
 
-				chat.deleteOne();
-			}
+			if (group === null) throw new Error();
+
+			// Remove group id from the contacts
+			await User.updateMany(
+				{ _id: [userID, ...group.modIDs, ...group.memberIDs] },
+				{ $pull: { groupRooms: contactID } });
 
 			// Unlink avatar
-			if (!group.avatar.includes('avatar.jpeg')) {
-				const [avatarFullFilename] = group.avatar.split('/').reverse();
-				const [avatarFilename] = avatarFullFilename.split('.');
-				
-				await cloudinary.uploader
-					.destroy('advanced/group-avatar/' + avatarFilename)
-					.catch(() => {
-						console.error('An error occurred while trying to delete the image');
-					});
+			if (!group.avatar.includes('avatar.png')) {
+				deleteFile(group.avatar, Folder.GROUP);
 			}
 
+			await group.deleteOne();
+	
 			socket.user.groupRooms = socket.user.groupRooms.filter(id => id !== contactID);
-		
+			socket.to(contactID).emit('leaveGroup', contactID, true);
 			socket.leave(contactID);
+		} catch {
+			socket.emit('socketError', ErrorMessage.failureDatabase);
 		}
 	});
 };

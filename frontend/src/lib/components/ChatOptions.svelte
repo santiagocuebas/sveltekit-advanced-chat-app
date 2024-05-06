@@ -41,7 +41,7 @@
 				user.blockContact({ id: $contact.contactID, name: $contact.name }, 'users');
 			}
 
-			contacts.leaveUser($contact.contactID, $contact.roomID);
+			contacts.leaveUser($contact.roomID);
 		}
 
 		options.resetOptions();

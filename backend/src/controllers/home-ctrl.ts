@@ -1,12 +1,11 @@
+import type { Users } from '../types/global.js';
 import type { Direction, IContact, IKeys } from '../types/types.js';
-import { v2 as cloudinary } from 'cloudinary';
-import { getId, matchId, dataUri, getChats, getContact } from '../libs/index.js';
-import { Group, User } from '../models/index.js';
-import { StateOption, TypeContact } from '../types/enums.js';
-import { Users } from '../types/global.js';
+import { matchId, getContact, deleteFile, loadFile } from '../libs/index.js';
+import { Chat, Group, User } from '../models/index.js';
+import { Folder, QueryType, StateOption, TypeContact } from '../types/enums.js';
 
 export const getAllContacts: Direction = async (req, res) => {
-	const{ id, users, userIDs, groupRooms } = req.user;
+	const { id, users, userIDs, groupRooms } = req.user;
 
 	// Get data of the contacts
 	const contactList: IKeys<IContact[]> = { users: [], groups: [] };
@@ -14,7 +13,8 @@ export const getAllContacts: Direction = async (req, res) => {
 	const contacts = await User
 		.find({ _id: userIDs })
 		.select('username avatar users blockedGroups logged')
-		.lean({ virtuals: true });
+		.lean({ virtuals: true })
+		.catch(() => []);
 
 	for (const contact of contacts) {
 		const { roomID } = users.find(user => user.userID === contact.id) as Users;
@@ -26,7 +26,8 @@ export const getAllContacts: Direction = async (req, res) => {
 
 	const groups = await Group
 		.find({ _id: groupRooms })
-		.lean({ virtuals: true });
+		.lean({ virtuals: true })
+		.catch(() => []);
 
 	for (const group of groups) {
 		const data = await getContact(group.id, group, TypeContact.GROUP);
@@ -38,42 +39,47 @@ export const getAllContacts: Direction = async (req, res) => {
 };
 
 export const getContactChats: Direction = async (req, res) => {
-	const userID = req.query.type === 'users' ? req.user.id : undefined;
+	const userID = req.query.type === QueryType.USERS ? req.user.id : undefined;
 	const contactID = String(req.query.id);
 	const skip = Number(req.query.skip);
 
 	// Get chats from the contacts
-	const chats = await getChats(contactID, userID, skip, 50);
+	const findQuery = userID !== undefined
+		? {
+			$or: [
+				{ from: req.user.id, to: contactID, type: TypeContact.USER },
+				{ from: contactID, to: req.user.id, type: TypeContact.USER }
+			]
+		} : { to: contactID, type: TypeContact.GROUP };
+
+	const chats = await Chat
+		.find(findQuery)
+		.skip(skip)
+		.limit(50)
+		.sort({ createdAt: -1 });
 
 	return res.json(chats);
 };
 
 export const getSearch: Direction = async (req, res) => {
-	const { param } = req.params;
-	const {
-		id,
-		userIDs,
-		groupRooms,
-		blockedUsersIDs,
-		blockedGroupsIDs
-	} = req.user;
+	const param = String(req.query.param);
+	const { id, userIDs, groupRooms, blockedUsersIDs, blockedGroupsIDs } = req.user;
 
 	// Find contacts
 	const users = await User
 		.find({
-			$or: [
-				{ username: { $regex: '.*' + param + '.*' } },
-				{ email: param }
-			]
+			$or: [{ username: { $regex: '.*' + param + '.*' } }, { email: param }]
 		})
 		.lean({ virtuals: true })
 		.select('id username avatar description users blockedUsers')
-		.limit(150);
+		.limit(150)
+		.catch(() => []);
 		
 	const groups = await Group
 		.find({ name: { $regex: '.*' + param + '.*' } })
 		.lean({ virtuals: true })
-		.limit(150);
+		.limit(150)
+		.catch(() => []);
 
 	const contacts: IKeys<string>[] = [];
 
@@ -116,66 +122,57 @@ export const getSearch: Direction = async (req, res) => {
 
 export const postAudiovisual: Direction = async (req, res) => {
 	const files = req.files instanceof Array ? req.files : [];
+	const contactID = String(req.query.id);
+	const type = String(req.query.type);
 	const filenames: string[] = [];
 
 	for (const fileBuffer of files) {
-		const file = dataUri(fileBuffer);
+		const data = await loadFile(fileBuffer, Folder.PUBLIC);
 
-		if (file) {
-			const data = await cloudinary.uploader
-				.upload(file, {
-					public_id: await getId(),
-					folder: 'advanced/public/',
-					resource_type: 'auto'
-				})
-				.catch(() => {
-					console.log('An error occurred while trying to uploaded the file');
-					return null;
-				});
-
-			if (data) filenames.push(data.secure_url);
-		}
+		if (data !== null) filenames.push(data.secure_url);
 	}
+
+	if (filenames.length <= 0) return res.status(401).json(
+		{ message: 'An error occurred while trying to upload the file(s)' });
+
+	const chat = await Chat
+		.create({
+			from: req.user.id,
+			to: contactID,
+			type,
+			username: (type === TypeContact.GROUP) ? req.user.username : undefined,
+			content: filenames,
+			createdAt: new Date
+		})
+		.catch(() => null);
+
+	if (chat === null) return res.status(401).json(
+		{ message: 'An error has occurred with the database' });
 
 	return res.json({ filenames });
 };
 
 export const postAvatar: Direction = async (req, res) => {
-	const group = await Group.findOne({ _id: req.body.id, admin: req.user.id });
+	try {
+		const group = await Group.findOne({ _id: req.body.id, admin: req.user.id });
+		
+		if (group === null) return res.status(401).json(null);
+		
+		const data = await loadFile(req.file, Folder.GROUP, TypeContact.GROUP);
 	
-	if (group === null || !req.file) return res.json(null);
+		if (!data) return res.status(401).json(null);
 	
-	const file = dataUri(req.file);
-
-	if (!file) return res.json(null);
+		// Unlink old avatar
+		if (!group.avatar.includes('avatar.png')) {
+			deleteFile(group.avatar, Folder.GROUP);
+		}
 	
-	const data = await cloudinary.uploader
-		.upload(file, {
-			public_id: await getId(TypeContact.GROUP),
-			folder: 'advanced/group-avatar/'
-		})
-		.catch(() => {
-			console.log('An error occurred while trying to uploaded the image');
-			return null;
-		});
-
-	if (!data) return res.json(null);
-
-	// Unlink old avatar
-	if (!group.avatar.includes('avatar.png')) {
-		const [avatarFullFilename] = group.avatar.split('/').reverse();
-		const [avatarFilename] = avatarFullFilename.split('.');
-					
-		await cloudinary.uploader
-			.destroy('advanced/group-avatar/' + avatarFilename)
-			.catch(() => {
-				console.error('An error occurred while trying to delete the image');
-			});
+		// Update database with the new avatar
+		group.avatar = data.secure_url;
+		await group.save();
+	
+		return res.json({ filename: data.secure_url });
+	} catch {
+		return res.status(401).json(null);
 	}
-
-	// Update database with the new avatar
-	group.avatar = data.secure_url;
-	await group.save();
-
-	return res.json({ filename: data.secure_url });
 };

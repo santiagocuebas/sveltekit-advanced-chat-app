@@ -1,7 +1,8 @@
 import type { Contact } from "$lib/types/global";
 import { goto } from "$app/navigation";
 import { writable } from "svelte/store";
-import { groupProps } from "./index";
+import { groupProps, options } from "./index";
+import { socket } from "$lib/socket";
 
 function createContact(data: Contact | null) {
 	const { subscribe, update, set } = writable(data);
@@ -16,8 +17,8 @@ function createContact(data: Contact | null) {
 
 			return contact;
 		}),
-		resetContactWithId: (id: string) => update(contact => {
-			if (contact?.contactID === id) {
+		resetContactWithId: (roomID: string) => update(contact => {
+			if (contact?.roomID === roomID) {
 				goto('/');
 				contact = null;
 			}
@@ -32,10 +33,17 @@ function createContact(data: Contact | null) {
 			
 			return contact;
 		}),
-		setContact: (value: Contact) => set(value),
-		resetContact: () => {
-			groupProps.resetProps();
-			set(null);
+		resetContact: () => update(contact => {
+			if (contact) {
+				groupProps.resetProps();
+				socket.emit('removeListeners');
+			}
+			
+			return null;
+		}),
+		setContact: (contact: Contact) => {
+			options.resetOptions();
+			set(contact);
 		}
 	}
 }

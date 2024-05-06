@@ -1,61 +1,27 @@
-import type { IGroup, Member } from '../types/global.js';
-import { v2 as cloudinary } from 'cloudinary';
-import { User } from '../models/index.js';
+import type { Member } from '../types/global.js';
+import { Group, User } from '../models/index.js';
 
-const validImageExt = ['apng', 'avif', 'gif', 'jpg', 'png', 'svg', 'webp'];
+export const isString = (value: unknown) => typeof value === 'string';
 
-export const isString = (value: unknown): boolean => typeof value === 'string';
+export const isArray = (value: unknown) => value instanceof Array;
 
-export const isObject = (value: unknown): boolean => typeof value === 'object';
-
-export const isArray = (value: unknown): boolean => value instanceof Array;
-
-export const isLength = (value: string | string[] | Member[], min: number, max: number): boolean => {
-	return value.length > min && value.length <= max;
+export const isMember = (value: Member) => {
+	return typeof value === 'object' && isString(value.id) && isString(value.name);
 };
 
-export const existsImage = async (values: string[]): Promise<boolean> => {
-	for (const value of values) {
-		if (!isString(value)) return false;
+export const isLength = (
+	value: string | string[] | Member[],
+	min: number,
+	max: number
+) => value.length > min && value.length <= max;
 
-		const [archiveFilename] = value.split('/').reverse();
-		const [archiveId, archiveExt] = archiveFilename.split('.');
-		const resource_type = validImageExt.includes(archiveExt) ? 'image' : 'video';
-
-		const data = await cloudinary.api
-			.resources_by_ids('advanced/public/' + archiveId, { resource_type })
-			.catch(err => {
-				console.error(err?.message);
-				return null;
-			});
-
-		if (!data || !data.resources.length) return false;
-	}
-
-	return true;
-};
-
-export const isValidUser = async (
-	groupID: string,
-	{ id, name }: Member
-): Promise<boolean> => {
+export const isValidUser = async (groupID: string, { id, name }: Member) => {
 	const user = await User
 		.findOne({ _id: id, username: name })
 		.select('blockedGroups')
 		.lean({ virtuals: true });
 
-	return !(user !== null && !user.blockedGroupsIDs.includes(groupID));
-};
-
-export const groupList = ({ admin, memberIDs, modIDs, blockedIDs }: IGroup) => {
-	return {
-		adminID: admin,
-		memberIDs,
-		modIDs,
-		blockedIDs,
-		validIDs: [admin, ...modIDs],
-		allIDs: [admin, ...modIDs, ...memberIDs, ...blockedIDs]
-	};
+	return user === null || user.blockedGroupsIDs.includes(groupID);
 };
 
 export const isValidKey = (values: string[]) => {
@@ -71,13 +37,39 @@ export const isValidKey = (values: string[]) => {
 export const isValidUsers = async (members: Member[], userIDs: string[]) => {
 	for (const member of members) {
 		if (
-			!isObject(member) ||
-			!isString(member.id) ||
-			!isString(member.name) ||
+			!isMember(member) ||
 			!userIDs.includes(member.id) ||
 			!(await User.findOne({ _id: member.id, username: member.name }))
 		) return false;
 	}
 
 	return true;
+};
+
+export const checkVariablesAndFindGroup = async (
+	id: string,
+	rooms: string[],
+	memberIDs: string[] | Member[]
+) => {
+	if (
+		isString(id) &&
+		rooms.includes(id) &&
+		isArray(memberIDs) &&
+		isLength(memberIDs, 0, 2^10)
+	) {
+		const group = await Group.findOne({ _id: id });
+
+		if (group === null) return group;
+
+		return {
+			adminID: group.admin,
+			memberIDs: group.memberIDs,
+			modIDs: group.modIDs,
+			blockedIDs: group.blockedIDs,
+			validIDs: [group.admin, ...group.modIDs],
+			allIDs: [group.admin, ...group.modIDs, ...group.memberIDs, ...group.blockedIDs]
+		};
+	}
+
+	return null;
 };

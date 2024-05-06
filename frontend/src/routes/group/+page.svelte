@@ -1,10 +1,11 @@
 <script lang="ts">
 	import type { Member } from '$lib/types/global';
 	import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
   import { Messages } from '$lib/dictionary';
   import { isMember, isMod, changeName } from '$lib/services';
   import { socket } from "$lib/socket";
-  import { contacts } from '$lib/store';
+  import { contact, contacts } from '$lib/store';
 	import { StateOption } from '$lib/types/enums';
 
 	let name = '';
@@ -31,6 +32,8 @@
 		members = [];
 		state = StateOption.PUBLIC;
 	}
+	
+	onMount(contact.resetContact);
 </script>
 
 <div class="container-box">

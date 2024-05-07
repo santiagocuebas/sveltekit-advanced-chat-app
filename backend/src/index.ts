@@ -50,6 +50,10 @@ const io = new Server(server, {
 		methods: ['GET', 'POST', 'PUT', 'DELETE'],
 		credentials: true
 	},
+	connectionStateRecovery: {
+		maxDisconnectionDuration: 2 * 60 * 1000,
+		skipMiddlewares: true
+	},
 	maxHttpBufferSize: 2e7,
 	adapter: createAdapter(mongoCollection)
 });

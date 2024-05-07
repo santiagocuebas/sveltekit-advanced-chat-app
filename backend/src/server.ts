@@ -23,11 +23,11 @@ cluster.setupPrimary({
 	exec: __dirname + '/index.js'
 });
 
-for (let i = 0; (i < cpuCount && i < 3); i++) {
+for (let i = 0; (i < cpuCount && i < 1); i++) {
 	cluster.fork();
 }
 
-cluster.on('exit', (worker) => {
+cluster.on('exit', worker => {
 	console.log(`Worker ${worker.process.pid} has been killed`);
 	console.log('Starting another worker');
 	cluster.fork();

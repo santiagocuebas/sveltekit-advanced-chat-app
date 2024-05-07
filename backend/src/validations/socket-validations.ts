@@ -290,8 +290,8 @@ export const groupInit = async ([group]: [GroupInit], { userIDs }: IUser) => {
 		isValidKey(Object.keys(group)) &&
 		isString(group.name) &&
 		validStates.includes(group.state) &&
-		group.members instanceof Array &&
-		group.mods instanceof Array &&
+		isArray(group.members) &&
+		isArray(group.mods) &&
 		await isValidUsers([...group.members, ...group.mods], userIDs)
 	) ? true : ErrorMessage.groupInit;
 };

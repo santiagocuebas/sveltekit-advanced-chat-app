@@ -46,8 +46,7 @@ const mongoCollection = mongoClient.db(MONGO_DB).collection(MONGO_COLLECTION);
 const io = new Server(server, {
 	cors: {
 		origin: ORIGIN,
-		allowedHeaders: ['Origin', 'Authorization', 'X-Requested-With', 'Content-Type', 'Accept'],
-		methods: ['GET', 'POST', 'PUT', 'DELETE'],
+		methods: ['GET', 'POST'],
 		credentials: true
 	},
 	connectionStateRecovery: {
@@ -66,7 +65,8 @@ await Group.updateMany({ }, { loggedUsers: [] });
 // Connect worker		
 io.use(async (socket, next) => {
 	const { sessionID, token } = socket.handshake.auth;
-	const user = await verifyToken(token).catch(() => null);
+	const user = await verifyToken(token)
+		.catch(() => null);
 
 	if (!user || user.id !== sessionID) return(new Error('Unauthorized'));
 

@@ -33,7 +33,7 @@ export const genericSockets: GenericSockets = (socket, userID, user) => {
 			}
 	
 			socket.emit('updateContacts', contact.contactID);
-			socket.emit('addContact', contact);
+			socket.emit('addContact', contact, false);
 			socket.join(roomID);
 		} catch {
 			socket.emit('socketError', ErrorMessage.failureDatabase);
@@ -51,21 +51,21 @@ export const genericSockets: GenericSockets = (socket, userID, user) => {
 					{ $push: { members: member, loggedUsers: [userID] } })
 				.lean({ virtuals: true });
 	
-			if (group === null) throw new Error(); 
-			
-			// Add group id
-			await User.updateOne({ _id: userID }, { groupRooms: user.groupRooms });
+			if (group === null) throw new Error();
 	
 			user.groupRooms.push(id);
 			group.members.push(member);
+			
+			// Add group id
+			await User.updateOne({ _id: userID }, { groupRooms: user.groupRooms });
 			
 			// Find chats
 			const contact = await getContact(id, group, TypeContact.GROUP);
 	
 			if (typeof contact.logged !== 'boolean') contact.logged.push(userID);
 	
+			socket.emit('addGroup', contact, false);
 			socket.emit('updateContacts', contact.contactID);
-			socket.emit('addGroup', contact);
 			socket.to(id).emit('addMembers', id, [member], [userID]);
 			socket.join(id);
 		} catch {
@@ -110,7 +110,7 @@ export const genericSockets: GenericSockets = (socket, userID, user) => {
 				socket.to(users.map(user => user.tempId)).emit('addGroup', contact, true);
 			}
 	
-			socket.emit('addGroup', contact);
+			socket.emit('addGroup', contact, false);
 			socket.join(group.id);
 		} catch {
 			socket.emit('socketError', ErrorMessage.failureDatabase);

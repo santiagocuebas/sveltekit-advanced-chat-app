@@ -68,12 +68,10 @@ export const modSockets: ModSockets = (socket, contactID) => {
 			await User.updateMany({ _id: userIDs }, { $pull: { groupRooms: contactID } });
 		
 			const users = await User.find({ _id: userIDs, logged: true });
-	
 			const loggedUsers = users.map(user => user.id);
 	
-			if (users.length) {
-				socket.to(users.map(user => user.tempId)).emit('leaveGroup', contactID, true);
-			}
+			if (users.length) socket.to(users.map(user => user.tempId))
+				.emit('leaveGroup', contactID, true);
 			
 			socket.to(contactID).emit('banMembers', contactID, userIDs, loggedUsers);
 			socket.emit('discountMembers', contactID, loggedUsers);
@@ -102,12 +100,10 @@ export const modSockets: ModSockets = (socket, contactID) => {
 			await User.updateMany({ _id: userIDs }, { $pull: { groupRooms: contactID } });
 	
 			const users = await User.find({ _id: userIDs, logged: true });
-			
 			const loggedUsers = users.map(user => user.id);
 			
-			if (users.length) {
-				socket.to(users.map(user => user.tempId)).emit('leaveGroup', contactID, true);
-			}
+			if (users.length) socket.to(users.map(user => user.tempId))
+				.emit('leaveGroup', contactID, true);
 			
 			socket.to(contactID).emit('blockMembers', contactID, members, loggedUsers);
 			socket.emit('discountMembers', contactID, loggedUsers);

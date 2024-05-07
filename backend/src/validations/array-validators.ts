@@ -78,9 +78,11 @@ export const arrayPassword: ValidationChain[] = [
 ];
 
 export const arrayUnblock: ValidationChain[] = [
-	body('unblockUsers', 'Unblock error')
+	body('unblockUsers', 'An error occurred while trying to unblock the user')
+		.customSanitizer(value => value instanceof Array ? value : [value])
 		.custom(existsUsers),
-	body('unblockGroups', 'Unblock error')
+	body('unblockGroups', 'An error occurred while trying to unblock the group')
+		.customSanitizer(value => value instanceof Array ? value : [value])
 		.custom(existsGroups)
 ];
 

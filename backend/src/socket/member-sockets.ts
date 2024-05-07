@@ -42,13 +42,13 @@ export const memberSockets: MemberSockets = (socket, [userID, contactID], user) 
 			
 			user.groupRooms = user.groupRooms.filter(id => id !== contactID);
 			user.blockedGroups.push({ id: contactID, name });
+			user.blockedGroupsIDs.push(contactID);
 	
 			// Remove and block group id
 			await User.updateOne(
 				{ _id: userID },
 				{ blockedGroups: user.blockedGroups, groupRooms: user.groupRooms });
 	
-			user.blockedGroupsIDs.push(contactID);
 			socket.to(contactID).emit('banMembers', contactID, [userID], [userID]);
 			socket.leave(contactID);
 		} catch {

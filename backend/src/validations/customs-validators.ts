@@ -23,7 +23,8 @@ export const isValidPassword: CustomValidator = async (value, { req }) => {
 
 	if (user === null) return true;
 
-	const match = await matchPassword(value, user.password).catch(() => false);
+	const match = await matchPassword(value, user.password)
+		.catch(() => false);
 		
 	if (!match) throw new Error('Incorrect password');
 	
@@ -35,7 +36,8 @@ export const isValidFormat: CustomValidator = (_value, { req }) => {
 };
 
 export const isCorrectPassword: CustomValidator = async (value, { req }) => {
-	const match = await matchPassword(value, req.user.password).catch(() => false);
+	const match = await matchPassword(value, req.user.password)
+		.catch(() => false);
 
 	if (!match) throw new Error('Incorrect password');
 
@@ -43,11 +45,9 @@ export const isCorrectPassword: CustomValidator = async (value, { req }) => {
 };
 
 export const existsUsers: CustomValidator = (value, { req }) => {
-	const parchedValue = value instanceof Array ? value : [value];
-
-	for (const id of parchedValue) {
+	for (const id of value) {
 		if (typeof value === 'string' && !req.user?.blockedUsersIDs.includes(id)) {
-			throw new Error('An error has occurred');
+			return false;
 		}
 	}
 
@@ -55,11 +55,9 @@ export const existsUsers: CustomValidator = (value, { req }) => {
 };
 
 export const existsGroups: CustomValidator = (value, { req }) => {
-	const parchedValue = value instanceof Array ? value : [value];
-
-	for (const id of parchedValue) {
-		if (typeof value === 'string' && !req.user?.blockedUsersIDs.includes(id)) {
-			throw new Error('An error has occurred');
+	for (const id of value) {
+		if (typeof value === 'string' && !req.user?.blockedGroupsIDs.includes(id)) {
+			return false;
 		}
 	}
 
@@ -76,7 +74,7 @@ export const isUndefinedImages: CustomValidator = (_value, { req }) => {
 
 export const isValidReceiver: CustomValidator = (value, { req }) => {
 	return (
-		(req.query?.type === TypeContact.GROUP && req.user.groupsRooms.includes(value) &&
+		(req.query?.type === TypeContact.GROUP && req.user.groupRooms.includes(value) &&
 			value === req.query.roomID) ||
 		(req.query?.type === TypeContact.USER && req.user.userIDs.includes(value) &&
 		req.user.userRooms.includes(req.query.roomID) && req.query.roomID.includes(value)));
@@ -100,5 +98,5 @@ export const isValidSizesAndFormat: CustomValidator = (_value, { req }) => {
 export const isValidContact: CustomValidator = (value, { req }) => {
 	return (
 		(req.query?.type === QueryType.USERS && req.user.userIDs.includes(value)) ||
-		(req.query?.type === QueryType.GROUPS && req.user.groupsRooms.includes(value)));
+		(req.query?.type === QueryType.GROUPS && req.user.groupRooms.includes(value)));
 };

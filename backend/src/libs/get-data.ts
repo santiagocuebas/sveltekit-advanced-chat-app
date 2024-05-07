@@ -16,7 +16,7 @@ export const getUser = (user: IUser): IPartialUser => {
 };
 
 export const getContact: Contact = async (roomID, contact, type, id) => {
-	const search = (type === TypeContact.GROUP)
+	const search = type === TypeContact.GROUP
 		? { to: contact.id, type: TypeContact.GROUP }
 		: { from: contact.id, to: id, type: TypeContact.USER };
 	

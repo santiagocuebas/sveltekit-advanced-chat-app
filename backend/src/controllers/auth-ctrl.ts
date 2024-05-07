@@ -19,7 +19,8 @@ export const postPassword: Direction = async (req, res) => {
 	// Check if is correct password
 	const match = typeof password === 'string' &&
 		req.user.type === TypeUser.EMAIL &&
-		await matchPassword(password, req.user.password).catch(() => false);
+		await matchPassword(password, req.user.password)
+			.catch(() => false);
 
 	return res.json(match);
 };

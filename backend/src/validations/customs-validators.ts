@@ -1,4 +1,4 @@
-import { CustomValidator } from 'express-validator';
+import { CustomSanitizer, CustomValidator } from 'express-validator';
 import { matchPassword } from '../libs/index.js';
 import { User } from '../models/index.js';
 import {
@@ -99,4 +99,12 @@ export const isValidContact: CustomValidator = (value, { req }) => {
 	return (
 		(req.query?.type === QueryType.USERS && req.user.userIDs.includes(value)) ||
 		(req.query?.type === QueryType.GROUPS && req.user.groupRooms.includes(value)));
+};
+
+export const patchSkip: CustomSanitizer = value => {
+	const patchSkip = Number(value);
+
+	if (Number.isNaN(patchSkip)) return 0;
+
+	return Math.abs(Math.floor(value));
 };

@@ -53,7 +53,8 @@ const io = new Server(server, {
 		maxDisconnectionDuration: 2 * 60 * 1000,
 		skipMiddlewares: true
 	},
-	maxHttpBufferSize: 2e7
+	maxHttpBufferSize: 2e7,
+	transports: ['polling', 'websocket']
 });
 
 io.adapter(createAdapter(mongoCollection));
@@ -61,7 +62,6 @@ io.adapter(createAdapter(mongoCollection));
 setupWorker(io);
 
 io.engine.on('connection_error', (err) => {
-	console.log(err?.req);
 	console.log(err?.code);
 	console.log(err?.message);
 	console.log(err?.context);

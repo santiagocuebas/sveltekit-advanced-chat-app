@@ -8,7 +8,8 @@ import {
 	isUndefinedImages,
 	isValidSizesAndFormat,
 	isValidContact,
-	isValidReceiver
+	isValidReceiver,
+	patchSkip
 } from './customs-validators.js';
 import { QueryType, TypeContact } from '../types/enums.js';
 
@@ -87,6 +88,8 @@ export const arrayUnblock: ValidationChain[] = [
 ];
 
 export const arrayChats: ValidationChain[] = [
+	query('skip')
+		.customSanitizer(patchSkip),
 	query('type', 'Invalid type')
 		.custom(value => value === QueryType.USERS || value === QueryType.GROUPS),
 	query('id', 'Invalid id')

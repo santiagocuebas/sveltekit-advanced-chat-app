@@ -53,11 +53,19 @@ const io = new Server(server, {
 		maxDisconnectionDuration: 2 * 60 * 1000,
 		skipMiddlewares: true
 	},
-	maxHttpBufferSize: 2e7,
-	adapter: createAdapter(mongoCollection)
+	maxHttpBufferSize: 2e7
 });
 
+io.adapter(createAdapter(mongoCollection));
+
 setupWorker(io);
+
+io.engine.on('connection_error', (err) => {
+	console.log(err?.req);
+	console.log(err?.code);
+	console.log(err?.message);
+	console.log(err?.context);
+});
 
 await User.updateMany({ }, { logged: false, tempId: '', socketIds: [] });
 await Group.updateMany({ }, { loggedUsers: [] });

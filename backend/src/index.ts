@@ -22,7 +22,7 @@ console.log(`Worker ${process.pid} started`);
 
 // Create Server
 const { MongoClient } = mongoose.mongo;
-const mongoClient = new MongoClient(MONGO_REPLIC);
+const mongoClient = new MongoClient(MONGO_REPLIC, { replicaSet: 'rs0' });
 
 // Connect Databases
 await mongoClient
@@ -85,7 +85,7 @@ io.use(async (socket, next) => {
 	if (!user || user.id !== sessionID) return(new Error('Unauthorized'));
 
 	socket.user = user;
-	socket.user.tempId = token;
+	if (user.tempId.length === 0) socket.user.tempId = token;
 
 	return next();
 });

@@ -1,6 +1,6 @@
 import { setupMaster } from '@socket.io/sticky';
 import cluster from 'cluster';
-import { createServer } from 'http';
+import { createServer } from 'https';
 import os from 'os';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';

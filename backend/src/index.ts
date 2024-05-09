@@ -2,7 +2,7 @@ import { Server } from 'socket.io';
 import mongoose from 'mongoose';
 import { setupWorker } from '@socket.io/sticky';
 import { createAdapter } from '@socket.io/mongo-adapter';
-import { createServer } from 'http';
+import { createServer } from 'https';
 import app from './app.js';
 import {
 	ORIGIN,

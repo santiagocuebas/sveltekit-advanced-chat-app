@@ -27,12 +27,15 @@ router.post(
 	homeCtrl.postAudiovisual
 );
 
-router.use(upload.none());
-
 router.get('/search', homeCtrl.getSearch);
 
-router.get('/contacts', homeCtrl.getAllContacts);
+router.get('/contacts', upload.none(), homeCtrl.getAllContacts);
 
-router.get('/chats', validate(arrayChats), homeCtrl.getContactChats);
+router.get(
+	'/chats',
+	upload.none(),
+	validate(arrayChats),
+	homeCtrl.getContactChats
+);
 
 export default router;

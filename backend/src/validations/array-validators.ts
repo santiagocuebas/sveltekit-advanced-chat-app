@@ -9,7 +9,7 @@ import {
 	isValidSizesAndFormat,
 	isValidContact,
 	isValidReceiver,
-	patchSkip
+	sanitizeSkip
 } from './customs-validators.js';
 import { QueryType, TypeContact } from '../types/enums.js';
 
@@ -20,9 +20,8 @@ export const arrayRegister: ValidationChain[] = [
 		.isLength({ max: 60 }).withMessage('The email must not have more than 60 characters'),
 	body('password', 'Invalid password')
 		.exists({ values: 'falsy' }).bail()
-		.isString().bail()
 		.isStrongPassword().withMessage('The password must contains at least a lowercase, a uppercase, a number and a special character').bail()
-		.isLength({ max: 40 }).withMessage('The password must not have more than 40 characters')
+		.isLength({ max: 40 }).withMessage('The password must not have more than 40 characters').bail()
 		.custom(isValidPassword)
 ];
 
@@ -80,16 +79,20 @@ export const arrayPassword: ValidationChain[] = [
 
 export const arrayUnblock: ValidationChain[] = [
 	body('unblockUsers', 'An error occurred while trying to unblock the user')
-		.customSanitizer(value => value instanceof Array ? value : [value])
+		.customSanitizer(value => value ? value : [])
+		.customSanitizer(value => typeof value === 'string' ? [value] : value)
+		.isArray({ min: 0, max: 1024 }).bail()
 		.custom(existsUsers),
 	body('unblockGroups', 'An error occurred while trying to unblock the group')
-		.customSanitizer(value => value instanceof Array ? value : [value])
+		.customSanitizer(value => value ? value : [])
+		.customSanitizer(value => typeof value === 'string' ? [value] : value)
+		.isArray({ min: 0, max: 1024 }).bail()
 		.custom(existsGroups)
 ];
 
 export const arrayChats: ValidationChain[] = [
 	query('skip')
-		.customSanitizer(patchSkip),
+		.customSanitizer(sanitizeSkip),
 	query('type', 'Invalid type')
 		.custom(value => value === QueryType.USERS || value === QueryType.GROUPS),
 	query('id', 'Invalid id')

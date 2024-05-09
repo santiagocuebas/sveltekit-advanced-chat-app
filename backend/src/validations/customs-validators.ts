@@ -15,17 +15,12 @@ const validAudioFormat: string[] = Object.values(AudioFormats);
 const validVideoFormat: string[] = Object.values(VideoFormats);
 
 export const isValidPassword: CustomValidator = async (value, { req }) => {
-	const user = await User
-		.findOne({ email: req.body.email, type: TypeUser.EMAIL })
-		.catch(() => {
-			throw new Error('An error has occurred with the database');
-		});
+	const user = await User.findOne({ email: req.body.email, type: TypeUser.EMAIL });
 
 	if (user === null) return true;
 
-	const match = await matchPassword(value, user.password)
-		.catch(() => false);
-		
+	const match = await matchPassword(value, user.password);
+
 	if (!match) throw new Error('Incorrect password');
 	
 	return match;
@@ -36,8 +31,7 @@ export const isValidFormat: CustomValidator = (_value, { req }) => {
 };
 
 export const isCorrectPassword: CustomValidator = async (value, { req }) => {
-	const match = await matchPassword(value, req.user.password)
-		.catch(() => false);
+	const match = await matchPassword(value, req.user.password);
 
 	if (!match) throw new Error('Incorrect password');
 
@@ -46,7 +40,7 @@ export const isCorrectPassword: CustomValidator = async (value, { req }) => {
 
 export const existsUsers: CustomValidator = (value, { req }) => {
 	for (const id of value) {
-		if (typeof value === 'string' && !req.user?.blockedUsersIDs.includes(id)) {
+		if (typeof id !== 'string' || !req.user.blockedUsersIDs.includes(id)) {
 			return false;
 		}
 	}
@@ -56,7 +50,7 @@ export const existsUsers: CustomValidator = (value, { req }) => {
 
 export const existsGroups: CustomValidator = (value, { req }) => {
 	for (const id of value) {
-		if (typeof value === 'string' && !req.user?.blockedGroupsIDs.includes(id)) {
+		if (typeof id !== 'string' || !req.user.blockedGroupsIDs.includes(id)) {
 			return false;
 		}
 	}
@@ -87,7 +81,8 @@ export const isValidSizesAndFormat: CustomValidator = (_value, { req }) => {
 			!(
 				req.files.length === 1 &&
 				file.size < 2.5e7 &&
-				(validAudioFormat.includes(file.mimetype) ||
+				(
+					validAudioFormat.includes(file.mimetype) ||
 					validVideoFormat.includes(file.mimetype)))
 		) return false;
 	}
@@ -101,10 +96,10 @@ export const isValidContact: CustomValidator = (value, { req }) => {
 		(req.query?.type === QueryType.GROUPS && req.user.groupRooms.includes(value)));
 };
 
-export const patchSkip: CustomSanitizer = value => {
+export const sanitizeSkip: CustomSanitizer = value => {
 	const patchSkip = Number(value);
 
 	if (Number.isNaN(patchSkip)) return 0;
 
-	return Math.abs(Math.floor(value));
+	return Math.abs(Math.floor(patchSkip));
 };

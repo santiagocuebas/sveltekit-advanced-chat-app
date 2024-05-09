@@ -1,9 +1,10 @@
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
+import { setupWorker } from '@socket.io/sticky';
 import { createAdapter } from '@socket.io/mongo-adapter';
-import server from './app.js';
+import { createServer } from 'http';
+import app from './app.js';
 import {
-	PORT,
 	ORIGIN,
 	MONGO_URI,
 	MONGO_REPLIC,
@@ -13,7 +14,9 @@ import {
 import initSocket from './socket-io.js';
 import { verifyToken } from './libs/index.js';
 import { Group, User } from './models/index.js';
-import { setupWorker } from '@socket.io/sticky';
+
+// Index Routes
+import * as routes from './routes/index.js';
 
 console.log(`Worker ${process.pid} started`);
 
@@ -42,6 +45,8 @@ await mongoose
 
 // Connect Socket.io
 const mongoCollection = mongoClient.db(MONGO_DB).collection(MONGO_COLLECTION);
+
+const server = createServer(app);
 
 const io = new Server(server, {
 	cors: {
@@ -86,5 +91,7 @@ io.use(async (socket, next) => {
 
 io.on('connection', initSocket);
 
-// Listener Server
-server.listen(PORT, () => console.log('Server running in port', PORT));
+// Routes
+app.use('/api/auth', routes.Auth);
+app.use('/api/home', routes.Home);
+app.use('/api/settings', routes.Settings);

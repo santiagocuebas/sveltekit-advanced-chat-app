@@ -216,7 +216,8 @@ export const joinRoom = async (
 	if (
 		isString(contactID) &&
 		isString(roomID) &&
-		((type === TypeContact.GROUP && !groupRooms.includes(roomID)) ||
+		(
+			(type === TypeContact.GROUP && !groupRooms.includes(roomID)) ||
 			(type === TypeContact.USER && !userIDs.includes(contactID) && !userRooms.includes(roomID)))
 	) {
 		const match = type === TypeContact.USER
@@ -287,6 +288,7 @@ export const joinGroup = async (
 export const groupInit = async ([group]: [GroupInit], { userIDs }: IUser) => {
 	return (
 		typeof group === 'object' &&
+		group !== null &&
 		isValidKey(Object.keys(group)) &&
 		isString(group.name) &&
 		validStates.includes(group.state) &&

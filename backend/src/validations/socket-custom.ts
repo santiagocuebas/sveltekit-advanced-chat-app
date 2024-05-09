@@ -6,7 +6,10 @@ export const isString = (value: unknown) => typeof value === 'string';
 export const isArray = (value: unknown) => value instanceof Array;
 
 export const isMember = (value: Member) => {
-	return typeof value === 'object' && isString(value.id) && isString(value.name);
+	return typeof value === 'object' &&
+		value !== null &&
+		isString(value.id) &&
+		isString(value.name);
 };
 
 export const isLength = (

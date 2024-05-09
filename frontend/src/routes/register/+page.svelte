@@ -18,7 +18,6 @@
 			type='text'
 			name={arrayOfInputs[0]}
 			value={$emailInput.value}
-			autocomplete="off"
 			on:keyup={emailInput.setInput}
 			on:focus={emailInput.changeClass}
 			on:blur={emailInput.changeError}
@@ -40,7 +39,6 @@
 			type='password'
 			name={arrayOfInputs[1]}
 			value={$passInput.value}
-			autocomplete="off"
 			on:keyup={passInput.setInput}
 			on:focus={passInput.changeClass}
 			on:blur={passInput.changeError}

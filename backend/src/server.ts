@@ -1,19 +1,20 @@
-import { setupPrimary } from '@socket.io/cluster-adapter';
 import { setupMaster } from '@socket.io/sticky';
 import cluster from 'cluster';
+import { createServer } from 'http';
 import os from 'os';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
-import server from './app.js';
+import { PORT } from './config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const cpuCount = os.cpus().length;
 
-// Setup sticky sessions
-setupMaster(server, { loadBalancingMethod: 'least-connection' });
+const httpServer = createServer();
 
-// Setup connections between the workers
-setupPrimary();
+// Setup sticky sessions
+setupMaster(httpServer, { loadBalancingMethod: 'least-connection' });
+
+httpServer.listen(PORT);
 
 console.log(`The total number of CPUs is ${cpuCount}`);
 console.log(`Primary pid=${process.pid}`);
@@ -23,7 +24,7 @@ cluster.setupPrimary({
 	exec: __dirname + '/index.js'
 });
 
-for (let i = 0; i < cpuCount && i < 3; i++) {
+for (let i = 0; i < cpuCount; i++) {
 	cluster.fork();
 }
 

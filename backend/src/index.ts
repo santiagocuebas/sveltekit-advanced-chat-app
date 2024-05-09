@@ -2,7 +2,7 @@ import { Server } from 'socket.io';
 import mongoose from 'mongoose';
 import { setupWorker } from '@socket.io/sticky';
 import { createAdapter } from '@socket.io/mongo-adapter';
-import { createServer } from 'https';
+import { createServer } from 'http';
 import app from './app.js';
 import {
 	ORIGIN,
@@ -51,6 +51,7 @@ const server = createServer(app);
 const io = new Server(server, {
 	cors: {
 		origin: ORIGIN,
+		allowedHeaders: 'Origin, Authorization, X-Requested-With, Content-Type, Accept',
 		methods: ['GET', 'POST'],
 		credentials: true
 	},

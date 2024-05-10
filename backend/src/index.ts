@@ -44,6 +44,18 @@ await mongoose
 	});
 
 // Connect Socket.io
+await mongoClient
+	.db(MONGO_DB)
+	.createCollection(MONGO_COLLECTION, {
+		capped: true,
+		size: 1e6 })
+	.then(() => console.log('The collection was created'))
+	.catch(() => {
+		// eslint-disable-next-line indent
+		mongoClient.close();
+		console.error('Collection already exists');
+	});
+
 const mongoCollection = mongoClient.db(MONGO_DB).collection(MONGO_COLLECTION);
 
 const server = createServer(app);

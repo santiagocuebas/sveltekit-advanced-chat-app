@@ -1,6 +1,6 @@
-import { setupMaster } from '@socket.io/sticky';
+// import { setupMaster } from '@socket.io/sticky';
 import cluster from 'cluster';
-import { createServer } from 'http';
+// import { createServer } from 'http';
 import os from 'os';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -17,19 +17,19 @@ cluster.setupPrimary({
 	exec: __dirname + '/index.js'
 });
 
-for (let i = 0; i < cpuCount && i < 1; i++) {
-	cluster.fork();
+for (let i = 0; i < cpuCount && i < 3; i++) {
+	cluster.fork({ PORT: Number(PORT) + i });
 }
 
-cluster.on('exit', worker => {
+cluster.on('exit', (worker, code) => {
 	console.log(`Worker ${worker.process.pid} has been killed`);
 	console.log('Starting another worker');
-	cluster.fork();
+	cluster.fork({ PORT: Number(PORT) + code });
 });
 
-const httpServer = createServer();
+// const httpServer = createServer();
 
-// Setup sticky sessions
-setupMaster(httpServer, { loadBalancingMethod: 'least-connection' });
+// // Setup sticky sessions
+// setupMaster(httpServer, { loadBalancingMethod: 'least-connection' });
 
-httpServer.listen(PORT, () => console.log('Server listening at port', PORT));
+// httpServer.listen(PORT, () => console.log('Server listening at port', PORT));

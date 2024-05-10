@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
-import { setupWorker } from '@socket.io/sticky';
+// import { setupWorker } from '@socket.io/sticky';
 import { createAdapter } from '@socket.io/mongo-adapter';
 import { createServer } from 'http';
 import app from './app.js';
@@ -46,7 +46,15 @@ await mongoose
 // Connect Socket.io
 const mongoCollection = mongoClient.db(MONGO_DB).collection(MONGO_COLLECTION);
 
+await User.updateMany({ }, { logged: false, tempId: '', socketIds: [] });
+await Group.updateMany({ }, { loggedUsers: [] });
+
 const server = createServer(app);
+
+// Routes
+app.use('/api/auth', routes.Auth);
+app.use('/api/home', routes.Home);
+app.use('/api/settings', routes.Settings);
 
 const io = new Server(server, {
 	cors: {
@@ -60,21 +68,17 @@ const io = new Server(server, {
 		skipMiddlewares: true
 	},
 	maxHttpBufferSize: 2e7,
-	transports: ['polling', 'websocket']
+	transports: ['polling', 'websocket'],
+	adapter: createAdapter(mongoCollection)
 });
 
-io.adapter(createAdapter(mongoCollection));
-
-setupWorker(io);
+// setupWorker(io);
 
 io.engine.on('connection_error', (err) => {
 	console.log(err?.code);
 	console.log(err?.message);
 	console.log(err?.context);
 });
-
-await User.updateMany({ }, { logged: false, tempId: '', socketIds: [] });
-await Group.updateMany({ }, { loggedUsers: [] });
 
 // Connect worker		
 io.use(async (socket, next) => {
@@ -92,7 +96,4 @@ io.use(async (socket, next) => {
 
 io.on('connection', initSocket);
 
-// Routes
-app.use('/api/auth', routes.Auth);
-app.use('/api/home', routes.Home);
-app.use('/api/settings', routes.Settings);
+server.listen(process.env.PORT, () => console.log('Server listening at port', process.env.PORT));

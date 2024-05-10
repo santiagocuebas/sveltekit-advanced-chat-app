@@ -24,7 +24,7 @@ cluster.setupPrimary({
 	exec: __dirname + '/index.js'
 });
 
-for (let i = 0; i < cpuCount && i < 3; i++) {
+for (let i = 0; i < cpuCount && i < 1; i++) {
 	cluster.fork();
 }
 

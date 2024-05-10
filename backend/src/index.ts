@@ -22,7 +22,7 @@ console.log(`Worker ${process.pid} started`);
 
 // Create Server
 const { MongoClient } = mongoose.mongo;
-const mongoClient = new MongoClient(MONGO_REPLIC, { replicaSet: 'rs0' });
+const mongoClient = new MongoClient(MONGO_REPLIC, { replicaSet: '' });
 
 // Connect Databases
 await mongoClient

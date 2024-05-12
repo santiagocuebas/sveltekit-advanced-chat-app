@@ -1,15 +1,16 @@
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
+import { createAdapter } from '@socket.io/cluster-adapter';
 // import { setupWorker } from '@socket.io/sticky';
-import { createAdapter } from '@socket.io/mongo-adapter';
+// import { createAdapter } from '@socket.io/mongo-adapter';
 import { createServer } from 'http';
 import app from './app.js';
 import {
 	ORIGIN,
 	MONGO_URI,
-	MONGO_REPLIC,
-	MONGO_DB,
-	MONGO_COLLECTION
+	// MONGO_REPLIC,
+	// MONGO_DB,
+	// MONGO_COLLECTION
 } from './config.js';
 import initSocket from './socket-io.js';
 import { verifyToken } from './libs/index.js';
@@ -21,17 +22,17 @@ import * as routes from './routes/index.js';
 console.log(`Worker ${process.pid} started`);
 
 // Create Server
-const { MongoClient } = mongoose.mongo;
-const mongoClient = new MongoClient(MONGO_REPLIC, { replicaSet: '' });
+// const { MongoClient } = mongoose.mongo;
+// const mongoClient = new MongoClient(MONGO_REPLIC, { replicaSet: '' });
 
 // Connect Databases
-await mongoClient
-	.connect()
-	.then(() => console.log('MongoDB Cluster is Connected'))
-	.catch(err => {
-		mongoClient.close();
-		console.error('An error has occurred with', err);
-	});
+// await mongoClient
+// 	.connect()
+// 	.then(() => console.log('MongoDB Cluster is Connected'))
+// 	.catch(err => {
+// 		mongoClient.close();
+// 		console.error('An error has occurred with', err);
+// 	});
 
 mongoose.set('strictQuery', true);
 
@@ -44,7 +45,7 @@ await mongoose
 	});
 
 // Connect Socket.io
-const mongoCollection = mongoClient.db(MONGO_DB).collection(MONGO_COLLECTION);
+// const mongoCollection = mongoClient.db(MONGO_DB).collection(MONGO_COLLECTION);
 
 await User.updateMany({ }, { logged: false, tempId: '', socketIds: [] });
 await Group.updateMany({ }, { loggedUsers: [] });
@@ -63,13 +64,10 @@ const io = new Server(server, {
 		methods: ['GET', 'POST'],
 		credentials: true
 	},
-	connectionStateRecovery: {
-		maxDisconnectionDuration: 2 * 60 * 1000,
-		skipMiddlewares: true
-	},
+	connectionStateRecovery: {},
 	maxHttpBufferSize: 2e7,
 	transports: ['polling', 'websocket'],
-	adapter: createAdapter(mongoCollection)
+	adapter: createAdapter()
 });
 
 // setupWorker(io);

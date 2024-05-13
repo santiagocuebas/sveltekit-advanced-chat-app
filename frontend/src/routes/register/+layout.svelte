@@ -32,13 +32,13 @@
 			}).then(res => res.data)
 				.catch(err => err.response ? err.response.data : visible = true);
 
-			if (data.user) connectSocket(data.user, data.token, true);
-			else if (data.errors) {
+			if (data?.user) connectSocket(data.user, data.token, true);
+			else if (data?.errors) {
 				const { username, password } = data.errors;
 
 				if (username) emailInput.updateError(username);
 				if (password) passInput.updateError(password);
-			} else if (data.error) console.log(data.error);
+			} else console.log(data?.error);
 		}
 	}
 
@@ -50,6 +50,7 @@
 
 		if (codeParam && !token) {
 			register.resetOptions();
+			
 			const data: RegisterData = await axios({
 				method: Method.POST,
 				url: '/auth/registerGithub?code=' + codeParam
@@ -60,6 +61,7 @@
 				});
 
 			if (data?.user) connectSocket(data.user, data.token, true);
+			else register.setOption(Option.REGISTER);
 		}
 	});
 

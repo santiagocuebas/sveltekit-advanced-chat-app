@@ -63,7 +63,8 @@ export const postGithubToken: Direction = async (req, res) => {
 			
 		return res.json({ user: partialUser, token });
 	} catch {
-		return res.status(401).json(null);
+		return res.status(401).json(
+			{ error: 'An error occurred while trying to register the user' });
 	}
 };
 
@@ -96,6 +97,7 @@ export const postRegister: Direction = async (req, res) => {
 	
 		return res.json({ user: partialUser, token });
 	} catch {
-		return res.status(401).json(null);
+		return res.status(401).json(
+			{ error: 'An error occurred while trying to register the user' });
 	}
 };

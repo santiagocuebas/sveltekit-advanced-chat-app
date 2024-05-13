@@ -21,7 +21,7 @@
 	let settingsProps = setSettingsProps($user);
 	let disabledButton = isDisabledButton($user);
 	let passwordValue: IKeys<string> = { old: '', new: '', confirm: '' };
-	let errorsProps: IErrorsProps = { message: '' };
+	let errorsProps: IErrorsProps | null = null;
 
 	async function checkOldPassword() {
 		const options = {
@@ -75,13 +75,13 @@
 			jsCookie.remove('authenticate');
 			socket.disconnect();
 			register.resetOptions();
-			user.resetUser();
 			contacts.resetContacts();
+			user.resetUser();
 			goto('/register');
 			setTimeout(() => register.setOption(Option.REGISTER), 3000);
 		} else {
 			errorsProps = data;
-			setTimeout(() => errorsProps.success = undefined, 5000);
+			setTimeout(() => errorsProps = null, 5000);
 		}
 	}
 
@@ -118,7 +118,7 @@
 		}
 
 		errorsProps = data;
-		setTimeout(() => errorsProps.success = undefined, 5000);
+		setTimeout(() => errorsProps = null, 5000);
 	}
 	
 	onMount(contact.resetContact);
@@ -132,7 +132,7 @@
 	</EditChat>
 {/if}
 
-{#if errorsProps.success !== undefined}
+{#if errorsProps !== null}
 	<ErrorBox success={errorsProps.success} message={errorsProps.message} />
 {/if}
 

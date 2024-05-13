@@ -95,7 +95,7 @@
 
 <div class="chat-footer">
 	<form on:submit|preventDefault={() => message = handleChat(message)}>
-		<input type="text" name='message' bind:value={message}>
+		<input type="text" name='message' spellcheck="false" bind:value={message}>
 	</form>
 	<button on:click={() => options.setOption(Option.UPLOAD)}>
 		<i

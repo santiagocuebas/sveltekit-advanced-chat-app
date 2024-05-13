@@ -20,17 +20,21 @@
 	};
 
 	const connectError = (err: Error) => {
-		if (err.message === 'Unauthorized') {
+		if (err?.message === 'Unauthorized') {
+			register.resetOptions();
 			user.resetUser();
 			contacts.resetContacts();
-			register.setOption(Option.REGISTER);
 			goto('/register');
+			setTimeout(() => register.setOption(Option.REGISTER), 3000);
 		}
 	};
 
 	onMount(() => {
 		if (data.user) connectSocket(data.user, data.token);
-		else register.setOption(Option.REGISTER);
+		else {
+			goto('/register');
+			setTimeout(() => register.setOption(Option.REGISTER), 3000);
+		}
 	});
 	
 	onMount(() => {

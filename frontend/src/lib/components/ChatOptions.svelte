@@ -1,12 +1,6 @@
 <script lang="ts">
 	import { EditChat as Edit, OptionBox as Box } from "./index";
-  import {
-		OptionUser,
-		OptionMember,
-		OptionMod,
-		OptionAdmin,
-    Messages
-	} from "$lib/dictionary";
+  import { OptionUser, OptionGroup, Messages, ValidLeave } from "$lib/dictionary";
   import { isNotMember, changeName, loadImage, socketResult } from "$lib/services";
 	import { socket } from "$lib/socket";
 	import { user, contact, contacts, options, groupProps } from "$lib/store";
@@ -34,7 +28,7 @@
 	}
 
 	function userOptions() {
-		if (OptionUser[option] && $contact) {
+		if ($contact && OptionUser[option]) {
 			socket.emit(OptionUser[option], $contact.contactID, $contact.roomID);
 
 			if (option === UserOptions.BLOCK || option === UserOptions.BAD) {
@@ -48,22 +42,14 @@
 	}
 
 	async function groupOptions() {
-		if ($contact) {
+		if ($contact && $groupProps && OptionGroup[option]) {
 			const choiceResult = socketResult($contact);
-			const data = $groupProps ? $groupProps[option] : undefined;
+			const data = $groupProps[option];
+			const result = await choiceResult[option](data);
 
-			if (OptionMember[option]) {
-				const result = await choiceResult[option](undefined);
-				socket.emit(OptionMember[option], ...result);
-				contacts.leaveGroup($contact.contactID);
-			} else if (OptionMod[option]) {
-				const result = await choiceResult[option](data);
-				socket.emit(OptionMod[option], ...result);
-			} else if (OptionAdmin[option]) {
-				const result = await choiceResult[option](data);
-				socket.emit(OptionAdmin[option], ...result);
-				if (option === AdminOptions.DESTROY) contacts.leaveGroup($contact.contactID);
-			}
+			socket.emit(OptionGroup[option], ...result);
+
+			if (ValidLeave[option]) contacts.leaveGroup($contact.contactID);
 		}
 		
 		options.resetOptions();

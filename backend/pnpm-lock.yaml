@@ -11,12 +11,6 @@ importers:
       '@socket.io/cluster-adapter':
         specifier: 0.2.2
         version: 0.2.2(socket.io-adapter@2.5.4)
-      '@socket.io/mongo-adapter':
-        specifier: 0.3.2
-        version: 0.3.2(socket.io-adapter@2.5.4)
-      '@socket.io/sticky':
-        specifier: 1.0.4
-        version: 1.0.4
       axios:
         specifier: 1.6.8
         version: 1.6.8
@@ -187,15 +181,6 @@ packages:
 
   '@socket.io/component-emitter@3.1.2':
     resolution: {integrity: sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA==}
-
-  '@socket.io/mongo-adapter@0.3.2':
-    resolution: {integrity: sha512-PcVlNuMJgAwDC+iVXmEDvmSik3TqzLqeBJz9uj18+FGApa5WEc35LgEnU0jCZPqZjvPQ2/i6sB/sAMsr58rHfA==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      socket.io-adapter: ^2.5.2
-
-  '@socket.io/sticky@1.0.4':
-    resolution: {integrity: sha512-VuauT5CJLvzYtKIgouFSQ8rUaygseR+zRutnwh6ZA2QYcXx+8g52EoJ8V2SLxfo+Tfs3ELUDy08oEXxlWNrxaw==}
 
   '@tsconfig/node10@1.0.11':
     resolution: {integrity: sha512-DcRjDCujK/kCk/cUe8Xz8ZSpm8mS3mNNpta+jGCA6USEDfktlNvm1+IuZ9eTcDbNk41BHwpHHeW+N1lKCz4zOw==}
@@ -1837,23 +1822,6 @@ snapshots:
       - supports-color
 
   '@socket.io/component-emitter@3.1.2': {}
-
-  '@socket.io/mongo-adapter@0.3.2(socket.io-adapter@2.5.4)':
-    dependencies:
-      debug: 4.3.4(supports-color@5.5.0)
-      mongodb: 6.5.0
-      socket.io-adapter: 2.5.4
-    transitivePeerDependencies:
-      - '@aws-sdk/credential-providers'
-      - '@mongodb-js/zstd'
-      - gcp-metadata
-      - kerberos
-      - mongodb-client-encryption
-      - snappy
-      - socks
-      - supports-color
-
-  '@socket.io/sticky@1.0.4': {}
 
   '@tsconfig/node10@1.0.11': {}
 

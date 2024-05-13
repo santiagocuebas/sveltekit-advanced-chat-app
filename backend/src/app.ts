@@ -2,11 +2,16 @@ import express from 'express';
 import morgan from 'morgan';
 import bodyParser from 'body-parser';
 import cors from 'cors';
+import { createServer } from 'http';
 import { cloudinaryConfig } from './cloudinary.js';
 import { ORIGIN } from './config.js';
 
+// Index Routes
+import * as routes from './routes/index.js';
+
 // Initializations
 const app = express();
+const server = createServer(app);
 
 // Middlewares
 app.use(morgan('dev'));
@@ -20,4 +25,9 @@ app.use(cors({
 }));
 app.use('*', cloudinaryConfig);
 
-export default app;
+// Routes
+app.use('/api/auth', routes.Auth);
+app.use('/api/home', routes.Home);
+app.use('/api/settings', routes.Settings);
+
+export default server;

@@ -1,4 +1,4 @@
-import type { IContact, ResponseData } from "$lib/types/global";
+import type { IChat, IContact, ResponseData } from "$lib/types/global";
 import { isValidImage, isValidAudio, isValidVideo } from "./index";
 import axios from "$lib/axios";
 import { groupProps } from "$lib/store";
@@ -38,17 +38,17 @@ export const getAudiovisuals = async (
 
 	const { contactID, roomID, type } = contact;
 
-	const data: ResponseData = await axios({
+	const data: IChat | null = await axios({
 		method: Method.POST,
 		url: `/home/audiovisual?id=${contactID}&roomID=${roomID}&type=${type}`,
 		data: formData
 	}).then(res => res.data)
 		.catch(err => {
-			console.error(err.message);
+			console.error(err?.message);
 			return null;
 		});
 
-	return (data && data.chat) ? data.chat : null;
+	return data;
 };
 
 export const sendAvatar = async (avatar: string, id: string) => {

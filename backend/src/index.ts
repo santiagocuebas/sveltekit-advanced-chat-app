@@ -1,39 +1,17 @@
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
 import { createAdapter } from '@socket.io/cluster-adapter';
-// import { setupWorker } from '@socket.io/sticky';
-// import { createAdapter } from '@socket.io/mongo-adapter';
-import { createServer } from 'http';
-import app from './app.js';
-import {
-	ORIGIN,
-	MONGO_URI,
-	// MONGO_REPLIC,
-	// MONGO_DB,
-	// MONGO_COLLECTION
-} from './config.js';
+import server from './app.js';
+import { ORIGIN, MONGO_URI } from './config.js';
 import initSocket from './socket-io.js';
 import { verifyToken } from './libs/index.js';
 import { Group, User } from './models/index.js';
 
-// Index Routes
-import * as routes from './routes/index.js';
-
 console.log(`Worker ${process.pid} started`);
 
-// Create Server
-// const { MongoClient } = mongoose.mongo;
-// const mongoClient = new MongoClient(MONGO_REPLIC, { replicaSet: '' });
+const PORT = process.env.PORT ?? process.pid;
 
-// Connect Databases
-// await mongoClient
-// 	.connect()
-// 	.then(() => console.log('MongoDB Cluster is Connected'))
-// 	.catch(err => {
-// 		mongoClient.close();
-// 		console.error('An error has occurred with', err);
-// 	});
-
+// Connect Database
 mongoose.set('strictQuery', true);
 
 await mongoose
@@ -44,19 +22,10 @@ await mongoose
 		console.error('An error has occurred with', err);
 	});
 
-// Connect Socket.io
-// const mongoCollection = mongoClient.db(MONGO_DB).collection(MONGO_COLLECTION);
-
 await User.updateMany({ }, { logged: false, tempId: '', socketIds: [] });
 await Group.updateMany({ }, { loggedUsers: [] });
 
-const server = createServer(app);
-
-// Routes
-app.use('/api/auth', routes.Auth);
-app.use('/api/home', routes.Home);
-app.use('/api/settings', routes.Settings);
-
+// Create Server
 const io = new Server(server, {
 	cors: {
 		origin: ORIGIN,
@@ -70,9 +39,7 @@ const io = new Server(server, {
 	adapter: createAdapter()
 });
 
-// setupWorker(io);
-
-io.engine.on('connection_error', (err) => {
+io.engine.on('connection_error', err => {
 	console.log(err?.code);
 	console.log(err?.message);
 	console.log(err?.context);
@@ -94,4 +61,4 @@ io.use(async (socket, next) => {
 
 io.on('connection', initSocket);
 
-server.listen(process.env.PORT, () => console.log('Server listening at port', process.env.PORT));
+server.listen(PORT, () => console.log('Server listening at port', PORT));

@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-export const PORT = process.env.PORT as string;
+export const PORT = process.env.PORT || '4200';
 
 export const SECRET = process.env.SECRET as string;
 
@@ -19,9 +19,3 @@ export const CLOUDINARY_KEY = process.env.CLOUDINARY_KEY;
 export const CLOUDINARY_SECRET = process.env.CLOUDINARY_SECRET;
 
 export const MONGO_URI = process.env.MONGO_URI as string;
-
-export const MONGO_REPLIC = process.env.MONGO_REPLIC as string;
-
-export const MONGO_DB = process.env.MONGO_DB;
-
-export const MONGO_COLLECTION = process.env.MONGO_COLLECTION as string;

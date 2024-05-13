@@ -132,7 +132,7 @@ export const postAudiovisual: Direction = async (req, res) => {
 		if (data !== null) filenames.push(data.secure_url);
 	}
 
-	if (filenames.length <= 0) return res.status(401).json(
+	if (filenames.length === 0) return res.status(401).json(
 		{ message: 'An error occurred while trying to upload the file(s)' });
 
 	const chat = await Chat
@@ -149,7 +149,7 @@ export const postAudiovisual: Direction = async (req, res) => {
 	if (chat === null) return res.status(401).json(
 		{ message: 'An error has occurred with the database' });
 
-	return res.json({ filenames });
+	return res.json(chat);
 };
 
 export const postAvatar: Direction = async (req, res) => {

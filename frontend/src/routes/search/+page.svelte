@@ -1,34 +1,31 @@
 <script lang="ts">
 	import type { PageData } from '../$types';
-	import type { IForeign, IGroup, IList } from '$lib/types/global';
-	import { afterNavigate } from '$app/navigation';
+	import type { IList } from '$lib/types/global';
 	import { onMount } from 'svelte';
 	import { DIR } from '$lib/config';
   import { selectCreate } from "$lib/dictionary";
   import { socket } from "$lib/socket";
-	import { contact, contacts } from '$lib/store';
-	import { Option } from '$lib/types/enums';
+	import { contact } from '$lib/store';
 
 	export let data: PageData & { contacts: IList[] };
 
-	const updateContacts = (user: IForeign & IGroup, emit: boolean) => {
-		if (user.type === Option.USER) contacts.addContact(user);
-		else contacts.addGroup(user);
+	let itemID: string | null = null;
 
-		data.contacts = data.contacts.filter(item => item.contactID !== user.contactID)
-		
-		if (emit) socket.emit('joinUpdate', user);
+	const updateContacts = (id: string) => {
+		data.contacts = data.contacts.filter(item => item.contactID !== id);
 	};
 
+	function createContact({ contactID, type }: IList) {
+		itemID = contactID;
+		socket.emit(selectCreate[type], contactID);
+	}
+
 	onMount(() => {
+		contact.resetContact();
+
 		socket.on('updateContacts', updateContacts);
 
 		return () => socket.off('updateContacts', updateContacts);
-	});
-	
-	afterNavigate(() => {
-		contact.resetContact();
-		socket.emit('removeListeners');
 	});
 </script>
 
@@ -45,8 +42,9 @@
 				{/if}
 				<div>
 					<button
-						on:click={() => socket.emit(selectCreate[item.type], item.contactID)}
-					>Join	</button>
+						disabled={item.contactID === itemID}
+						on:click={() => createContact(item)}
+					>Join</button>
 				</div>
 			</li>
 		{/each}
@@ -96,7 +94,7 @@
 		}
 
 		& button {
-			@apply px-6 py-2 bg-[#3d7cf1] rounded-2xl text-[20px] font-bold text-white;
+			@apply px-6 py-2 bg-[#3d7cf1] rounded-2xl text-[20px] font-bold text-white disabled:bg-[#bbbbbb] disabled:text-[#777777];
 		}
 	}
 

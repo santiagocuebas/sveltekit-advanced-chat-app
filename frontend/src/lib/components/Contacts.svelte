@@ -4,8 +4,6 @@
 	import { onMount } from 'svelte';
   import { Contact as Box } from './index';
   import axios from '$lib/axios';
-	import { selectJoin } from "$lib/dictionary";
-	import { socket } from '$lib/socket';
   import { contact, contacts } from '$lib/store';
 	import { Option } from '$lib/types/enums';
 	
@@ -33,10 +31,8 @@
 				return contact.contactID === id;
 			});
 
-			if (foundContact) {
-				contact.setContact(foundContact as Contact);
-				socket.emit(selectJoin[name], foundContact.contactID, foundContact.roomID);
-			} else goto('/');
+			if (foundContact) contact.setContact(foundContact as Contact);
+			else goto('/');
 		}
 	});
 </script>

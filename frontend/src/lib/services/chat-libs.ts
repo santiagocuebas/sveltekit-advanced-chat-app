@@ -22,7 +22,9 @@ export const isNotMember = (users: IForeign[], contact: Contact | null) => {
 	const newMembers: Member[] = [];
 	
 	if (contact !== null) {
-		const allIDs = [...contact.mods, ...contact.members, ...contact.blacklist].map(({ id }) => id);
+		const allIDs = [...contact.mods, ...contact.members, ...contact.blacklist]
+			.map(({ id }) => id);
+		
 		if (contact.admin) allIDs.push(contact.admin);
 
 		for (const { contactID, name, blockedIDs } of users) {

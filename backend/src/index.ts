@@ -1,62 +1,51 @@
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
-import { createAdapter } from '@socket.io/mongo-adapter';
+import { createAdapter } from '@socket.io/cluster-adapter';
 import server from './app.js';
-import {
-	PORT,
-	ORIGIN,
-	MONGO_URI,
-	MONGO_REPLIC,
-	MONGO_DB,
-	MONGO_COLLECTION
-} from './config.js';
+import { ORIGIN, MONGO_URI } from './config.js';
 import initSocket from './socket-io.js';
 import { verifyToken } from './libs/index.js';
 import { Group, User } from './models/index.js';
 
-// Create Server
-const { MongoClient } = mongoose.mongo;
-const mongoClient = new MongoClient(MONGO_REPLIC, { directConnection: true });
+console.log(`Worker ${process.pid} started`);
 
-// Connect Databases
-await mongoClient
-	.connect()
-	.then(() => console.log('MongoDB Cluster is Connected'))
-	.catch(err => console.error('An error has occurred with', err));
+const PORT = process.env.PORT ?? process.pid;
 
-await mongoClient
-	.db(MONGO_DB)
-	.createCollection(MONGO_COLLECTION, { capped: true, size: 1e6 })
-	.then(() => console.log('The collection has been created successfully'))
-	.catch(() => console.error('The collection exists'));
-
+// Connect Database
 mongoose.set('strictQuery', true);
 
 await mongoose
 	.connect(MONGO_URI)
 	.then(() => console.log('MongoDB Database is Connected'))
-	.catch(err => console.error('An error has occurred with', err));
+	.catch(err => {
+		mongoose.connection.close();
+		console.error('An error has occurred with', err);
+	});
 
 await User.updateMany({ }, { logged: false, tempId: '', socketIds: [] });
 await Group.updateMany({ }, { loggedUsers: [] });
 
-// Connect Socket.io
-const mongoCollection = mongoClient.db(MONGO_DB).collection(MONGO_COLLECTION);
-
+// Create Server
 const io = new Server(server, {
 	cors: {
 		origin: ORIGIN,
-		allowedHeaders: ['Origin', 'Authorization', 'X-Requested-With', 'Content-Type', 'Accept'],
-		methods: ['GET', 'POST', 'PUT', 'DELETE'],
+		allowedHeaders: 'Origin, Authorization, X-Requested-With, Content-Type, Accept',
+		methods: ['GET', 'POST'],
 		credentials: true
 	},
+	connectionStateRecovery: {},
 	maxHttpBufferSize: 2e7,
-	adapter: createAdapter(mongoCollection)
+	transports: ['polling', 'websocket'],
+	adapter: createAdapter()
 });
 
-await User.updateMany({ }, { logged: false, tempId: '', socketIds: [] });
-await Group.updateMany({ }, { loggedUsers: [] });
-		
+io.engine.on('connection_error', err => {
+	console.log(err?.code);
+	console.log(err?.message);
+	console.log(err?.context);
+});
+
+// Connect worker		
 io.use(async (socket, next) => {
 	const { sessionID, token } = socket.handshake.auth;
 	const user = await verifyToken(token)
@@ -65,11 +54,11 @@ io.use(async (socket, next) => {
 	if (!user || user.id !== sessionID) return(new Error('Unauthorized'));
 
 	socket.user = user;
-	socket.user.tempId = token;
+	if (user.tempId.length === 0) socket.user.tempId = token;
+
 	return next();
 });
 
 io.on('connection', initSocket);
 
-// Listener Server
-server.listen(PORT, () => console.log('Server running in port', PORT));
+server.listen(PORT, () => console.log('Server listening at port', PORT));

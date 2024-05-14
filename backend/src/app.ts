@@ -2,8 +2,8 @@ import express from 'express';
 import morgan from 'morgan';
 import bodyParser from 'body-parser';
 import cors from 'cors';
-import { join } from 'path';
 import { createServer } from 'http';
+import { join } from 'path';
 import { ORIGIN } from './config.js';
 import { __dirname } from './upload.js';
 

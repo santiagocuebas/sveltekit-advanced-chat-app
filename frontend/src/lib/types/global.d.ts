@@ -19,7 +19,7 @@ export interface IKeys<Type> {
 }
 
 export interface IErrorsProps {
-	success: boolean;
+	success?: boolean;
 	message: string | IKeys<string>;
 }
 
@@ -163,9 +163,9 @@ export interface IDisabledButton {
 }
 
 export interface ResponseData {
-	[index: string]: string | string[] | boolean | IKeys<string> | IList[];
+	[index: string]: string | IChat | boolean | IKeys<string> | IList[];
 	filename: string;
-	filenames: string[];
+	chat: IChat;
 	logout: boolean;
 	error: IKeys<string>;
 }

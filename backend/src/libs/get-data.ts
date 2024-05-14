@@ -1,10 +1,4 @@
-import type {
-	Chats,
-	IGroup,
-	IChat,
-	IUser,
-	IPartialUser
-} from '../types/global.js';
+import type { IGroup, IChat, IUser, IPartialUser } from '../types/global.js';
 import type { Contact } from '../types/types.js';
 import { Chat, Group, User } from '../models/index.js';
 import { StateOption, TypeContact } from '../types/enums.js';
@@ -22,13 +16,14 @@ export const getUser = (user: IUser): IPartialUser => {
 };
 
 export const getContact: Contact = async (roomID, contact, type, id) => {
-	const search = (type === TypeContact.GROUP)
+	const search = type === TypeContact.GROUP
 		? { to: contact.id, type: TypeContact.GROUP }
 		: { from: contact.id, to: id, type: TypeContact.USER };
 	
 	const chat = await Chat
 		.findOne(search)
-		.sort({ createdAt: -1 });
+		.sort({ createdAt: -1 })
+		.catch(() => null);
 
 	const data = (typeof contact.logged !== 'boolean')
 		? {
@@ -64,7 +59,7 @@ export const matchId = (group: IGroup, userIDs: string[]) => {
 	return false;
 };
 
-export const getId = async (type?: string): Promise<string> => {
+export const getId = async (type?: string) => {
 	const validChar = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 	let id = '';
 
@@ -87,20 +82,4 @@ export const getId = async (type?: string): Promise<string> => {
 	if (data !== null) getId(type);
 
 	return 'uploads/' + id;
-};
-
-export const getChats: Chats = async (contactID, userID, skip = 0, limit = Infinity) => {
-	const findQuery = (userID !== undefined)
-		? {
-			$or: [
-				{ from: userID, to: contactID, type: TypeContact.USER },
-				{ from: contactID, to: userID, type: TypeContact.USER }
-			]
-		} : { to: contactID, type: TypeContact.GROUP };
-
-	return await Chat
-		.find(findQuery)
-		.skip(skip)
-		.limit(limit)
-		.sort({ createdAt: -1 });
 };

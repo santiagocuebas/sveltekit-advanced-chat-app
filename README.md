@@ -14,13 +14,10 @@ SvChat es una aplicación web, vagamente basada en WhatsApp, con las que puedes 
 * `GITHUB_ID`, el id del cliente github oauth.
 * `GITHUB_SECRET`, la clave secreta del cliente github oauth.
 * `MONGO_URI`, el URI de la base de datos de mongodb.
-* `MONGO_REPLIC`, el URI de la base de datos de mongodb replica set.
-* `MONGO_DB`, el nombre de la base de datos del replica set.
-* `MONGO_COLLECTION`, el nombre de la colección del replica set.
 
 ## Instalación Manual
 ```
-git clone -b svchat-with-fs --single-branch https://github.com/santiagocuebas/sveltekit-advanced-chat-app //
+git clone -b svchat-with-fs --single-branch https://github.com/santiagocuebas/sveltekit-advanced-chat-app // Rama secundaria
 cd sveltekit-advanced-chat-app
 cd backend
 pnpm run todo
@@ -39,4 +36,4 @@ pnpm run todo
 
 ## Mejoras a Futuro
 - [ ] Actualizar sintaxis a Svelte 5.
-- [ ] Actualizar a Web Mobile.
+- [ ] Actualizar Responsive Design.

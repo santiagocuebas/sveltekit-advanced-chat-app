@@ -97,22 +97,22 @@ function createContacts(contacts: IContacts) {
 
 			return contacts;
 		}),
-		leaveUser: (id: string, room?: string) => update(contacts => {
-			if (room) socket.emit('removeRoom', room, Option.USER);
-			contact.resetContactWithId(id);
+		leaveUser: (roomID: string, removeRoom?: boolean) => update(contacts => {
+			if (removeRoom) socket.emit('removeRoom', roomID, Option.USER);
+			contact.resetContactWithId(roomID);
 
 			return {
 				...contacts,
-				users: contacts.users.filter(user => user.contactID !== id)
+				users: contacts.users.filter(user => user.roomID !== roomID)
 			};
 		}),
-		leaveGroup: (id: string) => update(contacts => {
-			socket.emit('removeRoom', id, Option.GROUP);
-			contact.resetContactWithId(id);
+		leaveGroup: (roomID: string, removeRoom?: boolean) => update(contacts => {
+			if (removeRoom) socket.emit('removeRoom', roomID, Option.GROUP);
+			contact.resetContactWithId(roomID);
 
 			return {
 				...contacts,
-				groups: contacts.groups.filter(user => user.contactID !== id)
+				groups: contacts.groups.filter(group => group.roomID !== roomID)
 			};
 		}),
 		addMembers: (id: string, members: Member[], loggedUsers?: string[]) => update(contacts => {
@@ -246,10 +246,14 @@ function createContacts(contacts: IContacts) {
 			contact.destroyIfAdmin(id);
 			return contacts;
 		}),
-		addContact: (contact: IForeign) => update(contacts => {
+		addContact: (contact: IForeign, isNewContact?: boolean) => update(contacts => {
+			if (isNewContact) socket.emit('joinUpdate', contact);
+
 			return { ...contacts, users: [contact, ...contacts.users] };
 		}),
-		addGroup: (contact: IGroup) => update(contacts => {
+		addGroup: (contact: IGroup, isNewContact?: boolean) => update(contacts => {
+			if (isNewContact) socket.emit('joinUpdate', contact);
+			
 			return { ...contacts, groups: [contact, ...contacts.groups] };
 		}),
 		setContacts: (contacts: Contacts) => set(contacts),

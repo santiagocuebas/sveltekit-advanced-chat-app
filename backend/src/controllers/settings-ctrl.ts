@@ -1,180 +1,125 @@
 import type { Direction } from '../types/types.js';
-import fs from 'fs/promises';
-import { extname, resolve } from 'path';
-import { encryptPassword, getId } from '../libs/index.js';
-import { Chat, Group, User } from '../models/index.js';
-import { TypeContact } from '../types/enums.js';
+import {
+	deleteChats,
+	deleteFile,
+	encryptPassword,
+	loadFile,
+	queryResult
+} from '../libs/index.js';
+import { Group, User } from '../models/index.js';
+import { QueryOption, TypeContact } from '../types/enums.js';
 
 export const postAvatar: Direction = async (req, res) => {
-	const { id, avatar } = req.user;
-	const ext = extname(req.file?.originalname as string).toLowerCase();
-	const avatarURL = await getId(TypeContact.USER) + ext;
-	const oldPath = resolve(avatar);
-	const targetPath = resolve(avatarURL);
+	const file = await loadFile(req.file, TypeContact.USER);
 
 	// Unlink old avatar
-	if (!avatar.includes('avatar.png')) await fs.unlink(oldPath);
-
-	// Set avatar location
-	await fs.rename(req.file?.path ?? '', targetPath);
+	if (!req.user.avatar.includes('avatar.png') && file !== null) {
+		deleteFile(req.user.avatar);
+	}
 
 	// Update database with the new avatar
-	await User.updateOne({ _id: id }, { avatar: avatarURL });
-
-	return res.json({
-		success: false,
-		message: { log: 'An error occurred while trying to update your avatar' }
-	});
+	const [status, success, message, filename] = file !== null
+		? await queryResult(req.user.id, { avatar: file }, file)
+		: [401, false, 'An error occurred while trying to uploaded the image'];
+	
+	return res.status(status).json({ success, filename, message });
 };
 
 export const postUsername: Direction = async (req, res) => {
 	// Change username
-	await User.updateOne({ _id: req.user.id }, { username: req.body.username });
-
-	return res.json({
-		success: true,
-		message: 'Your username has been successfully updated'
-	});
+	const [status, success, message] = await queryResult(req.user.id,
+		{ username: req.body.username });
+	
+	return res.status(status).json({ success, message });
 };
 
 export const postDescription: Direction = async (req, res) => {
 	// Change description
-	await User.updateOne(
-		{ _id: req.user.id },
-		{ description: req.body.description }
-	);
-
-	return res.json({
-		success: true,
-		message: 'Your description has been successfully updated'
-	});
+	const [status, success, message] = await queryResult(req.user.id,
+		{ description: req.body.description });
+	
+	return res.status(status).json({ success, message });
 };
 
 export const postPassword: Direction = async (req, res) => {
 	const password = await encryptPassword(req.body.newPassword)
-		.catch(err => {
-			console.error(err?.message);
-			return null;
-		});
+		.catch(() => null);
 
 	// Change password
-	if (password) await User.updateOne({ _id: req.user.id }, { password });
-
-	return res.json({
-		success: true,
-		message: 'Your password has been successfully updated'
-	});
+	const [status, success, message] = password !== null
+		? await queryResult(req.user.id, { password })
+		: [401, false, 'An error occurred while trying to encrypt the password'];
+	
+	return res.status(status).json({ success, message });
 };
 
 export const postUnblock: Direction = async (req, res) => {
 	// Unblock contacts
-	await User.updateOne(
-		{ _id: req.user.id },
-		{
-			$pull: {
-				blockedUsers: { id: { $in: req.body.unblockUsers } },
-				blockedGroups: { id: { $in: req.body.unblockGroups } }
-			}
+	const query = {
+		$pull: {
+			blockedUsers: { id: { $in: req.body.unblockUsers } },
+			blockedGroups: { id: { $in: req.body.unblockGroups } }
 		}
-	);
+	};
 
-	return res.json({
-		success: true,
-		message: 'Your contacts has been successfully updated'
-	});
+	const [status, success, message] = await queryResult(req.user.id, query);
+
+	return res.status(status).json({ success, message });
 };
 
 export const deleteUser: Direction = async (req, res) => {
-	const { id, userIDs, groupRooms } = req.user;
+	try {
+		const { id, userIDs, groupRooms } = req.user;
 	
-	// Delete user
-	const user = await User
-		.findOneAndDelete({ _id: id })
-		.lean({ virtuals: true });
+		// Delete user
+		const user = await User.findOne({ _id: id });
 
-	if (user !== null) {
+		if (user === null) return res.json({ delete: false });
+
 		// Unlink avatar
-		if (!user.avatar.includes('avatar.png')) {
-			const path = resolve(user.avatar);
-			await fs
-				.unlink(path)
-				.catch(err => console.error(err));
-		}
+		if (!user.avatar.includes('avatar.png')) deleteFile(user.avatar);
 
 		// Find and delete chats
-		const chats = await Chat.find({
-			$or: [{ from: id }, { to: id }]
-		});
-
-		for (const chat of chats) {
-			if (chat.content instanceof Array) {
-				for (const imageUrl of chat.content) {
-					const path = resolve(imageUrl);
-					await fs
-						.unlink(path)
-						.catch(err => console.error(err));
-				}
-			}
-
-			chat.deleteOne();
-		}
+		await deleteChats([id], QueryOption.SETTINGS);
 
 		// Delete user id from the contacts
-		for (const userID of userIDs) {
-			await User.updateOne(
-				{ _id: userID },
-				{ $pull: { users: { userID: id } } }
-			);
-		}
+		await User.updateMany(
+			{ _id: userIDs },
+			{ $pull: { users: { userID: id } } });
 
-		for (const groupID of groupRooms) {
-			await Group.updateOne(
-				{ _id: groupID },
-				{
-					$pull: {
-						connectedUsers: { $in: userIDs },
-						members: { id: { $in: userIDs } },
-						mods: { id: { $in: userIDs } }
-					}
+		await Group.updateMany(
+			{ _id: groupRooms },
+			{
+				$pull: {
+					loggedUsers: { $in: userIDs },
+					members: { id: { $in: userIDs } },
+					mods: { id: { $in: userIDs } }
 				}
-			);
-		}
+			});
 
 		// Find and delete groups where the user is the admin
 		const groups = await Group.find({ admin: id });
+		const groupsIDs: string[] = [];
 
 		for (const group of groups) {
-			// Unlink avatar
-			if (!group.avatar.includes('avatar.jpeg')) {
-				const path = resolve(group.avatar);
-				await fs
-					.unlink(path)
-					.catch(err => console.error(err));
+		// Unlink avatar
+			if (!group.avatar.includes('avatar.png')) {
+				deleteFile(group.avatar);
 			}
 
-			const groupID = String(group._id);
-
-			// Delete chats of the groups
-			const chats = await Chat.find({ to: groupID });
-			
-			for (const chat of chats) {
-				if (chat.content instanceof Array) {
-					for (const imageUrl of chat.content) {
-						const path = resolve(imageUrl);
-						await fs
-							.unlink(path)
-							.catch(err => console.error(err));
-					}
-				}
-	
-				chat.deleteOne();
-			}
-
-			group.deleteOne();
+			groupsIDs.push(group.id);
 		}
 
-		return res.json({ delete: true });
-	}
+		// Delete chats of the groups
+		await deleteChats(groupsIDs, QueryOption.GROUPS);
+		await Group.deleteMany({ admin: id });
+		await user.deleteOne();
 
-	return res.json({ delete: false });
+		return res.json({ success: true });
+	} catch {
+		return res.status(401).json({
+			success: false,
+			message: 'A database error occurred while attempting to delete the user'
+		});
+	}
 };

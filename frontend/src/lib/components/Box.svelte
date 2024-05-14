@@ -7,7 +7,7 @@
 
 <div class:success={success} class:errors={!success}>
 	{#if typeof message === 'string'}
-		{message}
+		<strong>{message}</strong>
 	{:else}
 		{#each Object.entries(message) as [key, value]}
 			<p>
@@ -20,7 +20,7 @@
 <style lang="postcss">
 	div {
 		scrollbar-width: none;
-		@apply self-end justify-self-end flex absolute flex-wrap items-center justify-center w-[200px] h-[200px] mr-2.5 mb-2.5 p-2.5 overflow-y-auto rounded-2xl z-[500];
+		@apply self-end justify-self-end flex absolute flex-col justify-center w-[240px] h-[240px] mr-2.5 mb-2.5 p-2.5 overflow-y-auto rounded-2xl z-[500];
 	}
 
 	.success {

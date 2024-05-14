@@ -18,12 +18,14 @@ export type Users = { userID: string, roomID: string };
 
 export type Member = { id: string, name: string };
 
+export type DocumentChat = Document<unknown, object, IChat> & IChat;
+
 export type Chats = (
 	room: string,
 	id?: string,
 	skip?: number,
 	limit?: number
-) => Promise<(Document<unknown, object, IChat> & IChat)[]>
+) => Promise<DocumentsChat[]>
 
 export interface IChat {
 	_id: string;

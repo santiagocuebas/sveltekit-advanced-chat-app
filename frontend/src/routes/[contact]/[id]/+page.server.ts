@@ -10,8 +10,8 @@ export const load = (async ({ parent, cookies, params }) => {
 		url: `/home/chats?id=${params.id}&skip=${0}&type=${params.contact}`,
 		headers: { Authorization: parentData.token }
 	}).then(res => res.data)
-		.catch(() => {
-			console.error('Network Error');
+		.catch(err => {
+			console.error('Network Error:', err.response?.data);
 			cookies.delete('authenticate', { path: '/' });
 			throw redirect(307, '/register');
 		});

@@ -6,7 +6,7 @@
   import { Contacts as BoxContacts, UserHeader, LoadingBox } from '$lib/components';
 	import { connectSocket } from '$lib/services';
   import { socket } from '$lib/socket';
-  import { user, register, contact, contacts, options } from '$lib/store';
+  import { user, register, contact, contacts } from '$lib/store';
   import { Option } from '$lib/types/enums';
 	import '../app.css';
 
@@ -20,20 +20,27 @@
 	};
 
 	const connectError = (err: Error) => {
-		if (err.message === 'Unauthorized') {
+		if (err?.message === 'Unauthorized') {
+			register.resetOptions();
 			user.resetUser();
 			contacts.resetContacts();
-			register.setOption(Option.REGISTER);
 			goto('/register');
+			setTimeout(() => register.setOption(Option.REGISTER), 3000);
 		}
 	};
 
 	onMount(() => {
 		if (data.user) connectSocket(data.user, data.token);
-		else register.setOption(Option.REGISTER);
+		else {
+			goto('/register');
+			setTimeout(() => register.setOption(Option.REGISTER), 3000);
+		}
 	});
 	
 	onMount(() => {
+		socket.on('checkId', (cb) => cb(socket.id));
+		socket.on('addContact', contacts.addContact);
+		socket.on('addGroup', contacts.addGroup);
 		socket.on('loggedUser', contacts.loggedUser);
 		socket.on('countUser', contacts.countUser);
 		socket.on('discountUser', contacts.discountUser);
@@ -55,6 +62,9 @@
 		socket.on('connect_error', connectError);
 
 		return () => {
+			socket.off('checkId', (cb) => cb(socket.id));
+			socket.off('addContact', contacts.addContact);
+			socket.off('addGroup', contacts.addGroup);
 			socket.off('loggedUser', contacts.loggedUser);
 			socket.off('countUser', contacts.countUser);
 			socket.off('discountUser', contacts.discountUser);
@@ -78,15 +88,9 @@
 	});
 
 	beforeNavigate(({ to, delta }) => {
-		if (delta === undefined) return;
-
-		if (!to?.params) {
-			contact.resetContact();
-			socket.emit('removeListeners');
-			return;
-		}
-
 		if (
+			delta &&
+			to?.params &&
 			(to.params.contact === Option.USERS || to.params.contact === Option.GROUPS) &&
 			typeof to.params.id === 'string'
 		) {
@@ -95,10 +99,8 @@
 				return to.params?.id === contactID;
 			});
 			
-			if (foundContact) {
-				options.resetOptions();
-				contact.setContact(foundContact as never);
-			} else goto('/');
+			if (foundContact) contact.setContact(foundContact as never);
+			else goto('/');
 		}
 	});
 </script>

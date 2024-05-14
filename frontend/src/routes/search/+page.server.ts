@@ -6,7 +6,7 @@ export const load = (async ({ url, cookies }) => {
 	const searchParams = url.searchParams.get('q');
 
 	return axios({
-		url: '/home/search/' + searchParams,
+		url: '/home/search?param=' + searchParams,
 		headers: { Authorization: token }
 	}).then(res => res.data)
 		.catch(err => {

@@ -1,17 +1,17 @@
-import { body, type ValidationChain } from 'express-validator';
+import { body, query, type ValidationChain } from 'express-validator';
 import {
 	isValidPassword,
-	isUndefinedImage,
 	isValidFormat,
-	isValidSize,
 	isCorrectPassword,
 	existsUsers,
 	existsGroups,
-	isArrayImages,
 	isUndefinedImages,
-	isValidLengthImages,
-	isValidSizesAndFormat
+	isValidSizesAndFormat,
+	isValidContact,
+	isValidReceiver,
+	sanitizeSkip
 } from './customs-validators.js';
+import { QueryType, TypeContact } from '../types/enums.js';
 
 export const arrayRegister: ValidationChain[] = [
 	body('email', 'Invalid email')
@@ -20,25 +20,34 @@ export const arrayRegister: ValidationChain[] = [
 		.isLength({ max: 60 }).withMessage('The email must not have more than 60 characters'),
 	body('password', 'Invalid password')
 		.exists({ values: 'falsy' }).bail()
-		.isString().bail()
 		.isStrongPassword().withMessage('The password must contains at least a lowercase, a uppercase, a number and a special character').bail()
-		.isLength({ max: 40 }).withMessage('The password must not have more than 40 characters')
+		.isLength({ max: 40 }).withMessage('The password must not have more than 40 characters').bail()
 		.custom(isValidPassword)
 ];
 
 export const arrayImages: ValidationChain[] = [
+	query('type', 'Invalid type')
+		.isString().bail()
+		.custom(value => value === TypeContact.USER || value === TypeContact.GROUP),
+	query('roomID', 'Invalid room')
+		.isString().bail()
+		.custom((value, { req }) => req.user.userRooms.includes(value) ||
+			req.user.groupsRooms.includes(value)),
+	query('id', 'Invalid id')
+		.isString().bail()
+		.custom(isValidReceiver),
 	body('audiovisual', 'Enter a valid image archive')
-		.custom(isArrayImages).bail()
-		.custom(isValidLengthImages).bail()
+		.custom((_value, { req }) => req.files instanceof Array).bail()
+		.custom((_value, { req }) =>req.files.length <= 4).bail()
 		.custom(isUndefinedImages).bail()
 		.custom(isValidSizesAndFormat)
 ];
 
 export const arrayAvatar: ValidationChain[] = [
 	body('avatar', 'Enter a valid image archive')
-		.custom(isUndefinedImage).bail()
+		.custom((_value, { req }) => req.file !== undefined).bail()
 		.custom(isValidFormat).bail()
-		.custom(isValidSize)
+		.custom((_value, { req }) => req.file.size < 1e6)
 ];
 
 export const arrayUsername: ValidationChain[] = [
@@ -69,8 +78,24 @@ export const arrayPassword: ValidationChain[] = [
 ];
 
 export const arrayUnblock: ValidationChain[] = [
-	body('unblockUsers', 'Unblock error')
+	body('unblockUsers', 'An error occurred while trying to unblock the user')
+		.customSanitizer(value => value ? value : [])
+		.customSanitizer(value => typeof value === 'string' ? [value] : value)
+		.isArray({ min: 0, max: 1024 }).bail()
 		.custom(existsUsers),
-	body('unblockGroups', 'Unblock error')
+	body('unblockGroups', 'An error occurred while trying to unblock the group')
+		.customSanitizer(value => value ? value : [])
+		.customSanitizer(value => typeof value === 'string' ? [value] : value)
+		.isArray({ min: 0, max: 1024 }).bail()
 		.custom(existsGroups)
+];
+
+export const arrayChats: ValidationChain[] = [
+	query('skip')
+		.customSanitizer(sanitizeSkip),
+	query('type', 'Invalid type')
+		.custom(value => value === QueryType.USERS || value === QueryType.GROUPS),
+	query('id', 'Invalid id')
+		.isString().bail()
+		.custom(isValidContact)
 ];

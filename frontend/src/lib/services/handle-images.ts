@@ -1,4 +1,4 @@
-import type { ResponseData } from "$lib/types/global";
+import type { IChat, IContact, ResponseData } from "$lib/types/global";
 import { isValidImage, isValidAudio, isValidVideo } from "./index";
 import axios from "$lib/axios";
 import { groupProps } from "$lib/store";
@@ -18,8 +18,11 @@ export const loadImage = (file: File): Promise<string> => {
   })
 };
 
-export const getAudiovisuals = async (files: FileList | null) => {
-	if (!files || files.length > 4) return null;
+export const getAudiovisuals = async (
+	files: FileList | null,
+	contact: IContact | null
+) => {
+	if (!contact || !files || files.length > 4) return null;
 
 	const formData = new FormData();
 
@@ -33,17 +36,19 @@ export const getAudiovisuals = async (files: FileList | null) => {
 		formData.append('audiovisual', file);
 	}
 
-	const data: ResponseData = await axios({
+	const { contactID, roomID, type } = contact;
+
+	const data: IChat | null = await axios({
 		method: Method.POST,
-		url: '/home/audiovisual',
+		url: `/home/audiovisual?id=${contactID}&roomID=${roomID}&type=${type}`,
 		data: formData
 	}).then(res => res.data)
 		.catch(err => {
-			console.error(err.message);
+			console.error(err?.message);
 			return null;
 		});
 
-	return (data && data.filenames) ? data.filenames : null;
+	return data;
 };
 
 export const sendAvatar = async (avatar: string, id: string) => {

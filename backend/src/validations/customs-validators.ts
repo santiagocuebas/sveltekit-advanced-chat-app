@@ -1,95 +1,61 @@
-import { CustomValidator } from 'express-validator';
+import { CustomSanitizer, CustomValidator } from 'express-validator';
 import { matchPassword } from '../libs/index.js';
 import { User } from '../models/index.js';
 import {
 	ImageFormats,
 	AudioFormats,
 	VideoFormats,
-	TypeUser
+	TypeUser,
+	QueryType,
+	TypeContact
 } from '../types/enums.js';
 
 const validImageFormat: string[] = Object.values(ImageFormats);
 const validAudioFormat: string[] = Object.values(AudioFormats);
 const validVideoFormat: string[] = Object.values(VideoFormats);
 
-export const existsUser: CustomValidator = async username => {
-	const user = await User.findOne({ username });
-
-	if (user !== null) throw new Error('The username is register');
-
-	return true;
-};
-
 export const isValidPassword: CustomValidator = async (value, { req }) => {
 	const user = await User.findOne({ email: req.body.email, type: TypeUser.EMAIL });
 
 	if (user === null) return true;
 
-	const match = await matchPassword(value, user.password)
-		.catch(err => {
-			console.error(err?.message);
-			return false;
-		});
-		
+	const match = await matchPassword(value, user.password);
+
 	if (!match) throw new Error('Incorrect password');
 	
 	return match;
-};
-
-export const isUndefinedImage: CustomValidator = (_value, { req }) => {
-	return req.file !== undefined;
 };
 
 export const isValidFormat: CustomValidator = (_value, { req }) => {
 	return validImageFormat.includes(req.file?.mimetype ?? '');
 };
 
-export const isValidSize: CustomValidator = (_value, { req }) => {
-	return req.file.size < 1e6;
-};
-
-export const isCorrectPassword: CustomValidator = async (value, { req }): Promise<boolean> => {
-	const match = await matchPassword(value, req.user.password)
-		.catch(err => {
-			console.error(err?.message);
-			return false;
-		});
+export const isCorrectPassword: CustomValidator = async (value, { req }) => {
+	const match = await matchPassword(value, req.user.password);
 
 	if (!match) throw new Error('Incorrect password');
 
 	return true;
 };
 
-export const existsUsers: CustomValidator = (value, { req }): boolean => {
-	const parchedValue = value instanceof Array ? value : [value];
-
-	for (const id of parchedValue) {
-		if (typeof value === 'string' && !req.user?.blockedUsersIDs.includes(id)) {
-			throw new Error('An error has occurred');
+export const existsUsers: CustomValidator = (value, { req }) => {
+	for (const id of value) {
+		if (typeof id !== 'string' || !req.user.blockedUsersIDs.includes(id)) {
+			return false;
 		}
 	}
 
 	return true;
 };
 
-export const existsGroups: CustomValidator = (value, { req }): boolean => {
-	const parchedValue = value instanceof Array ? value : [value];
-
-	for (const id of parchedValue) {
-		if (typeof value === 'string' && !req.user?.blockedUsersIDs.includes(id)) {
-			throw new Error('An error has occurred');
+export const existsGroups: CustomValidator = (value, { req }) => {
+	for (const id of value) {
+		if (typeof id !== 'string' || !req.user.blockedGroupsIDs.includes(id)) {
+			return false;
 		}
 	}
 
 	return true;
-};
-
-export const isArrayImages: CustomValidator = (_value, { req }) => {
-	return req.files instanceof Array;
-};
-
-export const isValidLengthImages: CustomValidator = (_value, { req }) => {
-	return req.files.length <= 4;
 };
 
 export const isUndefinedImages: CustomValidator = (_value, { req }) => {
@@ -98,6 +64,14 @@ export const isUndefinedImages: CustomValidator = (_value, { req }) => {
 	}
 
 	return true;
+};
+
+export const isValidReceiver: CustomValidator = (value, { req }) => {
+	return (
+		(req.query?.type === TypeContact.GROUP && req.user.groupRooms.includes(value) &&
+			value === req.query.roomID) ||
+		(req.query?.type === TypeContact.USER && req.user.userIDs.includes(value) &&
+		req.user.userRooms.includes(req.query.roomID) && req.query.roomID.includes(value)));
 };
 
 export const isValidSizesAndFormat: CustomValidator = (_value, { req }) => {
@@ -109,11 +83,23 @@ export const isValidSizesAndFormat: CustomValidator = (_value, { req }) => {
 				file.size < 2.5e7 &&
 				(
 					validAudioFormat.includes(file.mimetype) ||
-					validVideoFormat.includes(file.mimetype)
-				)
-			)
+					validVideoFormat.includes(file.mimetype)))
 		) return false;
 	}
 
 	return true;
+};
+
+export const isValidContact: CustomValidator = (value, { req }) => {
+	return (
+		(req.query?.type === QueryType.USERS && req.user.userIDs.includes(value)) ||
+		(req.query?.type === QueryType.GROUPS && req.user.groupRooms.includes(value)));
+};
+
+export const sanitizeSkip: CustomSanitizer = value => {
+	const patchSkip = Number(value);
+
+	if (Number.isNaN(patchSkip)) return 0;
+
+	return Math.abs(Math.floor(patchSkip));
 };

@@ -61,23 +61,23 @@ export const OptionUser: IKeys<string> = {
 	bad: 'emitBlockDestroy'
 };
 
-export const OptionMember: IKeys<string> = {
+export const OptionGroup: IKeys<string> = {
 	leave: 'emitLeaveGroup',
-	blockGroup: 'emitBlockGroup'
-};
-
-export const OptionMod: IKeys<string> = {
+	blockGroup: 'emitBlockGroup',
 	add: 'emitAddMember',
 	ban: 'emitBanMember',
 	block: 'emitBlockMember',
-	unblock: 'emitUnblockMember'
-};
-
-export const OptionAdmin: IKeys<string> = {
+	unblock: 'emitUnblockMember',
 	addMod: 'emitAddMod',
 	removeMod: 'emitRemoveMod',
   avatar: 'emitChangeAvatar',
   description: 'emitChangeDescription',
 	state: 'emitChangeState',
 	destroy: 'emitDestroyGroup'
+};
+
+export const ValidLeave: IKeys<string> = {
+	leave: 'leave',
+	blockGroup: 'blockGroup',
+	destroy: 'destroy'
 };

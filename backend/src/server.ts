@@ -13,7 +13,7 @@ console.log(`Primary pid=${process.pid}`);
 
 cluster.setupPrimary({ exec: __dirname + '/index.js' });
 
-for (let i = 0; i < cpuCount; i++) {
+for (let i = 0; i < 2; i++) {
 	cluster.fork({ PORT: Number(PORT) + i });
 }
 

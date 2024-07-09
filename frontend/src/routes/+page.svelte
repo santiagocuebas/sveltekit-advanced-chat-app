@@ -22,6 +22,10 @@
 				<path d={PathIcon.GITHUB} />
 			</svg>
 			Github
+			<a
+				href="https://github.com/santiagocuebas/sveltekit-advanced-chat-app"
+				target="_blank"
+			><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
 		</li>
 		<li>
 			<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -30,10 +34,10 @@
 			Netlify
 		</li>
 		<li>
-			<svg viewBox="-8 -8 181 181" xmlns="http://www.w3.org/2000/svg">
-				<path d={PathIcon.RENDER} />
+			<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+				<path d={PathIcon.KOYEB} />
 			</svg>
-			Render
+			Koyeb
 		</li>
 		<li>
 			<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
@@ -84,14 +88,14 @@
 		}
 
 		& li {
-			@apply flex items-center p-2 rounded-md font-semibold text-white gap-1.5;
+			@apply flex items-center py-2 px-3 rounded-md font-semibold text-white gap-1.5;
 
 			&:nth-child(1) {
 				@apply p-0 text-[17px] font-medium text-black leading-tight;
 			}
 
 			&:nth-child(2) {
-				@apply bg-black;
+				@apply bg-black [&_a]:text-white;
 			}
 
 			&:nth-child(3) {
@@ -99,7 +103,7 @@
 			}
 
 			&:nth-child(4) {
-				@apply bg-[#3bc29c];
+				@apply bg-[#48c288];
 			}
 
 			&:nth-child(5) {

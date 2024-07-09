@@ -2,6 +2,8 @@
 	"name": "frontend",
 	"version": "1.0.0",
 	"private": true,
+	"type": "module",
+  "packageManager": "pnpm@9.3.0",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
@@ -9,6 +11,14 @@
 		"todo": "pnpm install && vite build && vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+	},
+	"dependencies": {
+		"axios": "1.6.8",
+		"dotenv": "16.4.5",
+		"js-cookie": "3.0.5",
+		"socket.io-client": "4.7.5",
+		"svelte-preprocess": "5.1.4",
+		"validator": "13.11.0"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "3.2.0",
@@ -27,14 +37,5 @@
 		"tslib": "2.6.2",
 		"typescript": "5.4.5",
 		"vite": "5.2.11"
-	},
-	"type": "module",
-	"dependencies": {
-		"axios": "1.6.8",
-		"dotenv": "16.4.5",
-		"js-cookie": "3.0.5",
-		"socket.io-client": "4.7.5",
-		"svelte-preprocess": "5.1.4",
-		"validator": "13.11.0"
 	}
 }
